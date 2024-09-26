@@ -1747,6 +1747,7 @@ dependencies = [
  "cosmwasm-std",
  "dominator",
  "dominator_helpers",
+ "dotenvy",
  "futures",
  "futures-signals",
  "futures-timer",

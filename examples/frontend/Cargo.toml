@@ -9,6 +9,9 @@ default = ["dev"]
 autoconnect = []
 dev = ["wasm-logger", "console_error_panic_hook","awsm_web/unwrap_verbose"]
 
+[build-dependencies]
+dotenvy = "0.15.7"
+
 [dependencies]
 ######## Local dependencies ########
 layer-climb = { path = "../../packages/layer-climb", default-features = false, features = ["web"] }

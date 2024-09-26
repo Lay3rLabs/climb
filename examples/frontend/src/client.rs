@@ -8,8 +8,8 @@ pub static FAUCET_CLIENT: OnceLock<SigningClient> = OnceLock::new();
 #[derive(Debug, Clone)]
 pub enum ClientKeyKind {
     DirectInput { mnemonic: String },
-    DirectEnv,
     Keplr,
+    DirectEnv,
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -41,21 +41,12 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
         }
 
         ClientKeyKind::DirectEnv => {
-            let env_key = match target_env {
-                TargetEnvironment::Testnet => "TEST_MNEMONIC",
-                TargetEnvironment::Local => "LOCAL_MNEMONIC",
+            let env_str = match target_env {
+                TargetEnvironment::Testnet => option_env!("TEST_MNEMONIC"),
+                TargetEnvironment::Local => option_env!("LOCAL_MNEMONIC"),
             };
 
-            let env_str = include_str!("../.env");
-
-            let mnemonic = env_str
-                .lines()
-                .find(|line| line.starts_with(env_key))
-                .context("mnemonic not found in env")?
-                .split('=')
-                .nth(1)
-                .context("mnemonic not found in env")?
-                .replace("\"", "");
+            let mnemonic = env_str.context("mnemonic not found in env")?;
 
             let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
 

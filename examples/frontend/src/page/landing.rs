@@ -109,7 +109,10 @@ impl LandingUi {
                                 Err(e) => {
                                     log::error!("Error connecting: {:?}", e);
                                     match state.client_key_kind.lock().unwrap_ext().as_ref().unwrap_ext() {
-                                        ClientKeyKind::DirectEnv | ClientKeyKind::DirectInput { .. } => {
+                                        ClientKeyKind::DirectEnv => {
+                                            state.error.set(Some("Unable to connect".to_string()));
+                                        },
+                                        ClientKeyKind::DirectInput { .. } => {
                                             state.error.set(Some("Unable to connect".to_string()));
                                         },
                                         ClientKeyKind::Keplr => {
