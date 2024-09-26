@@ -1,8 +1,8 @@
 # CLIent for Multiple Blockchains
 
-## Universal, pure-Rust client lib for lay3r and beyond
+## Universal, pure-Rust client lib for [Layer](https://layer.xyz) and beyond
 
-Although hosted publicly, it's intended solely for Lay3r and Confio projects at the moment. PRs outside the official roadmap will be rejected, and forks are strongly discouraged until all the dust settles (at which point it will become an official public project and PRs/forks will be more than welcome!)
+Although hosted publicly, it's intended solely for Layer and Confio projects at the moment. PRs outside the official roadmap will be rejected, and forks are strongly discouraged until all the dust settles (at which point it will become an official public project and PRs/forks will be more than welcome!)
 
 ## Cargo Docs
 
