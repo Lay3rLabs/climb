@@ -1,0 +1,22 @@
+[package]
+name = "layer-climb-cli"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+### Local dependencies ###
+layer-climb = { path = "../../packages/layer-climb" }
+### Workspace dependencies ###
+serde = { workspace = true } 
+serde_json = {workspace = true} 
+anyhow = {workspace = true}
+tokio = { workspace = true} 
+clap = { workspace = true}
+futures = {workspace = true}
+cosmwasm-std = {workspace = true}
+tracing = {workspace = true}
+dotenvy = {workspace = true} 
+tracing-subscriber = {workspace = true} 
+bip39 = {workspace = true}
+rand = {workspace = true}

@@ -1,0 +1,33 @@
+[package]
+name = "layer-climb-proto"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["lib"]
+
+[features]
+default = ["binary"]
+web = [
+    "ibc-proto/std", 
+    "ibc-proto/client", 
+]
+binary = [
+    "ibc-proto/std", 
+    "ibc-proto/client", 
+    "ibc-proto/transport"
+]
+
+[dependencies]
+######## Workspace dependencies ########
+# Proto
+cosmos-sdk-proto = {workspace = true} 
+tendermint-proto = {workspace = true}
+
+# Error handling
+thiserror = {workspace = true}
+anyhow = {workspace = true} 
+
+######## Featurefull dependencies ########
+ibc-proto = {version = "0.49.0", default-features = false} 

@@ -1,0 +1,68 @@
+[workspace]
+members = ["packages/*", "examples/*"]
+resolver = "2"
+
+[workspace.dependencies]
+# General
+cfg-if = "1.0.0"
+async-trait = "0.1.82"
+
+# Error handling
+thiserror = "1.0.61"
+anyhow = "1.0.86"
+
+# Binary encoding
+hex = "0.4.3"
+base64 = "0.22.0"
+
+# Logging
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+log = "0.4.22"
+
+# Serdeish
+toml = "0.8.14"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+
+# Crypto
+bip39 = "2.0.0"
+
+# Networking
+reqwest = {version = "0.12.5", features=["json"]} 
+
+# Async
+futures = "0.3"
+
+# Randomness
+rand = "0.8.5"
+
+# Cosmos
+cosmrs = {version = "0.20.0", features = ["cosmwasm", "grpc-core"]}
+cosmwasm-std = "2.0.3"
+tendermint = "0.39.1"
+tendermint-rpc = {version = "0.39.1", default-features = false}
+
+# Proto
+cosmos-sdk-proto = {version = "0.25.0", default-features = false, features = ["std", "cosmwasm", "grpc"]} 
+tendermint-proto = {version = "0.39.1", default-features = false} 
+
+# Wasm
+tonic-web-wasm-client = "0.6.0"
+wasm-bindgen = "0.2.93"
+wasm-bindgen-futures = "0.4.43"
+serde-wasm-bindgen = "0.6.5"
+
+# CLI stuff
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4.5.7", features = ["derive"] }
+dotenvy = {version = "0.15.7", features = ["cli"]}
+
+# Browser stuff
+dominator = "0.5.38"
+futures-signals = "0.3.34"
+gloo-events = "0.2.0"
+gloo-timers = {version = "0.3.0", features = ["futures"]}
+dominator_helpers = {version = "0.8.0", default-features = false}
+wasm-logger = "0.2.0"
+console_error_panic_hook = "0.1.7"

@@ -1,0 +1,18 @@
+[package]
+name = "layer-climb-config"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["lib"]
+
+[features]
+default = ["binary"]
+binary = []
+web = []
+
+[dependencies]
+######## Workspace dependencies ########
+serde = {workspace = true} 
+anyhow = {workspace = true} 
