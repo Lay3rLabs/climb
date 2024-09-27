@@ -9,16 +9,20 @@ use layer_climb_config::ChainConfig;
 /// Currently this only works with mnemonic phrases
 pub struct SigningClientPoolManager {
     mnemonic: String,
-    chain_config: ChainConfig,
     derivation_index: AtomicU32,
+    pub chain_config: ChainConfig,
 }
 
 impl SigningClientPoolManager {
-    pub fn new_mnemonic(mnemonic: String, chain_config: ChainConfig) -> Self {
+    pub fn new_mnemonic(
+        mnemonic: String,
+        chain_config: ChainConfig,
+        start_index: Option<u32>,
+    ) -> Self {
         Self {
             mnemonic,
             chain_config,
-            derivation_index: AtomicU32::new(0),
+            derivation_index: AtomicU32::new(start_index.unwrap_or_default()),
         }
     }
 }
@@ -40,8 +44,7 @@ impl Manager for SigningClientPoolManager {
             }
         };
 
-        let signing_client = SigningClient::new(self.chain_config.clone(), signer).await?;
-        Ok(signing_client)
+        SigningClient::new(self.chain_config.clone(), signer).await
     }
 
     async fn recycle(&self, _: &mut SigningClient, _: &Metrics) -> RecycleResult<anyhow::Error> {

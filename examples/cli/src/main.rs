@@ -58,7 +58,7 @@ async fn main() -> Result<()> {
             let mut tx_builder = faucet.tx_builder();
             tx_builder.set_gas_simulate_multiplier(2.0);
             faucet
-                .transfer(None, amount, addr.clone(), Some(tx_builder))
+                .transfer(None, amount, &addr, Some(tx_builder))
                 .await?;
             tracing::info!(
                 "Balance after: {}",
@@ -97,9 +97,7 @@ async fn main() -> Result<()> {
                     tracing::info!("Sending {} to {} from {}", amount, addr, faucet.addr);
 
                     let tx_builder = faucet.tx_builder();
-                    faucet
-                        .transfer(None, amount, addr.clone(), Some(tx_builder))
-                        .await
+                    faucet.transfer(None, amount, &addr, Some(tx_builder)).await
                 });
             }
 

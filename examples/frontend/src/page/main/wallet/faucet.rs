@@ -5,7 +5,7 @@ use gloo_timers::future::IntervalStream;
 use wasm_bindgen_futures::spawn_local;
 
 pub struct WalletFaucetUi {
-    pub balance: Mutable<u64>,
+    pub balance: Mutable<u128>,
     pub client: SigningClient,
     pub loader: AsyncLoader,
 }
@@ -87,7 +87,7 @@ impl WalletFaucetUi {
         let faucet = SigningClient::new(self.client.querier.chain_config.clone(), signer).await?;
 
         faucet
-            .transfer(None, 1_000_000, self.client.addr.clone(), None)
+            .transfer(None, 1_000_000, &self.client.addr, None)
             .await?;
 
         self.update_balance().await;

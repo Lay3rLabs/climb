@@ -79,7 +79,7 @@ impl SigningClient {
         &self,
         denom: impl Into<Option<&str>>,
         amount: u128,
-        recipient: Address,
+        recipient: &Address,
         tx_builder: Option<TxBuilder<'_>>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
         tx_builder
