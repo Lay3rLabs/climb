@@ -61,6 +61,9 @@ tokio = { version = "1", features = ["full"] }
 clap = { version = "4.5.7", features = ["derive"] }
 dotenvy = {version = "0.15.7", features = ["cli"]}
 
+# Pool
+deadpool = "0.12.1"
+
 # Browser stuff
 dominator = "0.5.38"
 futures-signals = "0.3.34"

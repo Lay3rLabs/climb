@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use layer_climb_proto::MessageExt;
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "web")] {
+    if #[cfg(target_arch = "wasm32")] {
         #[async_trait(?Send)]
         pub trait TxSigner: Send + Sync {
             async fn sign(&self, doc: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>>;

@@ -8,20 +8,12 @@ license = "Apache-2.0"
 crate-type = ["lib"]
 
 [features]
-default = ["binary"]
-binary = ["layer-climb-proto/binary", "layer-climb-config/binary"]
-web = [
-    "dep:wasm-bindgen", 
-    "dep:wasm-bindgen-futures", 
-    "dep:serde-wasm-bindgen",
-    "layer-climb-config/web",
-    "layer-climb-proto/web"
-]
+web = []
 
 [dependencies]
 ######## Local dependencies ########
-layer-climb-proto = { path = "../layer-climb-proto", default-features = false}
-layer-climb-config = { path = "../layer-climb-config", default-features = false}
+layer-climb-proto = { path = "../layer-climb-proto"}
+layer-climb-config = { path = "../layer-climb-config"}
 ######## Workspace dependencies ########
 cfg-if = {workspace = true} 
 serde = {workspace = true} 
@@ -36,7 +28,8 @@ signature = {workspace = true}
 base64 = {workspace = true} 
 tendermint = {workspace = true} 
 
-######## Optional ########
-wasm-bindgen = {workspace = true, optional = true}
-wasm-bindgen-futures = {workspace = true, optional = true}
-serde-wasm-bindgen = {workspace = true, optional = true}
+######## Target-specific dependencies ########
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = {workspace = true}
+wasm-bindgen-futures = {workspace = true}
+serde-wasm-bindgen = {workspace = true}

@@ -70,6 +70,54 @@ async fn main() -> Result<()> {
             );
         }
 
+        Command::MultiTapFaucet { amount } => {
+            let faucet_pool = opt.faucet_pool().await?;
+            let addr = opt.address().await?;
+            let amount = amount.unwrap_or(1_000_000);
+
+            tracing::info!(
+                "Balance before: {}",
+                faucet_pool
+                    .get()
+                    .await
+                    .unwrap()
+                    .querier
+                    .balance(addr.clone(), None)
+                    .await?
+                    .unwrap_or_default()
+            );
+
+            // join several futures to send multiple transactions
+            let mut futures = Vec::new();
+            for _ in 0..3 {
+                let addr = addr.clone();
+                let faucet_pool = faucet_pool.clone();
+                futures.push(async move {
+                    let faucet = faucet_pool.get().await.unwrap();
+                    tracing::info!("Sending {} to {} from {}", amount, addr, faucet.addr);
+
+                    let tx_builder = faucet.tx_builder();
+                    faucet
+                        .transfer(None, amount, addr.clone(), Some(tx_builder))
+                        .await
+                });
+            }
+
+            futures::future::join_all(futures).await;
+
+            tracing::info!(
+                "Balance after: {}",
+                faucet_pool
+                    .get()
+                    .await
+                    .unwrap()
+                    .querier
+                    .balance(addr, None)
+                    .await?
+                    .unwrap_or_default()
+            );
+        }
+
         Command::GenerateWallet {} => {
             let mut rng = rand::thread_rng();
             let entropy: [u8; 32] = rng.gen();

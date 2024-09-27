@@ -43,12 +43,12 @@ impl KeySigner {
         let key =
             bip32::XPrv::derive_from_path(seed, derivation).map_err(|err| anyhow!("{}", err))?;
 
-        Ok(Self { key: key.into() })
+        Ok(Self { key })
     }
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "web")] {
+    if #[cfg(target_arch = "wasm32")] {
         #[async_trait(?Send)]
         impl TxSigner for KeySigner {
             async fn sign(&self, msg: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>> {

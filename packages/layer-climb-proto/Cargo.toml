@@ -7,18 +7,6 @@ license = "Apache-2.0"
 [lib]
 crate-type = ["lib"]
 
-[features]
-default = ["binary"]
-web = [
-    "ibc-proto/std", 
-    "ibc-proto/client", 
-]
-binary = [
-    "ibc-proto/std", 
-    "ibc-proto/client", 
-    "ibc-proto/transport"
-]
-
 [dependencies]
 ######## Workspace dependencies ########
 # Proto
@@ -29,5 +17,9 @@ tendermint-proto = {workspace = true}
 thiserror = {workspace = true}
 anyhow = {workspace = true} 
 
-######## Featurefull dependencies ########
-ibc-proto = {version = "0.49.0", default-features = false} 
+######## Target-specific dependencies ########
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+ibc-proto = {version = "0.49.0", default-features = false, features = ["std", "client"]} 
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ibc-proto = {version = "0.49.0", default-features = false, features = ["std", "client", "transport"]} 

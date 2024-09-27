@@ -3,7 +3,8 @@ use std::{path::PathBuf, str::FromStr};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use cosmwasm_std::Coin;
-use layer_climb::prelude::*;
+use deadpool::managed::{Manager, Pool};
+use layer_climb::{pool::SigningClientPoolManager, prelude::*};
 use serde::{Deserialize, Serialize};
 
 // https://docs.rs/clap/latest/clap/_derive/_tutorial/chapter_0/index.html
@@ -57,6 +58,12 @@ pub enum Command {
 
     /// Taps the faucet to get some funds
     TapFaucet {
+        #[arg(long)]
+        amount: Option<u128>,
+    },
+
+    /// Taps the faucet multiple times to get some funds (tests pool)
+    MultiTapFaucet {
         #[arg(long)]
         amount: Option<u128>,
     },
@@ -173,6 +180,17 @@ impl Opt {
     pub async fn faucet_client(&self) -> Result<SigningClient> {
         let signer = KeySigner::new_mnemonic_str(&self.faucet_config.mnemonic, None)?;
         SigningClient::new(self.chain_config.clone(), signer).await
+    }
+
+    pub async fn faucet_pool(&self) -> Result<Pool<SigningClientPoolManager>> {
+        let manager = SigningClientPoolManager::new_mnemonic(
+            self.faucet_config.mnemonic.clone(),
+            self.chain_config.clone(),
+        );
+        Pool::builder(manager)
+            .max_size(100)
+            .build()
+            .map_err(|e| e.into())
     }
 }
 
