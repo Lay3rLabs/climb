@@ -43,7 +43,7 @@ impl KeySigner {
         let key =
             bip32::XPrv::derive_from_path(seed, derivation).map_err(|err| anyhow!("{}", err))?;
 
-        Ok(Self { key: key.into() })
+        Ok(Self { key })
     }
 }
 

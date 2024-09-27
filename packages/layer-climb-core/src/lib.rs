@@ -6,9 +6,6 @@ pub mod prelude;
 pub mod querier;
 pub mod signing;
 pub mod transaction;
-cfg_if::cfg_if! {
-    if #[cfg(target_arch = "wasm32")] {
-    } else {
-        pub mod pool;
-    }
-}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod pool;

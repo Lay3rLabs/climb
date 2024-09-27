@@ -4,11 +4,11 @@ use async_trait::async_trait;
 use layer_climb_config::{ChainConfig, ChainId};
 
 use crate::{key::PublicKey, signer::TxSigner};
-pub struct KeplrSigner { }
+pub struct KeplrSigner {}
 
 impl KeplrSigner {
     pub async fn new(_: &ChainId) -> Result<Self> {
-        Ok(Self{})
+        Ok(Self {})
     }
 
     pub async fn add_chain(_: &ChainConfig) -> Result<()> {
