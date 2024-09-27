@@ -11,6 +11,8 @@ pub use layer_climb_core::{
     signing,
     transaction,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use layer_climb_core::pool;
 
 // in case anyone wants to use the protobufs directly
 pub mod proto {

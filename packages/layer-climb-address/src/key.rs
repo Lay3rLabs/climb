@@ -48,7 +48,7 @@ impl KeySigner {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "web")] {
+    if #[cfg(target_arch = "wasm32")] {
         #[async_trait(?Send)]
         impl TxSigner for KeySigner {
             async fn sign(&self, msg: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>> {

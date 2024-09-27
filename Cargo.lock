@@ -600,26 +600,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cosmrs"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09f90935b72d9fa65a2a784e09f25778637b7e88e9d6f87c717081470f7fa726"
-dependencies = [
- "bip32",
- "cosmos-sdk-proto",
- "ecdsa",
- "eyre",
- "k256",
- "rand_core",
- "serde",
- "serde_json",
- "signature",
- "subtle-encoding",
- "tendermint",
- "thiserror",
-]
-
-[[package]]
 name = "cosmwasm-core"
 version = "2.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -777,6 +757,23 @@ dependencies = [
  "subtle-ng",
  "zeroize",
 ]
+
+[[package]]
+name = "deadpool"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6541a3916932fe57768d4be0b1ffb5ec7cbf74ca8c903fdfd5c0fe8aa958f0ed"
+dependencies = [
+ "deadpool-runtime",
+ "num_cpus",
+ "tokio",
+]
+
+[[package]]
+name = "deadpool-runtime"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "092966b41edc516079bdf31ec78a2e0588d1d0c08f78b91d8307215928642b2b"
 
 [[package]]
 name = "der"
@@ -1006,16 +1003,6 @@ checksum = "534c5cf6194dfab3db3242765c03bbe257cf92f22b38f6bc0c58d59108a820ba"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "eyre"
-version = "0.6.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cd915d99f24784cdc19fd37ef22b97e3ff0ae756c7e492e9fbfe897d61e2aec"
-dependencies = [
- "indenter",
- "once_cell",
 ]
 
 [[package]]
@@ -1546,12 +1533,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indenter"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
-
-[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1635,7 +1616,9 @@ dependencies = [
  "cfg-if",
  "ecdsa",
  "elliptic-curve",
+ "once_cell",
  "sha2 0.10.8",
+ "signature",
 ]
 
 [[package]]
@@ -1655,14 +1638,17 @@ dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.22.1",
+ "bip32",
  "bip39",
  "cfg-if",
- "cosmrs",
  "hex",
+ "k256",
  "layer-climb-config",
  "layer-climb-proto",
  "serde",
  "serde-wasm-bindgen",
+ "signature",
+ "subtle-encoding",
  "tendermint",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1705,6 +1691,7 @@ dependencies = [
  "bip39",
  "cfg-if",
  "cosmwasm-std",
+ "deadpool",
  "futures",
  "futures-timer",
  "getrandom",
@@ -1895,6 +1882,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
+dependencies = [
+ "hermit-abi 0.3.9",
+ "libc",
 ]
 
 [[package]]

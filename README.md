@@ -9,6 +9,10 @@ Although hosted publicly, it's intended solely for Layer and Confio projects at 
 The easiest way to get a feel for the library is to check the cargo docs.
 As of right now, this isn't published anywhere, so just run `cargo doc --open`
 
+## Wasm compatibility
+
+It works in browsers, including gRPC (over gRPC-web) - just enable the `web` feature
+
 ## Prelude
 
 Most of the types are re-exported in the prelude and can be used via the line-liner:

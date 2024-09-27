@@ -8,13 +8,11 @@ license = "Apache-2.0"
 crate-type = ["lib"]
 
 [features]
-default = ["binary"]
-binary = ["layer-climb-core/binary", "layer-climb-proto/binary", "layer-climb-address/binary", "layer-climb-config/binary"]
-web = ["layer-climb-core/web", "layer-climb-proto/web", "layer-climb-address/web", "layer-climb-config/web"]
+web = ["layer-climb-address/web"]
 
 # General dependencies
 [dependencies]
-layer-climb-core = { path = "../layer-climb-core", default-features = false}
-layer-climb-proto = { path = "../layer-climb-proto", default-features = false}
-layer-climb-address = { path = "../layer-climb-address", default-features = false}
-layer-climb-config = { path = "../layer-climb-config", default-features = false}
+layer-climb-core = { path = "../layer-climb-core"}
+layer-climb-proto = { path = "../layer-climb-proto"}
+layer-climb-address = { path = "../layer-climb-address"}
+layer-climb-config = { path = "../layer-climb-config"}

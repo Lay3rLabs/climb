@@ -19,7 +19,7 @@ use middleware::{QueryMiddlewareMapReq, QueryMiddlewareMapResp, QueryMiddlewareR
 use crate::{network::rpc::RpcClient, prelude::*};
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "web")] {
+    if #[cfg(target_arch = "wasm32")] {
         #[derive(Clone)]
         pub struct QueryClient {
             pub chain_config: ChainConfig,
@@ -60,7 +60,7 @@ const DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION: std::time::Duration =
 
 impl QueryClient {
     cfg_if::cfg_if! {
-        if #[cfg(feature = "web")] {
+        if #[cfg(target_arch = "wasm32")] {
             pub async fn new(chain_config: ChainConfig) -> Result<Self> {
                 let grpc_channel = crate::network::grpc_web::get_grpc_client(&chain_config).await?;
                 let rpc_client = RpcClient::new(chain_config.rpc_endpoint.clone());
