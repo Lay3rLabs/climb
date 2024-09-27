@@ -186,6 +186,7 @@ impl Opt {
         let manager = SigningClientPoolManager::new_mnemonic(
             self.faucet_config.mnemonic.clone(),
             self.chain_config.clone(),
+            None,
         );
         Pool::builder(manager)
             .max_size(100)

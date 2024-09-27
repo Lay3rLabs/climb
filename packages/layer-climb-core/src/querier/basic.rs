@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 impl QueryClient {
-    pub async fn balance(&self, addr: Address, denom: Option<String>) -> Result<Option<u64>> {
+    pub async fn balance(&self, addr: Address, denom: Option<String>) -> Result<Option<u128>> {
         self.run_with_middleware(BalanceReq { addr, denom }).await
     }
 
@@ -45,7 +45,7 @@ pub struct BalanceReq {
 }
 
 impl QueryRequest for BalanceReq {
-    type QueryResponse = Option<u64>;
+    type QueryResponse = Option<u128>;
 
     async fn request(&self, client: QueryClient) -> Result<Self::QueryResponse> {
         let mut query_client =
@@ -69,7 +69,7 @@ impl QueryRequest for BalanceReq {
             Some(coin) => {
                 let amount = coin
                     .amount
-                    .parse::<u64>()
+                    .parse::<u128>()
                     .context("couldn't parse amount")?;
                 Ok(Some(amount))
             }

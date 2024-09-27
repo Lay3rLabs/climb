@@ -5,7 +5,7 @@ impl SigningClient {
         &self,
         denom: impl Into<Option<&'a str>>,
         amount: u128,
-        recipient: Address,
+        recipient: &Address,
     ) -> Result<layer_climb_proto::bank::MsgSend> {
         let denom = denom.into().unwrap_or(&self.querier.chain_config.gas_denom);
 
