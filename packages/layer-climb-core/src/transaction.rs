@@ -252,7 +252,7 @@ impl<'a> TxBuilder<'a> {
         };
 
         let signer_info = layer_climb_proto::tx::SignerInfo {
-            public_key: Some(self.signer.public_key().await?.into()),
+            public_key: Some(self.signer.public_key_as_proto().await?),
             mode_info: Some(layer_climb_proto::tx::ModeInfo {
                 sum: Some(layer_climb_proto::tx::mode_info::Sum::Single(
                     layer_climb_proto::tx::mode_info::Single {

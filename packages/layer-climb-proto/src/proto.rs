@@ -2,7 +2,7 @@
 pub use cosmos_sdk_proto::{
     cosmos::base::v1beta1::Coin,
     tendermint::google::protobuf::{Any, Duration, Timestamp},
-    traits::{Message, Name},
+    traits::{Message, MessageExt, Name},
 };
 
 // do these really not exist in cosmos_sdk_proto?

@@ -1,17 +1,24 @@
 use super::signer::TxSigner;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
+use bip32::DerivationPath;
 use bip39::Mnemonic;
-pub use cosmrs::crypto::PublicKey;
-use cosmrs::{bip32::DerivationPath, crypto::secp256k1::SigningKey};
+use signature::Signer;
 use std::{str::FromStr, sync::LazyLock};
 
+pub type PublicKey = tendermint::PublicKey;
+
 // https://github.com/confio/cosmos-hd-key-derivation-spec?tab=readme-ov-file#the-cosmos-hub-path
-static COSMOS_HUB_PATH: LazyLock<DerivationPath> =
+pub static COSMOS_HUB_PATH: LazyLock<DerivationPath> =
     LazyLock::new(|| DerivationPath::from_str("m/44'/118'/0'/0/0").unwrap());
 
+pub fn cosmos_hub_derivation(index: u32) -> Result<DerivationPath> {
+    DerivationPath::from_str(&format!("m/44'/118'/0'/0/{}", index))
+        .map_err(|err| anyhow!("{}", err))
+}
+
 pub struct KeySigner {
-    pub key: SigningKey,
+    pub key: bip32::XPrv,
 }
 
 impl KeySigner {
@@ -30,14 +37,13 @@ impl KeySigner {
     }
 
     pub fn new_mnemonic_str(mnemonic: &str, derivation: Option<&DerivationPath>) -> Result<Self> {
+        let derivation = derivation.unwrap_or(&COSMOS_HUB_PATH);
         let mnemonic: Mnemonic = mnemonic.parse()?;
-        let key = SigningKey::derive_from_path(
-            mnemonic.to_seed(""),
-            derivation.unwrap_or(&COSMOS_HUB_PATH),
-        )
-        .map_err(|err| anyhow!("{}", err))?;
+        let seed = mnemonic.to_seed("");
+        let key =
+            bip32::XPrv::derive_from_path(seed, derivation).map_err(|err| anyhow!("{}", err))?;
 
-        Ok(Self { key })
+        Ok(Self { key: key.into() })
     }
 }
 
@@ -69,13 +75,16 @@ cfg_if::cfg_if! {
 }
 
 async fn sign(signer: &KeySigner, msg: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>> {
-    let signed = signer
+    let signed: k256::ecdsa::Signature = signer
         .key
-        .sign(&layer_climb_proto::proto_into_bytes(msg)?)
+        .private_key()
+        .try_sign(&layer_climb_proto::proto_into_bytes(msg)?)
         .map_err(|err| anyhow!("{}", err))?;
     Ok(signed.to_vec())
 }
 
 async fn public_key(signer: &KeySigner) -> Result<PublicKey> {
-    Ok(signer.key.public_key())
+    let public_key = signer.key.public_key();
+    let public_key_bytes = public_key.to_bytes();
+    PublicKey::from_raw_secp256k1(&public_key_bytes).context("Invalid secp256k1 public key")
 }
