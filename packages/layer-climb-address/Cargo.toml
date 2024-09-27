@@ -24,12 +24,15 @@ layer-climb-proto = { path = "../layer-climb-proto", default-features = false}
 layer-climb-config = { path = "../layer-climb-config", default-features = false}
 ######## Workspace dependencies ########
 cfg-if = {workspace = true} 
-cosmrs = {workspace = true} 
 serde = {workspace = true} 
 anyhow = {workspace = true} 
 hex = {workspace = true} 
 async-trait = {workspace = true} 
 bip39 = {workspace = true}
+bip32 = {workspace = true}
+k256 = {workspace = true}
+subtle-encoding = {workspace = true}
+signature = {workspace = true}
 base64 = {workspace = true} 
 tendermint = {workspace = true} 
 

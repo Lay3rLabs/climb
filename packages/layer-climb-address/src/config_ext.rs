@@ -10,8 +10,8 @@ pub trait ConfigAddressExt {
 impl ConfigAddressExt for ChainConfig {
     fn parse_address(&self, value: &str) -> Result<Address> {
         match &self.address_kind {
-            AddrKind::Cosmos { prefix } => Address::new_cosmos(value, prefix),
-            AddrKind::Eth => Address::new_eth(value),
+            AddrKind::Cosmos { prefix } => Address::new_cosmos_string(value, Some(prefix)),
+            AddrKind::Eth => Address::new_eth_string(value),
         }
     }
 
