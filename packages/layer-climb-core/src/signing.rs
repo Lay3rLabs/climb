@@ -77,15 +77,15 @@ impl SigningClient {
 
     pub async fn transfer(
         &self,
-        denom: impl Into<Option<&str>>,
         amount: u128,
         recipient: &Address,
+        denom: impl Into<Option<&str>>,
         tx_builder: Option<TxBuilder<'_>>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
         tx_builder
             .unwrap_or_else(|| self.tx_builder())
             .broadcast([proto_into_any(
-                &self.transfer_msg(denom, amount, recipient)?,
+                &self.transfer_msg(amount, recipient, denom)?,
             )?])
             .await
     }

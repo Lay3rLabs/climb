@@ -11,7 +11,7 @@ As of right now, this isn't published anywhere, so just run `cargo doc --open`
 
 ## Wasm compatibility
 
-It works in browsers, including gRPC (over gRPC-web) - just enable the `web` feature
+All features besides [pools](#pools) work in browsers, including gRPC (over gRPC-web) - just enable the `web` feature.
 
 ## Prelude
 
@@ -125,9 +125,9 @@ let amount:u128 = 1_000_000;
 let recpient_addr:Address = chain_config.parse_address("address string")?; // see `Addresses` above
 
 // use chain's native gas denom
-signing_client.transfer(None, amount, recipient_addr, None).await?;
+signing_client.transfer(amount, recipient_addr, None, None).await?;
 // some other denom
-signing_client.transfer("uusdc", amount, recipient_addr, None).await?;
+signing_client.transfer(amount, recipient_addr, "uusdc", None).await?;
 ```
 
 The last `None` is typical for all transaction methods. It takes a `TxBuilder` which allows configuring per-transaction settings like the gas fee, simulation multiplier, and many more.
@@ -140,7 +140,7 @@ Technically, you don't even need a `SigningClient` for transactions, a `TxSigner
 ```rust
 let tx_builder = signing_client.tx_builder();
 tx_builder.set_gas_simulate_multiplier(2.0);
-let tx_resp = signing_client.transfer(None, amount, recipient_addr, Some(tx_builder)).await?;
+let tx_resp = signing_client.transfer(amount, recipient_addr, None, Some(tx_builder)).await?;
 ```
 
 `tx_resp` contains the chain's native `TxResponse`, directly as the protobuf definition. You can log out the hash via `tx_resp.txhash`, or get really fancy by passing it to [CosmosTxEvents](#events).
@@ -186,6 +186,87 @@ let code_id: u64 = CosmosTxEvents::from(&tx_resp)
     .parse()?;
 ```
 
+## Pools
+
+For non-wasm targets (e.g. cli tools, desktop applications, bots, etc.) - you can use pools to get robust conccurency. Under the hood it uses different derivation paths for each client instead of account sequence numbers, thereby avoiding all the issues that can come up with trying to parallelize over the same client.
+
+The pool itself is managed by a battle-tested third-party crate, [deadpool](https://crates.io/crates/deadpool) and is just plain Rust.
+
+Example:
+```rust
+// note the new imports, besides the prelude
+use layer_climb::{pool::SigningClientPoolManager, prelude::*};
+use deadpool::managed::Pool;
+
+// create a "pool manager", giving it a mnemonic, a chain config
+// and an optional derivation index to start from (typically leave this as `None`)
+let mut client_pool_manager = SigningClientPoolManager::new_mnemonic(mnemonic, chain_config.clone(), None);
+
+// this part is completely optional, but highly recommended for real-world use
+// it's a one-liner to set a minimum balance 
+// and the pool will make sure each client has the funds before handing it out
+
+// Minimum Balance Option 2
+// make sure your "main address" (derivation index 0) has enough funds
+// and just set the minimum balance
+// * the 200_000 is the threshhold to tigger a send
+// * the 1_000_000 is the amount that it will send when the balance falls below the threshhold 
+client_pool_manager = client_pool_manager.with_minimum_balance(200_000, 1_000_000, None, None).await?;
+
+// Minimum Balance Option 1
+// give it a separate funder client, like a faucet, to send from
+let faucet_signer = KeySigner::new_mnemonic_str(&faucet.mnemonic, None)?;
+let faucet = SigningClient::new(chain_config, faucet_signer).await?;
+client_pool_manager = client_pool_manager.with_minimum_balance(200_000, 1_000_000, Some(faucet), None).await?;
+
+// In both of those, the last Option is just the denom
+// similar to regular transfers, it will use the chain's gas denom if `None`
+
+// anyway, with or without the "minimum balance" set, we can now create our pool
+// this is just plain `deadpool`, with 100 max clients
+
+let client_pool: Pool<SigningClientPoolManager> = Pool::builder(client_pool_manager)
+.max_size(100)
+.build()
+.context("Failed to create client pool")?;
+```
+
+With the pool created, we can use it with plain Rust async concurrency primitives
+
+Example:
+
+```rust
+/// upload 3 different contract files simultaneously
+let (code_id_1, code_id_2, code_id_3) = try_join!(
+    {
+        let client_pool = client_pool.clone();
+        async move {
+            let client = client_pool.get().await?;
+            let (code_id, tx_resp) =
+                client.contract_upload_file(wasm_bytes_1, None).await?;
+            Ok(code_id)
+        }
+    },
+    {
+        let client_pool = client_pool.clone();
+        async move {
+            let client = client_pool.get().await?;
+            let (code_id, tx_resp) =
+                client.contract_upload_file(wasm_bytes_2, None).await?;
+            Ok(code_id)
+        }
+    },
+    {
+        let client_pool = client_pool.clone();
+        async move {
+            let client = client_pool.get().await?;
+            let (code_id, tx_resp) =
+                client.contract_upload_file(wasm_bytes_3, None).await?;
+            Ok(code_id)
+        }
+    }
+)?;
+```
 
 ## Middleware
 
