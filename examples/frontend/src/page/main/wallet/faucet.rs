@@ -87,7 +87,7 @@ impl WalletFaucetUi {
         let faucet = SigningClient::new(self.client.querier.chain_config.clone(), signer).await?;
 
         faucet
-            .transfer(None, 1_000_000, &self.client.addr, None)
+            .transfer(1_000_000, &self.client.addr, None, None)
             .await?;
 
         self.update_balance().await;
