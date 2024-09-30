@@ -5,7 +5,7 @@ edition = "2021"
 license = "Apache-2.0"
 
 [features]
-default = ["dev"]
+default = ["dev", "debug"]
 autoconnect = []
 debug = []
 dev = ["wasm-logger", "console_error_panic_hook","awsm_web/unwrap_verbose"]

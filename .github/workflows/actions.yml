@@ -57,7 +57,7 @@ jobs:
           version: 'latest' 
       
       - name: Build frontend
-        run: trunk build --release --public-url=https://lay3rlabs.github.io/climb/
+        run: trunk build --no-default-features --features dev --release --public-url=https://lay3rlabs.github.io/climb/
         working-directory: ./examples/frontend
       
       - name: Copy for 404 redirect
