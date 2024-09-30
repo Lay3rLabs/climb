@@ -9,10 +9,10 @@ use tokio::sync::Mutex;
 
 /// Currently this only works with mnemonic phrases
 pub struct SigningClientPoolManager {
-    mnemonic: String,
-    derivation_index: AtomicU32,
-    chain_config: ChainConfig,
-    balance_maintainer: Option<BalanceMaintainer>,
+    pub mnemonic: String,
+    pub derivation_index: AtomicU32,
+    pub chain_config: ChainConfig,
+    pub balance_maintainer: Option<BalanceMaintainer>,
 }
 
 impl SigningClientPoolManager {
@@ -123,7 +123,7 @@ impl SigningClientPoolManager {
 }
 
 // just a helper struct to keep track of the balance maintainer
-struct BalanceMaintainer {
+pub struct BalanceMaintainer {
     client: Mutex<SigningClient>,
     threshhold: u128,
     amount: u128,
