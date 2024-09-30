@@ -59,6 +59,15 @@ jobs:
       - name: Build frontend
         run: trunk build --release --public-url=https://lay3rlabs.github.io/climb/
         working-directory: ./examples/frontend
+      
+      - name: Copy for 404 redirect
+        run: cp ./examples/frontend/dist/index.html ./examples/frontend/dist/404.html
+
+      - name: Build cargo doc
+        run: cargo doc --release --no-deps --all-features 
+
+      - name: Copy cargo doc 
+        run: cp -R ./target/doc ./examples/frontend/dist/doc
 
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3

@@ -23,8 +23,8 @@ cfg_if::cfg_if! {
     } else {
         pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
             Config {
-                root_path: "demo",
-                media_root: "https://path-to/media",
+                root_path: "climb",
+                media_root: "https://lay3rlabs.github.io/climb/media",
                 data: serde_json::from_str(include_str!("../config.json")).unwrap_ext(),
                 debug: ConfigDebug::default(),
             }
