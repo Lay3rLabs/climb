@@ -65,6 +65,7 @@ jobs:
 
       - name: Build cargo doc
         run: cargo doc --release --no-deps --all-features 
+        working-directory: ./packages/layer-climb
 
       - name: Copy cargo doc 
         run: cp -R ./target/doc ./examples/frontend/dist/doc
