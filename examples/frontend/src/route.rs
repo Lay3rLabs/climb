@@ -20,6 +20,8 @@ impl Route {
     pub fn from_url(url: &str, root_path: &str) -> Self {
         let url = web_sys::Url::new(url).unwrap();
         let paths = url.pathname();
+        log::info!("paths before split: {}", paths);
+
         let paths = paths
             .split('/')
             .into_iter()
@@ -27,6 +29,8 @@ impl Route {
             // skip all the roots (1 for the domain, 1 for each part of root path)
             //.skip(root_path.chars().filter(|c| *c == '/').count() + 1)
             .collect::<Vec<_>>();
+
+        log::info!("paths after split: {:?}", paths);
         let paths = paths.as_slice();
 
         let route = match paths {

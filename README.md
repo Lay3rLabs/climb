@@ -1,4 +1,9 @@
+
+
 # CLIent for Multiple Blockchains
+
+* ### [Live demo](https://lay3rlabs.github.io/climb)
+* ### [Cargo docs](https://lay3rlabs.github.io/climb/doc/layer_climb/prelude/index.html) 
 
 ## Universal, pure-Rust client lib for [Layer](https://layer.xyz) and beyond
 
@@ -194,8 +199,8 @@ The pool itself is managed by a battle-tested third-party crate, [deadpool](http
 
 Example:
 ```rust
-// note the new imports, besides the prelude
-use layer_climb::{pool::SigningClientPoolManager, prelude::*};
+use layer_climb::prelude::*;
+// import deadpool Pool 
 use deadpool::managed::Pool;
 
 // create a "pool manager", giving it a mnemonic, a chain config

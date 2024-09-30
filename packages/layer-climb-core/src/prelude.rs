@@ -15,6 +15,9 @@ pub use crate::{
     transaction::TxBuilder,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::pool::*;
+
 // Common types that can be confusing between different proto files.
 // standardized here. In cases where we want helper methods, use extension traits
 // so that we don't have to deal with confusion between types.
