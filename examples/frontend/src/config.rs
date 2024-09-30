@@ -10,7 +10,7 @@ use crate::{
 };
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "dev")] {
+    if #[cfg(feature = "debug")] {
 
         pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
             Config {
