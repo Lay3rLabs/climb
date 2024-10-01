@@ -58,6 +58,8 @@ pub enum AnyClient {
 }
 
 impl AnyClient {
+    // helper method to get the signing client via ref when we know it's what we have
+    // will panic if called with a QueryClient (for error handling in that case, use TryInto)
     pub fn as_signing(&self) -> &SigningClient {
         match self {
             Self::Signing(client) => client,
@@ -65,6 +67,7 @@ impl AnyClient {
         }
     }
 
+    // helper method to get the query client via ref
     pub fn as_querier(&self) -> &QueryClient {
         match self {
             Self::Query(client) => client,
@@ -82,5 +85,25 @@ impl From<SigningClient> for AnyClient {
 impl From<QueryClient> for AnyClient {
     fn from(client: QueryClient) -> Self {
         Self::Query(client)
+    }
+}
+
+impl TryFrom<AnyClient> for SigningClient {
+    type Error = anyhow::Error;
+
+    fn try_from(value: AnyClient) -> Result<Self> {
+        match value {
+            AnyClient::Signing(client) => Ok(client),
+            AnyClient::Query(_) => Err(anyhow!("Expected SigningClient, got QueryClient")),
+        }
+    }
+}
+
+impl From<AnyClient> for QueryClient {
+    fn from(client: AnyClient) -> Self {
+        match client {
+            AnyClient::Query(client) => client,
+            AnyClient::Signing(client) => client.querier,
+        }
     }
 }
