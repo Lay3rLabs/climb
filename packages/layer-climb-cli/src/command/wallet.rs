@@ -30,8 +30,10 @@ pub enum WalletCommand {
         /// The address to send the funds to
         to: String,
         /// The amount to send
+        #[arg(long)]
         amount: u128,
         /// The denom of the funds to send, if not set will use the chain gas denom
+        #[arg(long)]
         denom: Option<String>,
     },
 }
