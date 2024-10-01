@@ -13,7 +13,7 @@ pub enum ContractCommand {
     },
 
     /// Instantiates a contract on the chain
-    InstantiateContract {
+    Instantiate {
         /// The code ID of the contract, obtained from `upload`
         #[arg(long)]
         code_id: u64,
@@ -32,7 +32,7 @@ pub enum ContractCommand {
     },
 
     /// Executes a contract on the chain
-    ExecuteContract {
+    Execute {
         /// The address of the contract, obtained from `instantiate`
         #[arg(long)]
         address: String,
@@ -48,7 +48,7 @@ pub enum ContractCommand {
     },
 
     /// Queries a contract on the chain
-    QueryContract {
+    Query {
         /// The address of the contract, obtained from `instantiate`
         #[arg(long)]
         address: String,
@@ -74,7 +74,7 @@ impl ContractCommand {
                     tx_resp: Box::new(tx_resp),
                 });
             }
-            ContractCommand::InstantiateContract {
+            ContractCommand::Instantiate {
                 code_id,
                 msg,
                 label,
@@ -102,7 +102,7 @@ impl ContractCommand {
                     tx_resp: Box::new(tx_resp),
                 });
             }
-            ContractCommand::ExecuteContract {
+            ContractCommand::Execute {
                 address,
                 msg,
                 funds_denom,
@@ -128,7 +128,7 @@ impl ContractCommand {
                     tx_resp: Box::new(tx_resp),
                 });
             }
-            ContractCommand::QueryContract { address, msg } => {
+            ContractCommand::Query { address, msg } => {
                 let address = client.as_querier().chain_config.parse_address(address)?;
 
                 let resp = client
