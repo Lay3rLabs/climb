@@ -76,6 +76,7 @@ impl SigningClientPoolManager {
                 let index = self
                     .derivation_index
                     .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
                 KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))?
             }
             layer_climb_config::AddrKind::Eth => {
@@ -97,7 +98,7 @@ impl SigningClientPoolManager {
                 {
                     let funder = balance_maintainer.client.lock().await;
 
-                    tracing::info!(
+                    tracing::debug!(
                         "Balance on {} is {}, below {}, sending {} to top-up from {}",
                         client.addr,
                         current_balance,

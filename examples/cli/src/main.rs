@@ -1,20 +1,23 @@
-#![allow(warnings)]
-mod opt;
+mod args;
+mod commands;
+mod config;
+mod context;
 
-use anyhow::{anyhow, bail, Context, Result};
-use bip39::Mnemonic;
+use anyhow::Result;
+use args::{CliArgs, Command, ContractArgs, FaucetArgs, PoolArgs, WalletArgs};
 use clap::Parser;
-use layer_climb::prelude::*;
-use opt::{Args, Command, Opt};
-use rand::Rng;
-use std::{fs, os::unix::net};
-use tracing;
-use tracing_subscriber;
+use context::AppContext;
+use layer_climb_cli::command::{ContractLog, WalletLog};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv().context("couldn't find dotenv file")?;
-    let args = Args::parse();
+    // Load the .env file before anything, in case it's used by args
+    if dotenvy::dotenv().is_err() {
+        eprintln!("Failed to load .env file");
+    }
+
+    // load the args before setting up the logger, since it uses the log level
+    let args = CliArgs::parse();
 
     tracing_subscriber::fmt()
         .without_time()
@@ -22,199 +25,63 @@ async fn main() -> Result<()> {
         .with_max_level(tracing::Level::from(args.log_level))
         .init();
 
-    let opt = Opt::new(args).await?;
+    // now we can get our context, which will contain the args too
+    let mut ctx = AppContext::new(args).await?;
 
-    match opt.command.clone() {
-        Command::WalletShow {} => {
-            let signing_client = opt.signing_client().await?;
-            tracing::info!("address: {}", signing_client.addr);
-            let balances = signing_client
-                .querier
-                .all_balances(signing_client.addr, None)
+    match &ctx.args.command {
+        Command::Wallet(WalletArgs { command }) => {
+            command
+                .run(ctx.any_client().await?, &mut ctx.rng, |line| match line {
+                    WalletLog::Create { addr, mnemonic } => {
+                        tracing::info!("Created wallet with address: {}", addr);
+                        tracing::info!("Mnemonic: {}", mnemonic);
+                    }
+                    WalletLog::Show { addr, balances } => {
+                        tracing::info!("Wallet address: {}", addr);
+                        for balance in balances {
+                            tracing::info!("{}: {}", balance.denom, balance.amount);
+                        }
+                    }
+                    WalletLog::Transfer {
+                        to,
+                        amount,
+                        denom,
+                        tx_resp,
+                    } => {
+                        tracing::info!("Transfer successful, tx hash: {}", tx_resp.txhash);
+                        tracing::info!("Sent {} {} to {}", amount, denom, to);
+                    }
+                })
                 .await?;
-            if balances.is_empty() {
-                tracing::info!("No balance found");
-            } else {
-                tracing::info!("Balances:");
-                for balance in balances {
-                    tracing::info!("{}: {}", balance.denom, balance.amount);
-                }
-            }
         }
-        Command::TapFaucet { amount } => {
-            let faucet = opt.faucet_client().await?;
-            let addr = opt.address().await?;
-            let amount = amount.unwrap_or(1_000_000);
-
-            tracing::info!(
-                "Balance before: {}",
-                faucet
-                    .querier
-                    .balance(addr.clone(), None)
-                    .await?
-                    .unwrap_or_default()
-            );
-            tracing::info!("Sending {} to {}", amount, addr);
-            let mut tx_builder = faucet.tx_builder();
-            tx_builder.set_gas_simulate_multiplier(2.0);
-            faucet
-                .transfer(amount, &addr, None, Some(tx_builder))
+        Command::Contract(ContractArgs { command }) => {
+            command
+                .run(ctx.any_client().await?, |line| match line {
+                    ContractLog::Upload { code_id, tx_resp } => {
+                        tracing::info!("Uploaded contract with code id: {}", code_id);
+                        tracing::info!("Tx hash: {}", tx_resp.txhash);
+                    }
+                    ContractLog::Instantiate { addr, tx_resp } => {
+                        tracing::info!("Instantiated contract at address: {}", addr);
+                        tracing::info!("Tx hash: {}", tx_resp.txhash);
+                    }
+                    ContractLog::Execute { tx_resp } => {
+                        tracing::info!("Executed contract");
+                        tracing::info!("Tx hash: {}", tx_resp.txhash);
+                    }
+                    ContractLog::Query { response } => {
+                        tracing::info!("Contract query response: {}", response);
+                    }
+                })
                 .await?;
-            tracing::info!(
-                "Balance after: {}",
-                faucet
-                    .querier
-                    .balance(addr, None)
-                    .await?
-                    .unwrap_or_default()
-            );
         }
-
-        Command::MultiTapFaucet { amount } => {
-            let faucet_pool = opt.faucet_pool().await?;
-            let addr = opt.address().await?;
-            let amount = amount.unwrap_or(1_000_000);
-
-            tracing::info!(
-                "Balance before: {}",
-                faucet_pool
-                    .get()
-                    .await
-                    .unwrap()
-                    .querier
-                    .balance(addr.clone(), None)
-                    .await?
-                    .unwrap_or_default()
-            );
-
-            // join several futures to send multiple transactions
-            let mut futures = Vec::new();
-            for _ in 0..3 {
-                let addr = addr.clone();
-                let faucet_pool = faucet_pool.clone();
-                futures.push(async move {
-                    let faucet = faucet_pool.get().await.unwrap();
-                    tracing::info!("Sending {} to {} from {}", amount, addr, faucet.addr);
-
-                    let tx_builder = faucet.tx_builder();
-                    faucet.transfer(amount, &addr, None, Some(tx_builder)).await
-                });
-            }
-
-            futures::future::join_all(futures).await;
-
-            tracing::info!(
-                "Balance after: {}",
-                faucet_pool
-                    .get()
-                    .await
-                    .unwrap()
-                    .querier
-                    .balance(addr, None)
-                    .await?
-                    .unwrap_or_default()
-            );
+        Command::Faucet(FaucetArgs { command }) => {
+            command.run(&ctx).await?;
         }
-
-        Command::GenerateWallet {} => {
-            let mut rng = rand::thread_rng();
-            let entropy: [u8; 32] = rng.gen();
-            let mnemonic = Mnemonic::from_entropy(&entropy)?;
-
-            let signer = KeySigner::new_mnemonic_iter(mnemonic.word_iter(), None)?;
-            let addr = opt
-                .chain_config
-                .address_from_pub_key(&signer.public_key().await?)?;
-
-            tracing::info!("--- Address ---");
-            tracing::info!("{}", addr);
-            tracing::info!("--- Mnemonic---");
-            tracing::info!("{}", mnemonic);
-        }
-
-        Command::UploadContract { wasm_file } => {
-            let wasm_byte_code = tokio::fs::read(wasm_file).await?;
-            let client = opt.signing_client().await?;
-            let (code_id, tx_resp) = client.contract_upload_file(wasm_byte_code, None).await?;
-
-            tracing::info!("Tx Hash: {}", tx_resp.txhash);
-            tracing::info!("Code ID: {}", code_id);
-        }
-
-        Command::InstantiateContract {
-            code_id,
-            msg,
-            label,
-            funds_denom,
-            funds_amount,
-        } => {
-            let client = opt.signing_client().await?;
-
-            let (addr, tx_resp) = client
-                .contract_instantiate(
-                    client.addr.clone(),
-                    code_id,
-                    label.unwrap_or_default(),
-                    &contract_str_to_msg(msg.as_deref())?,
-                    get_funds(&opt.chain_config, funds_denom, funds_amount),
-                    None,
-                )
-                .await?;
-
-            tracing::info!("Tx Hash: {}", tx_resp.txhash);
-            tracing::info!("Contract Address: {}", addr);
-        }
-
-        Command::ExecuteContract {
-            address,
-            msg,
-            funds_denom,
-            funds_amount,
-        } => {
-            let client = opt.signing_client().await?;
-
-            let address = opt.chain_config.parse_address(&address)?;
-
-            let tx_resp = client
-                .contract_execute(
-                    &address,
-                    &contract_str_to_msg(msg.as_deref())?,
-                    get_funds(&opt.chain_config, funds_denom, funds_amount),
-                    None,
-                )
-                .await?;
-
-            tracing::info!("Tx Hash: {}", tx_resp.txhash);
-        }
-
-        Command::QueryContract { address, msg } => {
-            let client = opt.signing_client().await?;
-
-            let address = opt.chain_config.parse_address(&address)?;
-
-            let resp = client
-                .querier
-                .contract_smart_raw(&address, &contract_str_to_msg(msg.as_deref())?)
-                .await?;
-            let resp = std::str::from_utf8(&resp)?;
-
-            tracing::info!("Query Response: {:?}", resp);
+        Command::Pool(PoolArgs { command }) => {
+            command.run(&ctx).await?;
         }
     }
 
     Ok(())
-}
-
-fn get_funds(
-    chain_config: &ChainConfig,
-    funds_denom: Option<String>,
-    funds_amount: Option<String>,
-) -> Vec<Coin> {
-    match funds_amount {
-        Some(funds_amount) => {
-            let funds_denom = funds_denom.unwrap_or(chain_config.gas_denom.clone());
-            vec![new_coin(funds_denom, funds_amount)]
-        }
-        None => Vec::new(),
-    }
 }

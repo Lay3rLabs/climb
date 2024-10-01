@@ -1,7 +1,10 @@
 # Climb CLI
 
-A universal Rust CLI for the layer-sdk chains. It builds on the [layer-climb](../../packages/layer-climb/) package, which can compile
-to native, in-browser wasm, and soon WASI.
+This is an example CLI
+
+It merely provides a thin layer around the reusable [layer-climb-cli](../../packages/layer-climb-cli) crate.
+
+Real-world usage such as [avs-toolkit](https://github.com/Lay3rLabs/avs-toolkit/tree/main/tools/cli) takes this as a starting point and builds from there.
 
 ## Running a local node
 

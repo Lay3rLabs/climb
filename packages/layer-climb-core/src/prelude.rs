@@ -49,3 +49,38 @@ pub fn new_coins(
         .map(|(amount, denom)| new_coin(amount, denom))
         .collect()
 }
+
+/// A useful abstraction when we have either a Signing or Query client
+/// but need to delay the decision of requiring it to be a SigningClient until runtime.
+pub enum AnyClient {
+    Signing(SigningClient),
+    Query(QueryClient),
+}
+
+impl AnyClient {
+    pub fn as_signing(&self) -> &SigningClient {
+        match self {
+            Self::Signing(client) => client,
+            Self::Query(_) => panic!("Expected SigningClient, got QueryClient"),
+        }
+    }
+
+    pub fn as_querier(&self) -> &QueryClient {
+        match self {
+            Self::Query(client) => client,
+            Self::Signing(client) => &client.querier,
+        }
+    }
+}
+
+impl From<SigningClient> for AnyClient {
+    fn from(client: SigningClient) -> Self {
+        Self::Signing(client)
+    }
+}
+
+impl From<QueryClient> for AnyClient {
+    fn from(client: QueryClient) -> Self {
+        Self::Query(client)
+    }
+}
