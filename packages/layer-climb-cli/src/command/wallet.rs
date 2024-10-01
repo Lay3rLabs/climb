@@ -8,8 +8,22 @@ use rand::Rng;
 pub enum WalletCommand {
     /// Creates a wallet with a random mnemonic
     Create,
-    /// Shows the wallet balance and address
+    /// Shows the current signing wallet balance and address
     Show,
+    /// Shows the balances for a given address
+    Balance {
+        #[arg(long)]
+        /// The address to show the balance for
+        address: String,
+        /// Denom to show the balance for, if not set will default to the chain's gas denom
+        #[arg(long)]
+        denom: Option<String>,
+    },
+    AllBalances {
+        #[arg(long)]
+        /// The address to show the balances for
+        address: String,
+    },
     /// Transfer funds to another address
     Transfer {
         #[arg(long)]
@@ -64,6 +78,25 @@ impl WalletCommand {
                     });
                 }
             }
+            WalletCommand::Balance { address, denom } => {
+                let addr = client.as_querier().chain_config.parse_address(address)?;
+                let balance = client
+                    .as_querier()
+                    .balance(addr.clone(), denom.clone())
+                    .await?;
+                let denom = denom
+                    .clone()
+                    .unwrap_or_else(|| client.as_querier().chain_config.gas_denom.clone());
+                log(WalletLog::Balance {
+                    addr,
+                    balance: new_coin(balance.unwrap_or_default(), denom),
+                });
+            }
+            WalletCommand::AllBalances { address } => {
+                let addr = client.as_querier().chain_config.parse_address(address)?;
+                let balances = client.as_querier().all_balances(addr.clone(), None).await?;
+                log(WalletLog::AllBalances { addr, balances });
+            }
             WalletCommand::Transfer { to, amount, denom } => {
                 let to = client.as_querier().chain_config.parse_address(to)?;
                 let tx_resp = client
@@ -90,6 +123,14 @@ pub enum WalletLog {
         mnemonic: Mnemonic,
     },
     Show {
+        addr: Address,
+        balances: Vec<Coin>,
+    },
+    Balance {
+        addr: Address,
+        balance: Coin,
+    },
+    AllBalances {
         addr: Address,
         balances: Vec<Coin>,
     },
