@@ -20,7 +20,6 @@ pub struct ChainConfig {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WasmaticConfig {
     pub endpoint: String,
-    pub address: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
