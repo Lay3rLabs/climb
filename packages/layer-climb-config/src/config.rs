@@ -1,9 +1,6 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{
-    fmt::{Debug, Display},
-    str::FromStr,
-};
+use std::{fmt::Display, str::FromStr};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChainConfig {
