@@ -1,5 +1,6 @@
 use crate::PublicKey;
 use anyhow::{anyhow, bail, Context, Result};
+use layer_climb_config::AddrKind;
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, str::FromStr};
 use subtle_encoding::bech32;
@@ -124,6 +125,13 @@ impl Address {
             Address::Cosmos { .. } => {
                 bail!("TODO - implement cosmos to eth addr");
             }
+        }
+    }
+
+    pub fn try_from_value(value: &str, kind: AddrKind) -> Result<Self> {
+        match kind {
+            AddrKind::Cosmos { prefix } => Self::new_cosmos_string(value, Some(prefix.as_str())),
+            AddrKind::Eth => Self::new_eth_string(value),
         }
     }
 }

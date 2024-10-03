@@ -1,6 +1,9 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, str::FromStr};
+use std::{
+    fmt::{Debug, Display},
+    str::FromStr,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChainConfig {
@@ -10,6 +13,19 @@ pub struct ChainConfig {
     pub gas_amount: String,
     pub gas_denom: String,
     pub address_kind: AddrKind,
+    pub wasmatic: WasmaticConfig,
+    pub faucet: FaucetConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct WasmaticConfig {
+    pub endpoint: String,
+    pub address: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct FaucetConfig {
+    pub mnemonic: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
