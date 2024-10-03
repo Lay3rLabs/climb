@@ -128,10 +128,17 @@ impl Address {
         }
     }
 
-    pub fn try_from_value(value: &str, kind: &AddrKind) -> Result<Self> {
-        match kind {
+    pub fn try_from_value(value: &str, addr_kind: &AddrKind) -> Result<Self> {
+        match addr_kind {
             AddrKind::Cosmos { prefix } => Self::new_cosmos_string(value, Some(prefix)),
             AddrKind::Eth => Self::new_eth_string(value),
+        }
+    }
+
+    pub fn try_from_pub_key(pub_key: &PublicKey, addr_kind: &AddrKind) -> Result<Address> {
+        match addr_kind {
+            AddrKind::Cosmos { prefix } => Address::new_cosmos_pub_key(pub_key, prefix),
+            AddrKind::Eth => Address::new_eth_pub_key(pub_key),
         }
     }
 }

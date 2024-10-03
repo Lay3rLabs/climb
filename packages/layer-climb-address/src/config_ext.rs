@@ -1,6 +1,6 @@
 use crate::{address::Address, key::PublicKey};
 use anyhow::Result;
-use layer_climb_config::{AddrKind, ChainConfig};
+use layer_climb_config::ChainConfig;
 
 pub trait ConfigAddressExt {
     fn parse_address(&self, value: &str) -> Result<Address>;
@@ -9,16 +9,10 @@ pub trait ConfigAddressExt {
 
 impl ConfigAddressExt for ChainConfig {
     fn parse_address(&self, value: &str) -> Result<Address> {
-        match &self.address_kind {
-            AddrKind::Cosmos { prefix } => Address::new_cosmos_string(value, Some(prefix)),
-            AddrKind::Eth => Address::new_eth_string(value),
-        }
+        Address::try_from_value(value, &self.address_kind)
     }
 
     fn address_from_pub_key(&self, pub_key: &PublicKey) -> Result<Address> {
-        match &self.address_kind {
-            AddrKind::Cosmos { prefix } => Address::new_cosmos_pub_key(pub_key, prefix),
-            AddrKind::Eth => Address::new_eth_pub_key(pub_key),
-        }
+        Address::try_from_pub_key(pub_key, &self.address_kind)
     }
 }
