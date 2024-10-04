@@ -10,18 +10,6 @@ pub struct ChainConfig {
     pub gas_amount: String,
     pub gas_denom: String,
     pub address_kind: AddrKind,
-    pub wasmatic: WasmaticConfig,
-    pub faucet: FaucetConfig,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct WasmaticConfig {
-    pub endpoint: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct FaucetConfig {
-    pub mnemonic: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
