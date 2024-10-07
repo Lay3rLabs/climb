@@ -59,7 +59,6 @@ export async function ffi_keplr_add_chain(config) {
     }
 
     const restUrl = new URL(config.rpc_endpoint);
-    restUrl.port = '1317';
     const restEndpoint = restUrl.toString();
 
     const keplrConfig = {
