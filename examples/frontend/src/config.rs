@@ -16,7 +16,7 @@ cfg_if::cfg_if! {
             Config {
                 root_path: "",
                 media_root: "http://localhost:9000",
-                data: serde_json::from_str(include_str!("../config.json")).unwrap_ext(),
+                data: serde_json::from_str(include_str!("../../config.json")).unwrap_ext(),
                 debug: ConfigDebug::dev_mode(),
             }
         });
@@ -25,7 +25,7 @@ cfg_if::cfg_if! {
             Config {
                 root_path: "climb",
                 media_root: "https://lay3rlabs.github.io/climb/media",
-                data: serde_json::from_str(include_str!("../config.json")).unwrap_ext(),
+                data: serde_json::from_str(include_str!("../../config.json")).unwrap_ext(),
                 debug: ConfigDebug::default(),
             }
         });
@@ -99,16 +99,17 @@ pub struct ConfigDebugAutoConnect {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConfigData {
-    pub chains: ChainConfigs,
-    pub faucet: FaucetConfig,
-}
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ChainConfigs {
-    pub local: Option<ChainConfig>,
-    pub testnet: Option<ChainConfig>,
+    pub local: Option<ChainInfo>,
+    pub testnet: Option<ChainInfo>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct ChainInfo {
+    pub chain: WebChainConfig,
+    pub faucet: FaucetConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FaucetConfig {
     pub mnemonic: String,
 }
