@@ -128,7 +128,7 @@ impl Address {
         }
     }
 
-    pub fn try_from_value(value: &str, addr_kind: &AddrKind) -> Result<Self> {
+    pub fn try_from_str(value: &str, addr_kind: &AddrKind) -> Result<Self> {
         match addr_kind {
             AddrKind::Cosmos { prefix } => Self::new_cosmos_string(value, Some(prefix)),
             AddrKind::Eth => Self::new_eth_string(value),

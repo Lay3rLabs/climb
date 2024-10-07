@@ -58,15 +58,11 @@ export async function ffi_keplr_add_chain(config) {
         coinGeckoId: config.gas_denom,
     }
 
-    const restUrl = new URL(config.rpc_endpoint);
-    restUrl.port = '1317';
-    const restEndpoint = restUrl.toString();
-
     const keplrConfig = {
         chainId:  config.chain_id,
         chainName: config.chain_id,
         rpc: config.rpc_endpoint,
-        rest: restEndpoint, 
+        rest: config.rest_endpoint, 
         bip44: {
             coinType: 118,
         },

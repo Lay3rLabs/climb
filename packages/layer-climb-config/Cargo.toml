@@ -11,3 +11,4 @@ crate-type = ["lib"]
 ######## Workspace dependencies ########
 serde = {workspace = true} 
 anyhow = {workspace = true} 
+url = {workspace = true}
