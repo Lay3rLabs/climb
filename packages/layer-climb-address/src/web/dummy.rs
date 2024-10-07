@@ -1,9 +1,11 @@
 // just to make IDE's happy
 use anyhow::{bail, Result};
 use async_trait::async_trait;
-use layer_climb_config::{ChainConfig, ChainId};
+use layer_climb_config::ChainId;
 
 use crate::{key::PublicKey, signer::TxSigner};
+
+use super::WebChainConfig;
 pub struct KeplrSigner {}
 
 impl KeplrSigner {
@@ -11,7 +13,7 @@ impl KeplrSigner {
         Ok(Self {})
     }
 
-    pub async fn add_chain(_: &ChainConfig) -> Result<()> {
+    pub async fn add_chain(_: &WebChainConfig) -> Result<()> {
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
 use anyhow::{anyhow, bail, Context, Result};
 use async_trait::async_trait;
 use base64::prelude::*;
-use layer_climb_config::{ChainConfig, ChainId};
+use layer_climb_config::ChainId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::js_sys::Uint8Array;
 
@@ -22,7 +22,7 @@ impl KeplrSigner {
         Ok(Self { id })
     }
 
-    pub async fn add_chain(chain_config: &ChainConfig) -> Result<()> {
+    pub async fn add_chain(chain_config: &super::shared::WebChainConfig) -> Result<()> {
         let serialized =
             serde_wasm_bindgen::to_value(chain_config).map_err(|e| anyhow!("{:?}", e))?;
 

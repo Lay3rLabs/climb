@@ -80,5 +80,5 @@ pub async fn add_keplr_chain(target_env: TargetEnvironment) -> Result<()> {
             .context("local chain not configured")?,
     };
 
-    KeplrSigner::add_chain(&chain_config).await
+    KeplrSigner::add_chain(&chain_config.into()).await
 }
