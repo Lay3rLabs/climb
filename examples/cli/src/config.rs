@@ -4,23 +4,23 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub chains: ChainConfigs,
-    pub faucet: FaucetConfig,
+    pub local: Option<ChainInfo>,
+    pub testnet: Option<ChainInfo>,
 }
 
 impl Config {
     pub fn load() -> Result<Self> {
-        serde_json::from_str(include_str!("../config.json")).context("Failed to parse config")
+        serde_json::from_str(include_str!("../../config.json")).context("Failed to parse config")
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ChainConfigs {
-    pub local: Option<ChainConfig>,
-    pub testnet: Option<ChainConfig>,
+pub struct ChainInfo {
+    pub chain: ChainConfig,
+    pub faucet: FaucetConfig,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FaucetConfig {
     pub mnemonic: String,
 }

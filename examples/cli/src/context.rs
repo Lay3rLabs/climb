@@ -24,14 +24,22 @@ impl AppContext {
     }
 
     pub fn chain_config(&self) -> Result<ChainConfig> {
-        match self.args.target_env {
-            TargetEnvironment::Local => self.config.chains.local.clone(),
-            TargetEnvironment::Testnet => self.config.chains.testnet.clone(),
-        }
-        .context(format!(
-            "Chain config for environment {:?} not found",
-            self.args.target_env
-        ))
+        Ok(match self.args.target_env {
+            TargetEnvironment::Local => self
+                .config
+                .local
+                .as_ref()
+                .context("no local config found")?
+                .chain
+                .clone(),
+            TargetEnvironment::Testnet => self
+                .config
+                .local
+                .as_ref()
+                .context("no testnet config found")?
+                .chain
+                .clone(),
+        })
     }
 
     pub async fn chain_querier(&self) -> Result<QueryClient> {
@@ -70,7 +78,27 @@ impl AppContext {
     }
 
     pub async fn create_faucet(&self) -> Result<SigningClient> {
-        let signer = KeySigner::new_mnemonic_str(&self.config.faucet.mnemonic, None)?;
+        let mnemonic = match self.args.target_env {
+            TargetEnvironment::Local => {
+                &self
+                    .config
+                    .local
+                    .as_ref()
+                    .context("no local config found")?
+                    .faucet
+                    .mnemonic
+            }
+            TargetEnvironment::Testnet => {
+                &self
+                    .config
+                    .testnet
+                    .as_ref()
+                    .context("no testnet config found")?
+                    .faucet
+                    .mnemonic
+            }
+        };
+        let signer = KeySigner::new_mnemonic_str(mnemonic, None)?;
         SigningClient::new(self.chain_config()?, signer).await
     }
 }
