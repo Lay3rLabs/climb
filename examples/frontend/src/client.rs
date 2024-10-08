@@ -87,5 +87,7 @@ pub async fn add_keplr_chain(target_env: TargetEnvironment) -> Result<()> {
             .clone(),
     };
 
-    KeplrSigner::add_chain(&chain_config.into()).await
+    KeplrSigner::add_chain(&chain_config.into())
+        .await
+        .map_err(|e| e.into())
 }

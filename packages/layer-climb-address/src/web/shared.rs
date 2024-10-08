@@ -42,3 +42,19 @@ impl From<ChainConfig> for WebChainConfig {
         }
     }
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum KeplrError {
+    #[error("keplr: missing chain")]
+    MissingChain,
+    #[error("keplr: failed enable")]
+    FailedEnable,
+    #[error("keplr: doesn't exist")]
+    NoExist,
+    #[error("keplr: no signer")]
+    NoSigner,
+    #[error("keplr: unknown {0}")]
+    Unknown(String),
+    #[error("keplr: technical {0}")]
+    Technical(String),
+}
