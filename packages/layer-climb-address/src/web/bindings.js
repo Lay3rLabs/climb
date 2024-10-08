@@ -6,7 +6,7 @@ const KEPLR_ERROR_FAILED_ENABLE = "keplr-failed-enable";
 const KEPLR_ERROR_NO_EXIST = "keplr-no-exist";
 const KEPLR_ERROR_NO_SIGNER = "keplr-no-signer";
 
-export async function ffi_keplr_register_signer(chainId) {
+export async function ffi_keplr_register_signer(chainId, onAccountChange) {
     if (!window.keplr) {
         throw new Error(KEPLR_ERROR_NO_EXIST);
     }
@@ -29,6 +29,21 @@ export async function ffi_keplr_register_signer(chainId) {
     let id = lastId.toString();
 
     lookup.set(id, {chainId, keplrKey, signer});
+
+    window.addEventListener("keplr_keystorechange", async () => {
+        const data = lookup.get(id);
+        if (!data) {
+            throw new Error(KEPLR_ERROR_NO_SIGNER);
+        }
+
+        let {chainId} = data;
+
+        const signer = await window.keplr.getOfflineSigner(chainId);
+        const keplrKey = await window.keplr.getKey(chainId);
+        lookup.set(id, {chainId, keplrKey, signer});
+
+        onAccountChange();
+    })
 
     return id;
 }

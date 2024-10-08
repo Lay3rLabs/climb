@@ -5,6 +5,7 @@ use layer_climb_proto::MessageExt;
 
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
+        // we assume that any signer we use in wasm32 is purely single-threaded
         #[async_trait(?Send)]
         pub trait TxSigner: Send + Sync {
             async fn sign(&self, doc: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>>;
@@ -14,7 +15,6 @@ cfg_if::cfg_if! {
             }
         }
     } else {
-
         #[async_trait]
         pub trait TxSigner: Send + Sync {
             async fn sign(&self, doc: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>>;

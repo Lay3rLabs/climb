@@ -2,26 +2,45 @@ use anyhow::{anyhow, bail, Context, Result};
 use async_trait::async_trait;
 use base64::prelude::*;
 use layer_climb_config::ChainId;
+use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::js_sys::Uint8Array;
 
 use super::shared::KeplrError;
 use crate::{key::PublicKey, signer::TxSigner};
 
+#[derive(Clone)]
 pub struct KeplrSigner {
-    pub id: String,
+    // we separate this out so it can be Send+Sync etc.
+    pub inner: KeplrSignerInner,
+    // the closure is stored here to keep it alive
+    _on_account_change: Arc<Closure<dyn Fn()>>,
+}
+
+#[derive(Clone)]
+pub struct KeplrSignerInner {
+    id: String,
 }
 
 impl KeplrSigner {
-    pub async fn new(chain_id: &ChainId) -> std::result::Result<Self, KeplrError> {
-        let id = ffi_keplr_register_signer(chain_id.as_str())
+    pub async fn new(
+        chain_id: &ChainId,
+        on_account_change: impl Fn() + 'static,
+    ) -> std::result::Result<Self, KeplrError> {
+        let on_account_change = Closure::new(on_account_change);
+
+        let id = ffi_keplr_register_signer(chain_id.as_str(), &on_account_change)
             .await
             .map_err(|e| KeplrError::from(e))?;
 
         let id = id
             .as_string()
             .ok_or_else(|| KeplrError::Technical("Keplr signer id is not a string".to_string()))?;
-        Ok(Self { id })
+
+        Ok(Self {
+            inner: KeplrSignerInner { id },
+            _on_account_change: on_account_change.into(),
+        })
     }
 
     pub async fn add_chain(
@@ -39,7 +58,7 @@ impl KeplrSigner {
 }
 
 #[async_trait(?Send)]
-impl TxSigner for KeplrSigner {
+impl TxSigner for KeplrSignerInner {
     async fn sign(&self, sign_doc: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>> {
         #[derive(serde::Serialize)]
         struct JsSignDoc {
@@ -125,7 +144,10 @@ extern "C" {
 #[wasm_bindgen(module = "/src/web/bindings.js")]
 extern "C" {
     #[wasm_bindgen(catch)]
-    async fn ffi_keplr_register_signer(chain_id: &str) -> std::result::Result<JsValue, JsValue>;
+    async fn ffi_keplr_register_signer(
+        chain_id: &str,
+        on_account_change: &Closure<dyn Fn()>,
+    ) -> std::result::Result<JsValue, JsValue>;
 
     #[wasm_bindgen(catch)]
     async fn ffi_keplr_add_chain(chain_config: &JsValue) -> std::result::Result<JsValue, JsValue>;
