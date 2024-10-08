@@ -1,11 +1,26 @@
 let lastId = 0;
 const lookup = new Map();
 
+const KEPLR_ERROR_MISSING_CHAIN = "keplr-missing-chain";
+const KEPLR_ERROR_FAILED_ENABLE = "keplr-failed-enable";
+const KEPLR_ERROR_NO_EXIST = "keplr-no-exist";
+const KEPLR_ERROR_NO_SIGNER = "keplr-no-signer";
+
 export async function ffi_keplr_register_signer(chainId) {
     if (!window.keplr) {
-        throw new Error("Please install keplr extension");
+        throw new Error(KEPLR_ERROR_NO_EXIST);
     }
-    await window.keplr.enable(chainId);
+
+    try {
+        await window.keplr.enable(chainId);
+    } catch (e) {
+        if(e.toString().toLowerCase().includes("no chain info")) {
+            throw new Error(KEPLR_ERROR_MISSING_CHAIN);
+        }  else {
+            throw new Error(KEPLR_ERROR_FAILED_ENABLE);
+        }
+    }
+
     const signer = await window.keplr.getOfflineSigner(chainId);
     const keplrKey = await window.keplr.getKey(chainId);
 
@@ -21,7 +36,7 @@ export async function ffi_keplr_register_signer(chainId) {
 export async function ffi_keplr_sign(keplrId, signDoc) {
     const data = lookup.get(keplrId);
     if (!data) {
-        throw new Error("Signer not found");
+        throw new Error(KEPLR_ERROR_NO_SIGNER);
     }
 
     const {keplrKey, signer} = data;
@@ -34,17 +49,13 @@ export async function ffi_keplr_sign(keplrId, signDoc) {
 export async function ffi_keplr_public_key(keplrId) {
     const data = lookup.get(keplrId);
     if (!data) {
-        throw new Error("Signer not found");
+        throw new Error(KEPLR_ERROR_NO_SIGNER);
     }
 
     return data.keplrKey;
 }
 
 export async function ffi_keplr_add_chain(config) {
-    if (!window.keplr) {
-        throw new Error("Please install keplr extension");
-    }
-
     const addrPrefix = config.address_kind?.cosmos?.prefix;
 
     if(!addrPrefix || addrPrefix.length === 0) {

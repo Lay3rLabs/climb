@@ -19,5 +19,5 @@ trunk serve --features=autoconnect
 And if you're making changes to the climb package, add it to the watcher too
 
 ```
-trunk serve --features=autoconnect --watch . --watch ../../packages/climb
+trunk serve --features=autoconnect --watch . --watch ../../packages
 ```

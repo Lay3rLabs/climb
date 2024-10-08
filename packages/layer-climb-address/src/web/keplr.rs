@@ -5,6 +5,7 @@ use layer_climb_config::ChainId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::js_sys::Uint8Array;
 
+use super::shared::KeplrError;
 use crate::{key::PublicKey, signer::TxSigner};
 
 pub struct KeplrSigner {
@@ -12,23 +13,26 @@ pub struct KeplrSigner {
 }
 
 impl KeplrSigner {
-    pub async fn new(chain_id: &ChainId) -> Result<Self> {
+    pub async fn new(chain_id: &ChainId) -> std::result::Result<Self, KeplrError> {
         let id = ffi_keplr_register_signer(chain_id.as_str())
             .await
-            .map_err(|e| anyhow!("{:?}", e))?;
+            .map_err(|e| KeplrError::from(e))?;
+
         let id = id
             .as_string()
-            .ok_or_else(|| anyhow!("Keplr signer id is not a string"))?;
+            .ok_or_else(|| KeplrError::Technical("Keplr signer id is not a string".to_string()))?;
         Ok(Self { id })
     }
 
-    pub async fn add_chain(chain_config: &super::shared::WebChainConfig) -> Result<()> {
-        let serialized =
-            serde_wasm_bindgen::to_value(chain_config).map_err(|e| anyhow!("{:?}", e))?;
+    pub async fn add_chain(
+        chain_config: &super::shared::WebChainConfig,
+    ) -> std::result::Result<(), KeplrError> {
+        let serialized = serde_wasm_bindgen::to_value(chain_config)
+            .map_err(|e| KeplrError::Technical(format!("{:?}", e)))?;
 
         ffi_keplr_add_chain(&serialized)
             .await
-            .map_err(|e| anyhow!("{:?}", e))?;
+            .map_err(|e| KeplrError::from(e))?;
 
         Ok(())
     }
@@ -134,4 +138,23 @@ extern "C" {
 
     #[wasm_bindgen(catch)]
     async fn ffi_keplr_public_key(keplr_id: &str) -> std::result::Result<KeplrKey, JsValue>;
+}
+
+impl From<JsValue> for KeplrError {
+    fn from(e: JsValue) -> Self {
+        if let Some(js_error) = e.dyn_ref::<js_sys::Error>() {
+            let s: String = js_error.message().into();
+            //web_sys::console::log_1(&JsValue::from_str(&s));
+
+            match s.as_str() {
+                "keplr-missing-chain" => Self::MissingChain,
+                "keplr-failed-enable" => Self::FailedEnable,
+                "keplr-no-exist" => Self::NoExist,
+                "keplr-no-signer" => Self::NoSigner,
+                _ => Self::Unknown(s),
+            }
+        } else {
+            Self::Unknown(format!("{:?}", e))
+        }
+    }
 }
