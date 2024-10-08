@@ -6,11 +6,20 @@ use layer_climb_config::ChainId;
 use crate::{key::PublicKey, signer::TxSigner};
 
 use super::WebChainConfig;
-pub struct KeplrSigner {}
+
+#[derive(Clone)]
+pub struct KeplrSigner {
+    pub inner: KeplrSignerInner,
+}
+
+#[derive(Clone)]
+pub struct KeplrSignerInner {}
 
 impl KeplrSigner {
-    pub async fn new(_: &ChainId) -> Result<Self> {
-        Ok(Self {})
+    pub async fn new(_: &ChainId, _: impl Fn() + 'static) -> Result<Self> {
+        Ok(Self {
+            inner: KeplrSignerInner {},
+        })
     }
 
     pub async fn add_chain(_: &WebChainConfig) -> Result<()> {
@@ -19,7 +28,7 @@ impl KeplrSigner {
 }
 
 #[async_trait]
-impl TxSigner for KeplrSigner {
+impl TxSigner for KeplrSignerInner {
     async fn sign(&self, _: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>> {
         bail!("Keplr is only available in browsers");
     }

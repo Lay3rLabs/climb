@@ -9,7 +9,6 @@ use wasm_bindgen_futures::spawn_local;
 
 pub struct WalletFaucetUi {
     pub balance: Mutable<u128>,
-    pub client: SigningClient,
     pub loader: AsyncLoader,
 }
 
@@ -18,7 +17,6 @@ impl WalletFaucetUi {
         Arc::new(Self {
             balance: Mutable::new(0),
             loader: AsyncLoader::new(),
-            client: CLIENT.get().unwrap_ext().clone(),
         })
     }
 
@@ -36,6 +34,17 @@ impl WalletFaucetUi {
         html!("div", {
             .class(&*CONTAINER)
             .future(clone!(state => async move {
+                match client_event_receiver().recv().await {
+                    Ok(ClientEvent::AddressChanged) => {
+                        log::info!("address changed, updating balance immediately");
+                        state.update_balance().await;
+                    }
+                    Err(err) => {
+                        log::error!("Error receiving client event: {:?}", err);
+                    }
+                }
+            }))
+            .future(clone!(state => async move {
                 state.update_balance().await;
                 IntervalStream::new(3_000).for_each(clone!(state => move |_| clone!(state => async move {
                     state.update_balance().await;
@@ -44,7 +53,7 @@ impl WalletFaucetUi {
             .child(html!("div", {
                 .class(&*TEXT_SIZE_XLG)
                 .text_signal(state.balance.signal().map(clone!(state => move |balance| {
-                    format!("Balance: {:.2}{}", balance, state.client.querier.chain_config.gas_denom)
+                    format!("Balance: {:.2}{}", balance, query_client().chain_config.gas_denom)
                 })))
             }))
             .child(html!("div", {
@@ -76,9 +85,8 @@ impl WalletFaucetUi {
 
     async fn update_balance(&self) {
         self.balance.set_neq(
-            self.client
-                .querier
-                .balance(self.client.addr.clone(), None)
+            query_client()
+                .balance(signing_client().addr.clone(), None)
                 .await
                 .unwrap_or_default()
                 .unwrap_or_default(),
@@ -105,10 +113,10 @@ impl WalletFaucetUi {
                 .clone(),
         };
         let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
-        let faucet = SigningClient::new(self.client.querier.chain_config.clone(), signer).await?;
+        let faucet = SigningClient::new(query_client().chain_config.clone(), signer).await?;
 
         faucet
-            .transfer(1_000_000, &self.client.addr, None, None)
+            .transfer(1_000_000, &signing_client().addr, None, None)
             .await?;
 
         self.update_balance().await;

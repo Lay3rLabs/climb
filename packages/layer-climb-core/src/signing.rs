@@ -48,6 +48,19 @@ impl SigningClient {
         })
     }
 
+    // This is especially useful if the signer gets its public key at runtime
+    // such as when using browser-based async wallets like Keplr
+    pub async fn refresh_signer(&mut self) -> Result<()> {
+        self.addr = self
+            .querier
+            .chain_config
+            .address_from_pub_key(&self.signer.public_key().await?)?;
+
+        self.account_number = self.querier.base_account(&self.addr).await?.account_number;
+
+        Ok(())
+    }
+
     pub fn chain_id(&self) -> &ChainId {
         &self.querier.chain_config.chain_id
     }

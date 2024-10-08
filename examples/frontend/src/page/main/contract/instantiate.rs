@@ -8,7 +8,6 @@ pub struct ContractInstantiateUi {
     pub msg: Mutable<Option<String>>,
     pub error: Mutable<Option<String>>,
     pub success: Mutable<Option<(Address, TxResponse)>>,
-    pub client: SigningClient,
 }
 
 impl ContractInstantiateUi {
@@ -19,7 +18,6 @@ impl ContractInstantiateUi {
             msg: Mutable::new(None),
             error: Mutable::new(None),
             success: Mutable::new(None),
-            client: CLIENT.get().unwrap_ext().clone(),
         })
     }
 
@@ -85,8 +83,9 @@ impl ContractInstantiateUi {
                                     state.error.set(Some(err.to_string()));
                                 },
                                 Ok(msg) => {
-                                    let resp = state.client.contract_instantiate(
-                                        state.client.addr.clone(),
+                                    let client = signing_client();
+                                    let resp = client.contract_instantiate(
+                                        client.addr.clone(),
                                         code_id,
                                         "instantiate".to_string(),
                                         &msg,

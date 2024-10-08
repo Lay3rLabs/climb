@@ -38,6 +38,8 @@ url = "2.5.2"
 
 # Async
 futures = "0.3"
+# TODO: waiting for https://github.com/smol-rs/async-broadcast/pull/61 to land
+async-broadcast = { git = "https://github.com/smol-rs/async-broadcast.git", rev="de420a3b6e72939d96250573c7c242d0ff195424"}
 
 # Randomness
 rand = "0.8.5"
