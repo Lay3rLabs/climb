@@ -6,8 +6,12 @@ pub struct WebChainConfig {
     pub chain_id: ChainId,
     pub rpc_endpoint: String,
     pub grpc_endpoint: String,
+    // if not specified, will fallback to `grpc_endpoint`
+    pub grpc_web_endpoint: Option<String>,
+    // needed for wallets like Keplr
     pub rest_endpoint: String,
-    pub gas_amount: String,
+    // not micro-units, e.g. 0.025 would be a typical value
+    pub gas_price: f32,
     pub gas_denom: String,
     pub address_kind: AddrKind,
 }
@@ -18,7 +22,8 @@ impl From<WebChainConfig> for ChainConfig {
             chain_id: web_chain_config.chain_id,
             rpc_endpoint: web_chain_config.rpc_endpoint,
             grpc_endpoint: web_chain_config.grpc_endpoint,
-            gas_amount: web_chain_config.gas_amount,
+            grpc_web_endpoint: web_chain_config.grpc_web_endpoint,
+            gas_price: web_chain_config.gas_price,
             gas_denom: web_chain_config.gas_denom,
             address_kind: web_chain_config.address_kind,
         }
@@ -36,7 +41,8 @@ impl From<ChainConfig> for WebChainConfig {
             rpc_endpoint: chain_config.rpc_endpoint,
             rest_endpoint,
             grpc_endpoint: chain_config.grpc_endpoint,
-            gas_amount: chain_config.gas_amount,
+            grpc_web_endpoint: chain_config.grpc_web_endpoint,
+            gas_price: chain_config.gas_price,
             gas_denom: chain_config.gas_denom,
             address_kind: chain_config.address_kind,
         }

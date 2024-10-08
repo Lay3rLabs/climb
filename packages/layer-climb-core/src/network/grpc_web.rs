@@ -24,23 +24,28 @@ impl GrpcClientCache {
 }
 
 pub async fn get_grpc_client(config: &ChainConfig) -> Result<Client> {
+    let endpoint = config
+        .grpc_web_endpoint
+        .as_ref()
+        .unwrap_or(&config.grpc_endpoint);
+
     // try to get the channel from the cache
     let client = {
         // give the lock its own scope so it can be definitively dropped before the await
         let lock = GRPC_CLIENT_CACHE.clients.lock().unwrap();
-        lock.get(&config.grpc_endpoint).cloned()
+        lock.get(endpoint).cloned()
     };
 
     match client {
         Some(client) => Ok(client),
         None => {
-            let client = Client::new(config.grpc_endpoint.clone());
+            let client = Client::new(endpoint.clone());
 
             GRPC_CLIENT_CACHE
                 .clients
                 .lock()
                 .unwrap()
-                .insert(config.grpc_endpoint.clone(), client.clone());
+                .insert(endpoint.clone(), client.clone());
 
             Ok(client)
         }

@@ -453,11 +453,7 @@ impl<'a> FeeCalculation<'a> {
                 chain_config,
                 gas_units,
             } => {
-                let price = chain_config
-                    .gas_amount
-                    .parse::<f32>()
-                    .map_err(|e| anyhow!("{}", e))?;
-                let amount = (price * *gas_units as f32).ceil() as u128;
+                let amount = (chain_config.gas_price * *gas_units as f32).ceil() as u128;
                 (new_coin(amount, &chain_config.gas_denom), *gas_units)
             }
             Self::RealCoin {
