@@ -7,7 +7,10 @@ pub struct ChainConfig {
     pub chain_id: ChainId,
     pub rpc_endpoint: String,
     pub grpc_endpoint: String,
-    pub gas_amount: String,
+    // if not specified, will fallback to `grpc_endpoint`
+    pub grpc_web_endpoint: Option<String>,
+    // not micro-units, e.g. 0.025 would be a typical value
+    pub gas_price: f32,
     pub gas_denom: String,
     pub address_kind: AddrKind,
 }
