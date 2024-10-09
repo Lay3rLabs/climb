@@ -72,7 +72,7 @@ where
     pub fn new() -> Self {
         Self {
             label: None,
-            label_color: Color::Darkish,
+            label_color: Color::TextBody,
             options: Vec::new(),
             initial_selected: None,
             size: DropdownSize::Md,
@@ -239,9 +239,9 @@ where
                                         .text(&option.label)
                                         .style_signal("color", hovering.signal().map(|hovering| {
                                             if hovering {
-                                                Color::Accent.hex_str()
+                                                Color::BackgroundBrand.hex_str()
                                             } else {
-                                                Color::Darkish.hex_str()
+                                                Color::Background.hex_str()
                                             }
                                         }))
                                         .event({

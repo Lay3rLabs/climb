@@ -71,9 +71,9 @@ cfg_if::cfg_if! {
             pub fn dev_mode() -> Self {
                 Self {
                     auto_connect: Some(ConfigDebugAutoConnect{
-                        key_kind: ClientKeyKind::DirectEnv,
-                        //key_kind: ClientKeyKind::Keplr,
-                        target_env: TargetEnvironment::Local
+                        //key_kind: ClientKeyKind::DirectEnv,
+                        key_kind: ClientKeyKind::Keplr,
+                        target_env: TargetEnvironment::Testnet
                     }),
                     start_route: Mutex::new(Some(Route::BlockEvents))
                 }

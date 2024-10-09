@@ -30,7 +30,7 @@ impl Label {
             text: "".to_string(),
             direction: LabelDirection::Row,
             size: LabelSize::Md,
-            color: Color::Darkish,
+            color: Color::TextSecondary,
         }
     }
 

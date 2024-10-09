@@ -54,40 +54,40 @@ pub enum ButtonColor {
 impl ButtonColor {
     pub fn bg_class(&self) -> &'static str {
         match self {
-            Self::Accent => Color::Accent.class_bg(),
-            Self::Orange => Color::Orange.class_bg(),
-            Self::Red => Color::Red.class_bg(),
-            Self::Green => Color::Green.class_bg(),
+            Self::Accent => Color::BackgroundBrand.background_class(),
+            Self::Orange => Color::BackgroundTertiary.background_class(),
+            Self::Red => Color::BackgroundBrand.background_class(),
+            Self::Green => Color::BackgroundBrand.background_class(),
         }
     }
 
     pub fn bg_hover_class(&self) -> &'static str {
         match self {
-            Self::Accent => Color::AccentDarker.class_bg(),
-            Self::Orange => Color::OrangeDarker.class_bg(),
-            Self::Red => Color::RedDarker.class_bg(),
-            Self::Green => Color::GreenDarker.class_bg(),
+            Self::Accent => Color::BackgroundBrand.background_class(),
+            Self::Orange => Color::BackgroundTertiary.background_class(),
+            Self::Red => Color::BackgroundBrand.background_class(),
+            Self::Green => Color::BackgroundBrand.background_class(),
         }
     }
 
     pub fn color_class(&self) -> &'static str {
-        Color::Whiteish.class()
+        Color::TextPrimary.class()
     }
 
     pub fn color_hover_class(&self) -> &'static str {
-        Color::Whiteish.class()
+        Color::TextPrimary.class()
     }
 
     pub fn bg_disabled_class(self) -> &'static str {
-        Color::Grey.class_bg()
+        Color::BackgroundInteractiveDisabled.background_class()
     }
 
     pub fn border_disabled_class(self) -> &'static str {
-        Color::Grey.class_border()
+        "transparent"
     }
 
     pub fn color_disabled_class(self) -> &'static str {
-        Color::Whiteish.class()
+        Color::TextPrimary.class()
     }
 }
 
