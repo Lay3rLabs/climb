@@ -18,7 +18,7 @@ pub fn init() {
         .style("padding", "0")
         .style("width", "100%")
         .style("height", "100%")
-        .style("font-family", FONT_FAMILY_ROBOTO)
+        .style("font-family", FONT_FAMILY_INTER)
     });
 
     stylesheet!("a", {

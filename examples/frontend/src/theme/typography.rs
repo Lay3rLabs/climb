@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use dominator::{class, styles};
 use futures_signals::signal::SignalExt;
 
-pub const FONT_FAMILY_ROBOTO: &str = r#""Roboto", sans-serif"#;
+pub const FONT_FAMILY_INTER: &str = r#""Inter", sans-serif"#;
 
 pub static TEXT_SIZE_H1: LazyLock<String> = LazyLock::new(|| {
     class! {
