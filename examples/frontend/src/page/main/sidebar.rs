@@ -14,30 +14,48 @@ impl Sidebar {
     pub fn render(self: Arc<Self>) -> Dom {
         static CONTAINER: LazyLock<String> = LazyLock::new(|| {
             class! {
-                .style("margin-top", "1rem")
-                .style("display", "flex")
-                .style("flex-direction", "column")
-                .style("gap", "1.3125rem")
-                .style("align-items", "flex-start")
+              .style("display", "flex")
+              .style("flex-direction", "column")
+              .style("gap", "1.3125rem")
+              .style("align-items", "flex-start")
+              .style("width", "302px")
+              .style("padding", "20px 24px")
             }
         });
 
+        static TITLE: LazyLock<String> = LazyLock::new(|| {
+          class! {
+            .style("font-weight", "600")
+            .style("font-size", "20px")
+            .style("width", "100%")
+            .style("padding-bottom", "20px")
+            .style("margin-bottom", "8px")
+            .style("color", Color::TextPrimary.hex_str())
+            .style("border-bottom", "1px solid")
+            .style("border-color", Color::BorderPrimary.hex_str())
+          }
+        });
+
         html!("div", {
-            .class(&*CONTAINER)
-            .children([
-                self.render_section("Wallet", vec![
-                    Route::WalletFaucet,
-                ]),
-                self.render_section("Contract", vec![
-                    Route::ContractUpload,
-                    Route::ContractInstantiate,
-                    Route::ContractExecute,
-                    Route::ContractQuery,
-                ]),
-                self.render_section("Block", vec![
-                    Route::BlockEvents,
-                ]),
-            ])
+          .class(&*CONTAINER)
+          .children([
+            html!("div", {
+              .class([&*TEXT_SIZE_XLG, &*TITLE])
+              .text("Climb")
+            }),
+              self.render_section("Wallet", vec![
+                  Route::WalletFaucet,
+              ]),
+              self.render_section("Contract", vec![
+                  Route::ContractUpload,
+                  Route::ContractInstantiate,
+                  Route::ContractExecute,
+                  Route::ContractQuery,
+              ]),
+              self.render_section("Block", vec![
+                  Route::BlockEvents,
+              ]),
+          ])
         })
     }
 
@@ -51,7 +69,10 @@ impl Sidebar {
         });
         static TITLE: LazyLock<String> = LazyLock::new(|| {
             class! {
-                .style("margin-left", "1rem")
+                .style("font-weight", "500")
+                .style("font-size", "12px")
+                .style("color", Color::TextSecondary.hex_str())
+                .style("margin-bottom", "8px")
             }
         });
 
@@ -63,7 +84,7 @@ impl Sidebar {
             .class(&*CONTAINER)
             .children([
                 html!("div", {
-                    .class([&*TEXT_SIZE_XLG, &*TITLE, Color::Grey.class()])
+                    .class([&*TEXT_SIZE_XLG, &*TITLE, Color::Background.background_class()])
                     .text(title)
                 }),
                 html!("div", {
@@ -79,20 +100,22 @@ impl Sidebar {
     fn render_button(self: &Arc<Self>, route: Route) -> Dom {
         static BUTTON_BG_CLASS: LazyLock<String> = LazyLock::new(|| {
             class! {
-                    .style("cursor", "pointer")
-                    .style("display", "flex")
-                    .style("justify-content", "flex-start")
-                    .style("align-items", "center")
-                    .style("gap", "1.5rem")
-                    .style("width", "100%")
-                    .style("padding", "1.25rem 2.88rem")
+              .style("cursor", "pointer")
+              .style("display", "flex")
+              .style("font-size", "15px")
+              .style("font-weight", "600")
+              .style("justify-content", "flex-start")
+              .style("align-items", "center")
+              .style("margin-bottom", "8px")
+              .style("padding", "8px")
+              .style("border-radius", "6px")
+              .style("color", Color::TextPrimary.hex_str())
             }
         });
 
         static SELECTED: LazyLock<String> = LazyLock::new(|| {
             class! {
-                    .style("background-color", Color::GreyAlt1.hex_str())
-                    .style("color", Color::Accent.hex_str())
+              .style("background-color", Color::BackgroundInteractiveSelected.hex_str())
             }
         });
 
