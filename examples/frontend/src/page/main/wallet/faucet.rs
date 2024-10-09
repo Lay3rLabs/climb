@@ -81,7 +81,7 @@ impl WalletFaucetUi {
           .child_signal(state.loader.is_loading().map(|is_loading| {
               match is_loading {
                   true => Some(html!("div", {
-                      .class(&*TEXT_SIZE_MD)
+                      .class([&*TEXT_SIZE_MD, Color::TextPrimary.class()])
                       .text("Getting tokens...")
                   })),
                   false => None

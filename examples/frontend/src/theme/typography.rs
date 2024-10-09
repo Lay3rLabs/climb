@@ -38,7 +38,7 @@ pub static TEXT_SIZE_LG: LazyLock<String> = LazyLock::new(|| {
 
 pub static TEXT_SIZE_MD: LazyLock<String> = LazyLock::new(|| {
     class! {
-        .style("font-size", "0.875rem")
+        .style("font-size", "12px")
     }
 });
 

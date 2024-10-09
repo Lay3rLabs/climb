@@ -34,11 +34,12 @@ impl ContractUploadUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("label", {
-                .class(&*TEXT_SIZE_MD)
+                .class([Color::TextPrimary.class(), &*TEXT_SIZE_MD])
                 .attr("for", "contract-upload")
                 .text("Choose a .wasm file")
             }))
             .child(html!("input" => web_sys::HtmlInputElement, {
+                .class([Color::TextPrimary.class(), &*TEXT_SIZE_MD])
                 .attrs!{
                     "type": "file",
                     "id": "contract-upload",
@@ -54,7 +55,7 @@ impl ContractUploadUi {
             }))
             .child(html!("div", {
                 .child(Button::new()
-                    .with_color(ButtonColor::Accent)
+                    .with_text("Upload")
                     .with_disabled_signal(state.file.signal_cloned().map(|file| file.is_none()))
                     .with_on_click(clone!(state => move || {
                         state.loader.load(clone!(state => async move {

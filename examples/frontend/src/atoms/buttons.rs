@@ -26,7 +26,8 @@ impl ButtonSize {
     pub fn container_class(self) -> &'static str {
         static DEFAULT_CLASS: LazyLock<String> = LazyLock::new(|| {
             class! {
-                .style("padding", "0.625rem 1.875rem")
+                .style("padding", "8px 16px")
+                .style("font-size", "15px")
             }
         });
 
@@ -208,10 +209,8 @@ impl Button {
             let hovering = hovering.signal() => {
                 if *disabled {
                     "not-allowed"
-                } else if *hovering {
-                    "pointer"
                 } else {
-                    "auto"
+                    "pointer"
                 }
             }
         };
@@ -226,7 +225,6 @@ impl Button {
                     })))
             }))
             .class([&*USER_SELECT_NONE, &*CLASS, size.container_class(), size.text_size_class()])
-            .apply(set_on_hover(&hovering))
             .style_signal("cursor", cursor_signal)
             .class_signal(color.bg_disabled_class(), disabled.signal())
             .class_signal(color.bg_hover_class(), hover_but_not_disabled_signal())

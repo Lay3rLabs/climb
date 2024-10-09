@@ -39,6 +39,9 @@ impl ContractInstantiateUi {
                 .render(TextInput::new()
                     .with_kind(TextInputKind::Number)
                     .with_placeholder("e.g. 123")
+                    .with_mixin(|dom| {
+                      dom.style("width", "30rem")
+                    })
                     .with_on_input(clone!(state => move |code_id| {
                         match code_id {
                             None => state.code_id.set(None),

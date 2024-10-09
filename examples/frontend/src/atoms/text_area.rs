@@ -40,6 +40,19 @@ impl TextArea {
     }
 
     pub fn render(self) -> Dom {
+      static TEXTAREA_CLASS: LazyLock<String> = LazyLock::new(|| {
+        class! {
+            .style("background-color", Color::BackgroundTertiary.hex_str())
+            .style("color", Color::TextPrimary.hex_str())
+            .style("font-size", "14px")
+            .style("padding", "16px")
+            .style("border", "1px solid")
+            .style("border-color", Color::BorderPrimary.hex_str())
+            .style("border-radius", "6px")
+            .style("outline", "none")
+        }
+      });
+
         let show_password = Mutable::new(false);
 
         let Self {
@@ -50,6 +63,7 @@ impl TextArea {
         } = self;
 
         html!("textarea" => HtmlTextAreaElement, {
+            .class(&*TEXTAREA_CLASS)
             .attrs!{
                 "autocomplete": "off",
                 "spellcheck": "false",
