@@ -34,11 +34,12 @@ impl ContractUploadUi {
         html!("div", {
             .class(&*CONTAINER)
             .child(html!("label", {
-                .class(&*TEXT_SIZE_MD)
+                .class([Color::TextPrimary.class(), &*TEXT_SIZE_MD])
                 .attr("for", "contract-upload")
                 .text("Choose a .wasm file")
             }))
             .child(html!("input" => web_sys::HtmlInputElement, {
+                .class([Color::TextPrimary.class(), &*TEXT_SIZE_MD])
                 .attrs!{
                     "type": "file",
                     "id": "contract-upload",
@@ -100,11 +101,11 @@ impl ContractUploadUi {
                 match success {
                     Some((code_id, tx_resp)) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([&*TEXT_SIZE_MD, Color::TextBody.class()])
                             .text(&format!("Contract uploaded! Code ID: {}", code_id))
                         }))
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_SM, Color::Accent.class()])
+                            .class([&*TEXT_SIZE_SM, Color::TextBrand.class()])
                             .text(&format!("Tx Hash: {}", tx_resp.txhash))
                         }))
                     })),
@@ -114,7 +115,7 @@ impl ContractUploadUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([&*TEXT_SIZE_SM, Color::TextInteractiveError.class()])
                         .text(&error)
                     })),
                     None => None

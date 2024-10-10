@@ -299,7 +299,7 @@ impl LandingUi {
             .apply_if(error.is_some(), |dom| {
                 dom.child(html!("div", {
                     .style("margin-top", "1rem")
-                    .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                    .class([&*TEXT_SIZE_MD, Color::TextInteractiveError.class()])
                     .text(error.as_ref().unwrap_ext())
                 }))
             })

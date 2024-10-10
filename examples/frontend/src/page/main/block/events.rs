@@ -67,7 +67,7 @@ impl BlockEventsUi {
                                     },
                                     Err(err) => {
                                         html!("div", {
-                                            .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                                            .class([&*TEXT_SIZE_MD, Color::TextInteractiveError.class()])
                                             .text("Error fetching block events")
                                         })
                                     }
@@ -77,7 +77,7 @@ impl BlockEventsUi {
                     },
                     Some(Err(err)) => {
                         Some(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Red.class()])
+                            .class([&*TEXT_SIZE_MD, Color::TextInteractiveError.class()])
                             .text("Error fetching block events")
                         }))
                     },
@@ -149,7 +149,7 @@ impl BlockEventsUi {
                     .text(&format!("Block #{}", block_events.height))
                 }))
                 .child(html!("div", {
-                    .class([&*Color::Accent.class(), &*CURSOR_POINTER])
+                    .class([&*Color::BackgroundBrand.background_class(), &*CURSOR_POINTER])
                     .text_signal(expanded.signal().map(move |is_expanded| {
                         if is_expanded {
                             format!("Hide events ({event_len})")
@@ -178,7 +178,7 @@ impl BlockEventsUi {
                                 .text("Event type")
                             }))
                             .child(html!("span", {
-                                .class([&*Color::Darkest.class(), &*TEXT_WEIGHT_BOLD])
+                                .class([&*Color::TextBody.class(), &*TEXT_WEIGHT_BOLD])
                                 .text(&event.kind)
                             }))
                         }))
@@ -191,7 +191,7 @@ impl BlockEventsUi {
                                 html!("div", {
                                     .class(&*EVENT_ATTR)
                                     .child(html!("span", {
-                                        .class([&*Color::Darkest.class(), &*TEXT_WEIGHT_BOLD])
+                                        .class([&*Color::TextBody.class(), &*TEXT_WEIGHT_BOLD])
                                         .text(&format!("{}:", attr.key_str().unwrap_or_default()))
                                     }))
                                     .child(html!("span", {

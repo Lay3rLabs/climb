@@ -39,6 +39,9 @@ impl ContractInstantiateUi {
                 .render(TextInput::new()
                     .with_kind(TextInputKind::Number)
                     .with_placeholder("e.g. 123")
+                    .with_mixin(|dom| {
+                      dom.style("width", "30rem")
+                    })
                     .with_on_input(clone!(state => move |code_id| {
                         match code_id {
                             None => state.code_id.set(None),
@@ -122,11 +125,11 @@ impl ContractInstantiateUi {
                 match success {
                     Some((addr, tx_resp)) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([&*TEXT_SIZE_MD, Color::TextBody.class()])
                             .text(&format!("Contract instantiated! address: {}", addr))
                         }))
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_SM, Color::Accent.class()])
+                            .class([&*TEXT_SIZE_SM, Color::TextBrand.class()])
                             .text(&format!("Tx Hash: {}", tx_resp.txhash))
                         }))
                     })),
@@ -136,7 +139,7 @@ impl ContractInstantiateUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([&*TEXT_SIZE_SM, Color::TextInteractiveError.class()])
                         .text(&error)
                     })),
                     None => None

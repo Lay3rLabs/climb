@@ -127,7 +127,7 @@ impl ContractQueryUi {
                 match success {
                     Some(resp) => Some(html!("div", {
                         .child(html!("div", {
-                            .class([&*TEXT_SIZE_MD, Color::Darkish.class()])
+                            .class([&*TEXT_SIZE_MD, Color::TextBody.class()])
                             .text(&format!("Contract queried! Response:"))
                         }))
                         .child(html!("div", {
@@ -141,7 +141,7 @@ impl ContractQueryUi {
             .child_signal(state.error.signal_cloned().map(|error| {
                 match error {
                     Some(error) => Some(html!("div", {
-                        .class([&*TEXT_SIZE_SM, Color::Red.class()])
+                        .class([&*TEXT_SIZE_SM, Color::TextBody.class()])
                         .text(&error)
                     })),
                     None => None

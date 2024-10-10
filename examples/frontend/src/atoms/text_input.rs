@@ -56,10 +56,14 @@ impl TextInput {
     pub fn render(self) -> Dom {
         static CLASS: LazyLock<String> = LazyLock::new(|| {
             class! {
-                .style("padding", "0.625rem 1.875rem")
-                .style("border-radius", "0.25rem")
-                .style("border-width", "1px")
-                .style("border-style", "solid")
+                .style("background-color", Color::BackgroundTertiary.hex_str())
+                .style("color", Color::TextPrimary.hex_str())
+                .style("font-size", "14px")
+                .style("padding", "16px")
+                .style("border", "1px solid")
+                .style("border-color", Color::BorderPrimary.hex_str())
+                .style("border-radius", "6px")
+                .style("outline", "none")
             }
         });
 

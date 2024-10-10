@@ -7,7 +7,7 @@ impl WindowSize {
 
         // Define minimum and maximum font sizes
         let font_size_min = 12.0; // For small screens
-        let font_size_max = 26.0; // For large screens
+        let font_size_max = 16.0; // For large screens
 
         // Define viewport width breakpoints
         let viewport_width_min = 320.0; // Minimum screen width (e.g., mobile)
