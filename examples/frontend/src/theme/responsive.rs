@@ -21,8 +21,8 @@ impl WindowSize {
             + (font_size_max - font_size_min) * (clamped_width - viewport_width_min)
                 / (viewport_width_max - viewport_width_min);
 
-        // Return the calculated font size
-        format!("{}px", font_size)
+        // Return the calculated font size - but adjust for our base design size
+        format!("{}em", font_size / 16.0)
 
         // this kinda works but it's too small on smaller screens:
         // let scale_ratio = self.width / 1920.0;
