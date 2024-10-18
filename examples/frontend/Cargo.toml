@@ -15,7 +15,7 @@ dotenvy = "0.15.7"
 
 [dependencies]
 ######## Local dependencies ########
-layer-climb = { path = "../../packages/layer-climb", features = ["web"] }
+layer-climb = { path = "../../packages/layer-climb", features = ["web"] } # doesn't use workspace since we want to use the web feature
 
 ######## Workspace dependencies ########
 serde = {workspace = true} 

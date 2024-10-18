@@ -5,10 +5,9 @@ edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
-### Local dependencies ###
-layer-climb = { path = "../../packages/layer-climb" }
-layer-climb-cli = { path = "../../packages/layer-climb-cli" }
 ### Workspace dependencies ###
+layer-climb = { workspace = true }
+layer-climb-cli = { workspace = true }
 serde = { workspace = true } 
 serde_json = {workspace = true} 
 anyhow = {workspace = true}
@@ -21,6 +20,4 @@ tracing-subscriber = {workspace = true}
 bip39 = {workspace = true}
 rand = {workspace = true}
 deadpool = {workspace = true}
-
-### Proprietary dependencies ###4
-tokio = { version = "1", features = ["full"] }
+tokio = {workspace = true}

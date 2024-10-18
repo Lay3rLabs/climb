@@ -299,11 +299,14 @@ checksum = "504e3947307ac8326a5437504c517c4b56716c9d98fac0028c2acc7ca47d70ae"
 dependencies = [
  "async-trait",
  "axum-core",
+ "axum-macros",
  "bytes",
  "futures-util",
  "http",
  "http-body",
  "http-body-util",
+ "hyper",
+ "hyper-util",
  "itoa",
  "matchit",
  "memchr",
@@ -312,10 +315,15 @@ dependencies = [
  "pin-project-lite",
  "rustversion",
  "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_urlencoded",
  "sync_wrapper 1.0.1",
+ "tokio",
  "tower 0.5.1",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]
@@ -336,6 +344,18 @@ dependencies = [
  "sync_wrapper 1.0.1",
  "tower-layer",
  "tower-service",
+ "tracing",
+]
+
+[[package]]
+name = "axum-macros"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57d123550fa8d071b7255cb0cc04dc302baa6c8c4a79f55701552684d8399bce"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.79",
 ]
 
 [[package]]
@@ -560,6 +580,27 @@ name = "clap_lex"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
+
+[[package]]
+name = "climb-faucet"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "clap 4.5.18",
+ "deadpool",
+ "dotenvy",
+ "futures",
+ "layer-climb",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "toml",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "colorchoice"
@@ -2641,6 +2682,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_path_to_error"
+version = "0.1.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af99884400da37c88f5e9146b7f1fd0fbcae8f6eec4e9da38b67d05486f814a6"
+dependencies = [
+ "itoa",
+ "serde",
+]
+
+[[package]]
 name = "serde_repr"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3256,6 +3307,22 @@ dependencies = [
  "futures-util",
  "pin-project-lite",
  "sync_wrapper 0.1.2",
+ "tokio",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
+name = "tower-http"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8437150ab6bbc8c5f0f519e3d5ed4aa883a83dd4cdd3d1b21f9482936046cb97"
+dependencies = [
+ "bitflags 2.6.0",
+ "bytes",
+ "http",
+ "pin-project-lite",
  "tower-layer",
  "tower-service",
 ]
@@ -3278,6 +3345,7 @@ version = "0.1.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef"
 dependencies = [
+ "log",
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",
