@@ -23,6 +23,11 @@ pub async fn credit(
     }
 
     // do not send to ourselves
+    // TODO - improve this... looping is fine, but there's no guarantee
+    // that we'll actually move onto the next sender here.
+    // We need to hold and release each, one at a time
+    //
+    // Alternatively - get rid of it, maybe it's not a bug to send to ourselves?
     let sender = loop {
         let sender = state
             .client_pool
