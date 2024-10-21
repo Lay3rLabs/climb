@@ -13,6 +13,7 @@ pub use crate::{
     querier::{QueryClient, QueryRequest},
     signing::SigningClient,
     transaction::TxBuilder,
+    cache::ClimbCache,
 };
 
 #[cfg(not(target_arch = "wasm32"))]

@@ -1,3 +1,5 @@
+use tracing::instrument;
+
 use crate::{
     ibc_types::{IbcChannelId, IbcClientId, IbcConnectionId, IbcPortId},
     prelude::*,
@@ -9,6 +11,7 @@ use super::{
 };
 
 impl QueryClient {
+    #[instrument]
     pub async fn ibc_connection_proofs(
         &self,
         proof_height: layer_climb_proto::RevisionHeight,
@@ -23,6 +26,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn ibc_channel_proofs(
         &self,
         proof_height: layer_climb_proto::RevisionHeight,
@@ -37,6 +41,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn ibc_client_state(
         &self,
         ibc_client_id: &IbcClientId,
@@ -49,6 +54,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn ibc_connection(
         &self,
         connection_id: &IbcConnectionId,
@@ -61,6 +67,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn ibc_connection_consensus_state(
         &self,
         connection_id: &IbcConnectionId,
@@ -75,6 +82,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn ibc_channel(
         &self,
         channel_id: &IbcChannelId,
@@ -89,6 +97,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn ibc_create_client_consensus_state(
         &self,
         trusting_period_secs: Option<u64>,

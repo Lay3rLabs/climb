@@ -1,6 +1,9 @@
 // see this example for testing axum: https://github.com/tokio-rs/axum/tree/main/examples/testing
 
-use std::sync::{LazyLock, OnceLock};
+use std::{
+    ops::Mul,
+    sync::{LazyLock, OnceLock},
+};
 
 use axum::{
     body::Body,
@@ -19,64 +22,124 @@ use layer_climb_faucet::{
 };
 use rand::{prelude::*, rngs::OsRng};
 use serde::de::DeserializeOwned;
-use tower::{Service, ServiceExt};
-use tracing::subscriber::DefaultGuard;
+use tower::Service;
 
-pub struct App {
-    pub config: Config,
-    pub rng: OsRng,
-    pub router: Router,
-    _tracing_guard: DefaultGuard,
-}
+// // need a static reference to the app to avoid double initialization
+// static ROUTER: LazyLock<Mutex<Option<Router>>> = LazyLock::new(|| Mutex::new(None));
 
-// need a static reference to the app to avoid double initialization
-// otherwise we defeat the purpose of a pool
-// if we change the test suite to use reqwest instead of direct axum, we can remove this
-// and each App will be a genuinely new instance
-static ROUTER: OnceLock<Router> = OnceLock::new();
 // just so we don't reload it each time
 static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     Config::try_from(ConfigInit::load_sync("./config/faucet-layer-test.toml").unwrap()).unwrap()
 });
 
-impl App {
-    pub async fn new() -> Self {
-        let config = CONFIG.clone();
+static INIT: LazyLock<tokio::sync::Mutex<bool>> = LazyLock::new(|| tokio::sync::Mutex::new(false));
 
-        if ROUTER.get().is_none() {
-            let router = layer_climb_faucet::router::make_router(config.clone())
+static FAUCET: LazyLock<tokio::sync::Mutex<Option<SigningClient>>> =
+    LazyLock::new(|| tokio::sync::Mutex::new(None));
+static ORIGINAL_FAUCET: OnceLock<SigningClient> = OnceLock::new();
+
+//static CACHE: LazyLock<ClimbCache> = LazyLock::new(|| ClimbCache::default());
+
+pub struct App {
+    _router: Router,
+    pub config: Config,
+}
+
+// this is called from every test, but we gate it with an async-aware lock so it only runs once
+async fn init() {
+    let mut lock = INIT.lock().await;
+
+    if !*lock {
+        *lock = true;
+        tracing_subscriber::fmt()
+            .without_time()
+            //.with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
+            .with_target(false)
+            .with_max_level(CONFIG.tracing_level)
+            .init();
+
+        let original_faucet_signer =
+            KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
+        let original_faucet =
+            SigningClient::new(CONFIG.chain_config.clone(), original_faucet_signer)
                 .await
                 .unwrap();
-            let _ = ROUTER.set(router.clone());
-        };
 
-        let router = ROUTER.get().unwrap().clone();
+        ORIGINAL_FAUCET.set(original_faucet).unwrap();
+    }
+}
 
-        let subscriber = tracing_subscriber::fmt()
-            .without_time()
-            .with_target(false)
-            .with_max_level(config.tracing_level)
-            .finish();
+async fn fund_faucet(addr: &Address) {
+    let mut lock = FAUCET.lock().await;
+    if lock.is_none() {
+        let faucet_signer = KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
+        let faucet = SigningClient::new(CONFIG.chain_config.clone(), faucet_signer)
+            .await
+            .unwrap();
 
-        // Set the subscriber for this scope
-        let _tracing_guard = tracing::subscriber::set_default(subscriber);
+        *lock = Some(faucet);
+    }
 
-        let rng = OsRng;
+    let amount = CONFIG
+        .credit
+        .amount
+        .parse::<u128>()
+        .unwrap()
+        .max(CONFIG.minimum_credit_balance_topup)
+        .mul(1000);
 
+    tracing::debug!("Transferring {} to per-router faucet {}", amount, addr);
+
+    lock.as_ref()
+        .unwrap()
+        .transfer(amount, addr, Some(CONFIG.credit.denom.as_str()), None)
+        .await
+        .unwrap();
+}
+
+impl App {
+    pub async fn new() -> Self {
+        init().await;
+
+        // generate a new faucet per application - otherwise they run in different threads altogether and will have sequence errors
+        let faucet_mnemonic = generate_mnemonic();
+        let faucet_addr = CONFIG
+            .chain_config
+            .address_from_pub_key(
+                &KeySigner::new_mnemonic_iter(faucet_mnemonic.word_iter(), None)
+                    .unwrap()
+                    .public_key()
+                    .await
+                    .unwrap(),
+            )
+            .unwrap();
+
+        // replace it in the config
+        let mut config = CONFIG.clone();
+        config.mnemonic = faucet_mnemonic.to_string();
+
+        // fund it
+        fund_faucet(&faucet_addr).await;
+
+        // get the router
+        let router = layer_climb_faucet::router::make_router(config.clone())
+            .await
+            .unwrap();
+
+        // and we're off!
         Self {
+            _router: router,
             config,
-            rng,
-            router,
-            _tracing_guard,
         }
     }
 
-    // get an instance of the router, but wait for it to be ready
     async fn router(&mut self) -> &mut Router {
-        <Router as tower::ServiceExt<Request<Body>>>::ready(&mut self.router)
+        // wait till it's ready
+        <Router as tower::ServiceExt<Request<Body>>>::ready(&mut self._router)
             .await
             .unwrap();
-        &mut self.router
+
+        &mut self._router
     }
 
     pub async fn status(&mut self) -> StatusResponse {
@@ -86,7 +149,7 @@ impl App {
             .body(Body::empty())
             .unwrap();
 
-        let response = self.router().await.oneshot(req).await.unwrap();
+        let response = self.router().await.call(req).await.unwrap();
 
         map_response(response).await
     }
@@ -104,19 +167,21 @@ impl App {
 
         map_response(response).await
     }
-
-    pub async fn generate_signing_client(&mut self) -> SigningClient {
-        let entropy: [u8; 32] = self.rng.gen();
-        let mnemonic = Mnemonic::from_entropy(&entropy).unwrap();
-
-        let signer = KeySigner::new_mnemonic_iter(mnemonic.word_iter(), None).unwrap();
-
-        SigningClient::new(self.config.chain_config.clone(), signer)
-            .await
-            .unwrap()
-    }
 }
 
+fn generate_mnemonic() -> Mnemonic {
+    let mut rng = OsRng;
+    let entropy: [u8; 32] = rng.gen();
+    Mnemonic::from_entropy(&entropy).unwrap()
+}
+
+pub async fn generate_signing_client() -> SigningClient {
+    let signer = KeySigner::new_mnemonic_iter(generate_mnemonic().word_iter(), None).unwrap();
+
+    SigningClient::new(CONFIG.chain_config.clone(), signer)
+        .await
+        .unwrap()
+}
 #[allow(dead_code)]
 async fn assert_empty_response(response: axum::http::Response<Body>) {
     let bytes = response.into_body().collect().await.unwrap().to_bytes();

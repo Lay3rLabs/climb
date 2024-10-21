@@ -1,10 +1,14 @@
+use tracing::instrument;
+
 use crate::prelude::*;
 
 impl QueryClient {
+    #[instrument]
     pub async fn balance(&self, addr: Address, denom: Option<String>) -> Result<Option<u128>> {
         self.run_with_middleware(BalanceReq { addr, denom }).await
     }
 
+    #[instrument]
     pub async fn all_balances(
         &self,
         addr: Address,
@@ -17,6 +21,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn base_account(
         &self,
         addr: &Address,
@@ -24,15 +29,23 @@ impl QueryClient {
         self.run_with_middleware(BaseAccountReq { addr: addr.clone() })
             .await
     }
+
+    #[instrument]
     pub async fn staking_params(&self) -> Result<layer_climb_proto::staking::Params> {
         self.run_with_middleware(StakingParamsReq {}).await
     }
+
+    #[instrument]
     pub async fn block(&self, height: Option<u64>) -> Result<BlockResp> {
         self.run_with_middleware(BlockReq { height }).await
     }
+
+    #[instrument]
     pub async fn block_header(&self, height: Option<u64>) -> Result<BlockHeaderResp> {
         self.run_with_middleware(BlockHeaderReq { height }).await
     }
+
+    #[instrument]
     pub async fn block_height(&self) -> Result<u64> {
         self.run_with_middleware(BlockHeightReq {}).await
     }

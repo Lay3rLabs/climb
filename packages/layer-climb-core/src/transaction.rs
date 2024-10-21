@@ -189,6 +189,11 @@ impl<'a> TxBuilder<'a> {
         self,
         messages: impl IntoIterator<Item = layer_climb_proto::Any>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
+        let messages = messages.into_iter().map(Into::into).collect();
+        self.broadcast_inner(messages).await
+    }
+
+    async fn broadcast_inner(self, messages: Vec<layer_climb_proto::Any>) -> Result<layer_climb_proto::abci::TxResponse> {
         let block_height = self.querier.block_height().await?;
 
         let tx_timeout_blocks = self
@@ -196,7 +201,7 @@ impl<'a> TxBuilder<'a> {
             .unwrap_or(Self::DEFAULT_TX_TIMEOUT_BLOCKS);
 
         let mut body = layer_climb_proto::tx::TxBody {
-            messages: messages.into_iter().map(Into::into).collect(),
+            messages,
             memo: self.memo.as_deref().unwrap_or("").to_string(),
             timeout_height: block_height + tx_timeout_blocks,
             extension_options: Default::default(),

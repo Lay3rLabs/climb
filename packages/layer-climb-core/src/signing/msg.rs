@@ -1,11 +1,11 @@
 use crate::prelude::*;
 
 impl SigningClient {
-    pub fn transfer_msg<'a>(
+    pub fn transfer_msg<'a, D: Into<Option<&'a str>> + std::fmt::Debug>(
         &self,
         amount: u128,
         recipient: &Address,
-        denom: impl Into<Option<&'a str>>,
+        denom: D,
     ) -> Result<layer_climb_proto::bank::MsgSend> {
         let denom = denom.into().unwrap_or(&self.querier.chain_config.gas_denom);
 

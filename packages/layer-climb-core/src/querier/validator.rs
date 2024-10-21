@@ -1,8 +1,11 @@
+use tracing::instrument;
+
 use crate::prelude::*;
 
 use super::basic::BlockHeightReq;
 
 impl QueryClient {
+    #[instrument]
     pub async fn validator_set(
         &self,
         height: Option<u64>,
