@@ -193,7 +193,10 @@ impl<'a> TxBuilder<'a> {
         self.broadcast_inner(messages).await
     }
 
-    async fn broadcast_inner(self, messages: Vec<layer_climb_proto::Any>) -> Result<layer_climb_proto::abci::TxResponse> {
+    async fn broadcast_inner(
+        self,
+        messages: Vec<layer_climb_proto::Any>,
+    ) -> Result<layer_climb_proto::abci::TxResponse> {
         let block_height = self.querier.block_height().await?;
 
         let tx_timeout_blocks = self

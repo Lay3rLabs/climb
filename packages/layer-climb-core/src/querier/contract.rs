@@ -4,7 +4,11 @@ use tracing::instrument;
 
 impl QueryClient {
     #[instrument]
-    pub async fn contract_smart<'a, D: DeserializeOwned + Send + std::fmt::Debug + Sync, S: Serialize + std::fmt::Debug>(
+    pub async fn contract_smart<
+        'a,
+        D: DeserializeOwned + Send + std::fmt::Debug + Sync,
+        S: Serialize + std::fmt::Debug,
+    >(
         &self,
         address: &Address,
         msg: &S,

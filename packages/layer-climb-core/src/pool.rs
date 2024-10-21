@@ -13,7 +13,7 @@ pub struct SigningClientPoolManager {
     pub derivation_index: AtomicU32,
     pub chain_config: ChainConfig,
     pub balance_maintainer: Option<BalanceMaintainer>,
-    pub cache: ClimbCache
+    pub cache: ClimbCache,
 }
 
 impl SigningClientPoolManager {
@@ -27,7 +27,7 @@ impl SigningClientPoolManager {
             chain_config,
             derivation_index: AtomicU32::new(start_index.unwrap_or_default()),
             balance_maintainer: None,
-            cache: ClimbCache::default()
+            cache: ClimbCache::default(),
         }
     }
 
@@ -147,7 +147,11 @@ impl Manager for SigningClientPoolManager {
         Ok(client)
     }
 
-    async fn recycle(&self, client: &mut SigningClient, _: &Metrics) -> RecycleResult<anyhow::Error> {
+    async fn recycle(
+        &self,
+        client: &mut SigningClient,
+        _: &Metrics,
+    ) -> RecycleResult<anyhow::Error> {
         tracing::debug!("POOL RECYCLING CLIENT {}", client.addr);
         self.maybe_top_up(client).await?;
 

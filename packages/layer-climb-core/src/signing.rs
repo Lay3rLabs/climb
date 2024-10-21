@@ -4,12 +4,14 @@ pub mod middleware;
 pub mod msg;
 
 use crate::{
-    cache::ClimbCache, prelude::*, transaction::{SequenceStrategy, SequenceStrategyKind}
+    cache::ClimbCache,
+    prelude::*,
+    transaction::{SequenceStrategy, SequenceStrategyKind},
 };
 use layer_climb_address::TxSigner;
 use middleware::{SigningMiddlewareMapBody, SigningMiddlewareMapResp};
-use tracing::instrument;
 use std::sync::Arc;
+use tracing::instrument;
 
 // Cloning a SigningClient is pretty cheap
 #[derive(Clone)]
@@ -43,7 +45,11 @@ impl SigningClient {
         Self::new_with_cache(chain_config, signer, ClimbCache::default()).await
     }
 
-    pub async fn new_with_cache(chain_config: ChainConfig, signer: impl TxSigner + 'static, cache: ClimbCache) -> Result<Self> {
+    pub async fn new_with_cache(
+        chain_config: ChainConfig,
+        signer: impl TxSigner + 'static,
+        cache: ClimbCache,
+    ) -> Result<Self> {
         let addr = chain_config.address_from_pub_key(&signer.public_key().await?)?;
 
         let querier = QueryClient::new_with_cache(chain_config.clone(), cache).await?;
