@@ -2,16 +2,20 @@
 // ideally they would be solely a backup (like the way abci_proof works)
 // some old implementation code is kept in comments for reference
 
+use tracing::instrument;
+
 use super::basic::BlockHeightReq;
 use crate::prelude::*;
 
 impl QueryClient {
+    #[instrument]
     pub async fn fetch_signed_header(
         &self,
         height: Option<u64>,
     ) -> Result<layer_climb_proto::tendermint::SignedHeader> {
         self.run_with_middleware(SignedHeaderReq { height }).await
     }
+    #[instrument]
     pub async fn fetch_block_events(
         &self,
         block_height: u64,

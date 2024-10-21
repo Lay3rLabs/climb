@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicU32;
 
-use crate::signing::SigningClient;
+use crate::{cache::ClimbCache, signing::SigningClient};
 use anyhow::{bail, Result};
 use deadpool::managed::{Manager, Metrics, RecycleResult};
 use layer_climb_address::*;
@@ -13,6 +13,7 @@ pub struct SigningClientPoolManager {
     pub derivation_index: AtomicU32,
     pub chain_config: ChainConfig,
     pub balance_maintainer: Option<BalanceMaintainer>,
+    pub cache: ClimbCache,
 }
 
 impl SigningClientPoolManager {
@@ -26,6 +27,7 @@ impl SigningClientPoolManager {
             chain_config,
             derivation_index: AtomicU32::new(start_index.unwrap_or_default()),
             balance_maintainer: None,
+            cache: ClimbCache::default(),
         }
     }
 
@@ -84,8 +86,10 @@ impl SigningClientPoolManager {
             }
         };
 
-        let client = SigningClient::new(self.chain_config.clone(), signer).await?;
+        SigningClient::new_with_cache(self.chain_config.clone(), signer, self.cache.clone()).await
+    }
 
+    async fn maybe_top_up(&self, client: &SigningClient) -> Result<()> {
         if let Some(balance_maintainer) = &self.balance_maintainer {
             let current_balance = client
                 .querier
@@ -119,7 +123,7 @@ impl SigningClientPoolManager {
             }
         }
 
-        Ok(client)
+        Ok(())
     }
 }
 
@@ -136,10 +140,21 @@ impl Manager for SigningClientPoolManager {
     type Error = anyhow::Error;
 
     async fn create(&self) -> Result<SigningClient> {
-        self.create_client().await
+        let client = self.create_client().await?;
+        tracing::debug!("POOL CREATED CLIENT {}", client.addr);
+        self.maybe_top_up(&client).await?;
+
+        Ok(client)
     }
 
-    async fn recycle(&self, _: &mut SigningClient, _: &Metrics) -> RecycleResult<anyhow::Error> {
+    async fn recycle(
+        &self,
+        client: &mut SigningClient,
+        _: &Metrics,
+    ) -> RecycleResult<anyhow::Error> {
+        tracing::debug!("POOL RECYCLING CLIENT {}", client.addr);
+        self.maybe_top_up(client).await?;
+
         Ok(())
     }
 }

@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use crate::prelude::*;
 use futures::Stream;
+use tracing::instrument;
 
 #[derive(Debug, Clone)]
 pub struct BlockEvents {
@@ -10,6 +11,7 @@ pub struct BlockEvents {
 }
 
 impl QueryClient {
+    #[instrument]
     pub async fn stream_block_events(
         // take by value to avoid lifetime issues
         // typically this means the caller is cloning the QueryClient

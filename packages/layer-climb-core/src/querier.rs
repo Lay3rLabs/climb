@@ -50,6 +50,14 @@ cfg_if::cfg_if! {
     }
 }
 
+impl std::fmt::Debug for QueryClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("QueryClient")
+            .field("chain_id", &self.chain_config.chain_id)
+            .finish()
+    }
+}
+
 pub trait QueryRequest: Clone + std::fmt::Debug + Send {
     type QueryResponse: std::fmt::Debug + Send;
 

@@ -66,6 +66,7 @@ async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditR
     }
 
     let amount = state.config.credit.amount.parse()?;
+
     let tx = sender
         .transfer(
             amount,
@@ -74,13 +75,6 @@ async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditR
             Some(tx_builder),
         )
         .await?;
-
-    tracing::debug!(
-        "sent credit to {} from {}, tx hash: {}",
-        address,
-        sender.addr,
-        tx.txhash
-    );
 
     Ok(CreditResponse {
         amount,

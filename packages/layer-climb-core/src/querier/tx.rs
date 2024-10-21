@@ -21,6 +21,7 @@ impl QueryClient {
             .await
             .map(|res| res.into_inner())?)
     }
+
     pub async fn broadcast_tx_bytes(
         &self,
         tx_bytes: Vec<u8>,
@@ -39,7 +40,7 @@ impl QueryClient {
             .context("couldn't broadcast tx")
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument]
     pub async fn poll_until_tx_ready(
         &self,
         tx_hash: String,

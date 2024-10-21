@@ -1,19 +1,17 @@
 mod helpers;
-use helpers::App;
+use helpers::{generate_signing_client, App};
 use layer_climb_faucet::handlers::credit::CreditRequest;
 
 #[tokio::test]
 async fn status_ok() {
-    let mut app = App::new().await;
-
-    let _ = app.status().await;
+    let _ = App::new().await.status().await;
 }
 
 #[tokio::test]
 async fn credit_works() {
     let mut app = App::new().await;
 
-    let client = app.generate_signing_client().await;
+    let client = generate_signing_client().await;
 
     let balance_before = client
         .querier
@@ -48,7 +46,7 @@ async fn credit_works() {
 async fn credit_works_multi_distribution_serial() {
     let mut app = App::new().await;
 
-    let client = app.generate_signing_client().await;
+    let client = generate_signing_client().await;
 
     let balance_before = client
         .querier
@@ -85,8 +83,8 @@ async fn credit_works_multi_distribution_serial() {
     let expected_balance = balance_before + app.config.credit.amount.parse::<u128>().unwrap() * 3;
 
     assert!(
-        balance_after > expected_balance,
-        "Expected for {} balance_after ({}) to be greater than expected balance ({}), but it is {}.",
+        balance_after >= expected_balance,
+        "Expected for {} balance_after ({}) to be greater than or equal to expected balance ({}), but it is {}.",
         client.addr, balance_after, expected_balance, balance_after
     );
 }

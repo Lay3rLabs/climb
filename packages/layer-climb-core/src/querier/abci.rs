@@ -1,3 +1,5 @@
+use tracing::instrument;
+
 use crate::{
     ibc_types::{IbcChannelId, IbcClientId, IbcConnectionId, IbcPortId},
     prelude::*,
@@ -12,6 +14,7 @@ impl QueryClient {
     // instead, getting proof height from the client state (i.e. local client state, which is the state of the remote chain) seems to work just fine
 
     // height - 1 is documented here: https://github.com/cosmos/ibc-go/blob/main/modules/core/client/query.go#L26
+    #[instrument]
     pub async fn abci_proof(&self, kind: AbciProofKind, height: u64) -> Result<AbciProofResponse> {
         self.run_with_middleware(AbciProofReq {
             kind: kind.clone(),
@@ -21,6 +24,7 @@ impl QueryClient {
     }
 
     // if None, will make a best-guess attempt
+    #[instrument]
     pub async fn set_abci_query_client_mode(&self, mode: Option<QueryClientMode>) -> Result<()> {
         match mode {
             Some(mode) => {

@@ -22,7 +22,7 @@ impl IntoResponse for AnyError {
             Ok(app_error) => app_error.into_response(),
             Err(e) => {
                 let e = e.to_string();
-                tracing::warn!("{}", e);
+                tracing::error!("{}", e);
 
                 Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)

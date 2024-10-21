@@ -98,6 +98,7 @@ cfg_if::cfg_if! {
                 Ok(match grpc {
                     Some(grpc) => grpc,
                     None => {
+                        tracing::debug!("Creating new grpc channel for {}", chain_config.grpc_endpoint);
                         let grpc = crate::network::grpc_native::make_grpc_channel(&chain_config.grpc_endpoint).await?;
                         self.grpc.lock().unwrap().insert(chain_config.grpc_endpoint.to_string(), grpc.clone());
                         grpc

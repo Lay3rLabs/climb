@@ -1,11 +1,17 @@
 use crate::{contract_helpers::contract_msg_to_vec, prelude::*};
 use serde::{de::DeserializeOwned, Serialize};
+use tracing::instrument;
 
 impl QueryClient {
-    pub async fn contract_smart<'a, D: DeserializeOwned + Send + std::fmt::Debug + Sync>(
+    #[instrument]
+    pub async fn contract_smart<
+        'a,
+        D: DeserializeOwned + Send + std::fmt::Debug + Sync,
+        S: Serialize + std::fmt::Debug,
+    >(
         &self,
         address: &Address,
-        msg: &impl Serialize,
+        msg: &S,
     ) -> Result<D> {
         self.run_with_middleware(ContractSmartReq {
             address: address.clone(),
@@ -14,10 +20,11 @@ impl QueryClient {
         })
         .await
     }
-    pub async fn contract_smart_raw<'a>(
+    #[instrument]
+    pub async fn contract_smart_raw<'a, S: Serialize + std::fmt::Debug>(
         &self,
         address: &Address,
-        msg: &impl Serialize,
+        msg: &S,
     ) -> Result<Vec<u8>> {
         self.run_with_middleware(ContractSmartRawReq {
             address: address.clone(),
@@ -26,6 +33,7 @@ impl QueryClient {
         .await
     }
 
+    #[instrument]
     pub async fn contract_code_info(
         &self,
         code_id: u64,
@@ -33,6 +41,8 @@ impl QueryClient {
         self.run_with_middleware(ContractCodeInfoReq { code_id })
             .await
     }
+
+    #[instrument]
     pub async fn contract_info(
         &self,
         address: &Address,

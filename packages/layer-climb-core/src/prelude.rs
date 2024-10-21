@@ -8,6 +8,7 @@ pub(crate) use layer_climb_proto::{proto_into_any, proto_into_bytes, Message};
 
 // common types
 pub use crate::{
+    cache::ClimbCache,
     contract_helpers::contract_str_to_msg,
     events::CosmosTxEvents,
     querier::{QueryClient, QueryRequest},

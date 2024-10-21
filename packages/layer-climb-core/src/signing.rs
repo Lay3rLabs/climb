@@ -4,12 +4,14 @@ pub mod middleware;
 pub mod msg;
 
 use crate::{
+    cache::ClimbCache,
     prelude::*,
     transaction::{SequenceStrategy, SequenceStrategyKind},
 };
 use layer_climb_address::TxSigner;
 use middleware::{SigningMiddlewareMapBody, SigningMiddlewareMapResp};
 use std::sync::Arc;
+use tracing::instrument;
 
 // Cloning a SigningClient is pretty cheap
 #[derive(Clone)]
@@ -29,11 +31,28 @@ pub struct SigningClient {
     pub sequence_strategy: SequenceStrategy,
 }
 
+impl std::fmt::Debug for SigningClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SigningClient")
+            .field("chain_id", &self.querier.chain_config.chain_id)
+            .field("addr", &self.addr)
+            .finish()
+    }
+}
+
 impl SigningClient {
     pub async fn new(chain_config: ChainConfig, signer: impl TxSigner + 'static) -> Result<Self> {
+        Self::new_with_cache(chain_config, signer, ClimbCache::default()).await
+    }
+
+    pub async fn new_with_cache(
+        chain_config: ChainConfig,
+        signer: impl TxSigner + 'static,
+        cache: ClimbCache,
+    ) -> Result<Self> {
         let addr = chain_config.address_from_pub_key(&signer.public_key().await?)?;
 
-        let querier = QueryClient::new(chain_config.clone()).await?;
+        let querier = QueryClient::new_with_cache(chain_config.clone(), cache).await?;
 
         let base_account = querier.base_account(&addr).await?;
 
@@ -50,6 +69,7 @@ impl SigningClient {
 
     // This is especially useful if the signer gets its public key at runtime
     // such as when using browser-based async wallets like Keplr
+    #[instrument]
     pub async fn refresh_signer(&mut self) -> Result<()> {
         self.addr = self
             .querier
@@ -88,18 +108,22 @@ impl SigningClient {
         tx_builder
     }
 
-    pub async fn transfer(
+    pub async fn transfer<'a, D: Into<Option<&'a str>> + std::fmt::Debug>(
         &self,
         amount: u128,
         recipient: &Address,
-        denom: impl Into<Option<&str>>,
+        denom: D,
         tx_builder: Option<TxBuilder<'_>>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
-        tx_builder
+        tracing::debug!("transfering {} to {} from {}", amount, recipient, self.addr);
+
+        let res = tx_builder
             .unwrap_or_else(|| self.tx_builder())
             .broadcast([proto_into_any(
                 &self.transfer_msg(amount, recipient, denom)?,
             )?])
-            .await
+            .await?;
+
+        Ok(res)
     }
 }
