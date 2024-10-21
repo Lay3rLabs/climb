@@ -1,17 +1,32 @@
 use crate::prelude::*;
-use axum::extract;
+use axum::{extract, Json};
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CreditRequest {
     pub address: String,
     pub denom: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CreditResponse {
+    pub amount: u128,
+    pub recipient: Address,
+    pub denom: String,
+    pub txhash: String,
 }
 
 #[axum::debug_handler]
 pub async fn credit(
     State(state): State<AppState>,
     extract::Json(payload): extract::Json<CreditRequest>,
-) -> Result<()> {
+) -> impl IntoResponse {
+    match credit_inner(state, payload).await {
+        Ok(resp) => Json(resp).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditResponse> {
     tracing::debug!("credit request: {:?}", payload);
 
     let address = state.config.chain_config.parse_address(&payload.address)?;
@@ -28,32 +43,49 @@ pub async fn credit(
     // We need to hold and release each, one at a time
     //
     // Alternatively - get rid of it, maybe it's not a bug to send to ourselves?
-    let sender = loop {
-        let sender = state
-            .client_pool
-            .get()
-            .await
-            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
-        if sender.addr != address {
-            break sender;
-        }
-    };
+    // let sender = loop {
+    //     let sender = state
+    //         .client_pool
+    //         .get()
+    //         .await
+    //         .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    //     if sender.addr != address {
+    //         break sender;
+    //     }
+    // };
+
+    let sender = state
+        .client_pool
+        .get()
+        .await
+        .map_err(|e| anyhow::anyhow!("{e:?}"))?;
 
     let mut tx_builder = sender.tx_builder();
     if let Some(memo) = &state.config.memo {
         tx_builder.set_memo(memo);
     }
 
+    let amount = state.config.credit.amount.parse()?;
     let tx = sender
         .transfer(
-            state.config.credit.amount.parse()?,
+            amount,
             &address,
             Some(state.config.credit.denom.as_str()),
             Some(tx_builder),
         )
         .await?;
 
-    tracing::debug!("sent credit to {}, tx hash: {}", address, tx.txhash);
+    tracing::debug!(
+        "sent credit to {} from {}, tx hash: {}",
+        address,
+        sender.addr,
+        tx.txhash
+    );
 
-    Ok(())
+    Ok(CreditResponse {
+        amount,
+        recipient: address,
+        denom: state.config.credit.denom.clone(),
+        txhash: tx.txhash,
+    })
 }

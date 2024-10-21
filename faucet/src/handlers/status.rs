@@ -3,16 +3,44 @@ use anyhow::Context;
 use axum::Json;
 use std::{collections::HashMap, sync::atomic::Ordering};
 
+// These structs are JSON-friendly and backwards-compatible with CosmJS status
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct StatusResponse {
+    pub status: String,
+    #[serde(rename = "chainId")]
+    pub chain_id: String,
+    #[serde(rename = "nodeUrl")]
+    pub node_url: String,
+    #[serde(rename = "chainTokens")]
+    pub chain_tokens: Vec<String>,
+    #[serde(rename = "availableTokens")]
+    pub available_tokens: Vec<String>,
+    pub holder: AddressWithBalance,
+    pub distributors: Vec<AddressWithBalance>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AddressWithBalance {
+    pub address: String,
+    pub balances: Vec<StatusCoin>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct StatusCoin {
+    pub denom: String,
+    pub amount: String,
+}
+
 // This gathers all the core status info we need
 // but it is not the final response format, which needs to be compatible with
 // the JSON format produced by CosmJS faucets
-struct Status {
+struct StatusHandler {
     chain_config: ChainConfig,
     holder: (Address, Vec<Coin>),
     distributors: HashMap<Address, Vec<Coin>>,
 }
 
-impl Status {
+impl StatusHandler {
     pub async fn new(state: AppState) -> Result<Self> {
         let max_derivation_index = state
             .client_pool
@@ -51,11 +79,7 @@ impl Status {
                 Some(addr) => addr.clone(),
             };
 
-            tracing::debug!("getting balances for {}", addr);
-
             let balances = state.query_client.all_balances(addr.clone(), None).await?;
-
-            tracing::debug!("balances for {}: {:?}", addr, balances);
 
             if derivation_index == 0 {
                 holder = Some((addr, balances));
@@ -74,35 +98,7 @@ impl Status {
 
 #[axum::debug_handler]
 pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
-    // These structs are JSON-friendly and backwards-compatible with CosmJS status
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct JsonStatus {
-        status: &'static str,
-        #[serde(rename = "chainId")]
-        chain_id: String,
-        #[serde(rename = "nodeUrl")]
-        node_url: String,
-        #[serde(rename = "chainTokens")]
-        chain_tokens: Vec<String>,
-        #[serde(rename = "availableTokens")]
-        available_tokens: Vec<String>,
-        holder: AddressWithBalance,
-        distributors: Vec<AddressWithBalance>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct AddressWithBalance {
-        address: String,
-        balances: Vec<JsonCoin>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct JsonCoin {
-        denom: String,
-        amount: String,
-    }
-
-    match Status::new(state.clone()).await {
+    match StatusHandler::new(state.clone()).await {
         Err(e) => e.into_response(),
         Ok(status) => {
             let mut available_tokens: Vec<String> = status
@@ -115,8 +111,8 @@ pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
             available_tokens.sort();
             available_tokens.dedup();
 
-            let status = JsonStatus {
-                status: "ok",
+            let status = StatusResponse {
+                status: "ok".to_string(),
                 chain_id: status.chain_config.chain_id.to_string(),
                 node_url: status.chain_config.rpc_endpoint.clone(),
                 chain_tokens: vec![status.chain_config.gas_denom.clone()],
@@ -127,7 +123,7 @@ pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
                         .holder
                         .1
                         .iter()
-                        .map(|c| JsonCoin {
+                        .map(|c| StatusCoin {
                             denom: c.denom.clone(),
                             amount: c.amount.to_string(),
                         })
@@ -140,7 +136,7 @@ pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
                         address: k.to_string(),
                         balances: v
                             .iter()
-                            .map(|c| JsonCoin {
+                            .map(|c| StatusCoin {
                                 denom: c.denom.clone(),
                                 amount: c.amount.to_string(),
                             })

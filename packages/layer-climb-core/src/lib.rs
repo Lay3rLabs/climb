@@ -1,3 +1,4 @@
+pub mod cache;
 pub mod contract_helpers;
 pub mod events;
 pub mod ibc_types;

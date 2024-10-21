@@ -3,10 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{
-    args::CliArgs,
-    config::{Config, ConfigInit},
-};
+use crate::config::Config;
 use anyhow::Result;
 use deadpool::managed::Pool;
 use layer_climb::{pool::SigningClientPoolManager, prelude::*};
@@ -21,9 +18,7 @@ pub struct AppState {
 
 impl AppState {
     // Getting a context requires parsing the args first
-    pub async fn new(args: CliArgs) -> Result<Self> {
-        let config = Arc::new(Config::try_from(ConfigInit::load(args.config).await?)?);
-
+    pub async fn new(config: Config) -> Result<Self> {
         let client_pool_manager = SigningClientPoolManager::new_mnemonic(
             config.mnemonic.clone(),
             config.chain_config.clone(),
@@ -44,7 +39,7 @@ impl AppState {
         let query_client = QueryClient::new(config.chain_config.clone()).await?;
 
         Ok(Self {
-            config,
+            config: Arc::new(config),
             client_pool,
             query_client,
             distributor_addrs: Arc::new(Mutex::new(HashMap::new())),

@@ -76,10 +76,17 @@ impl FromStr for ConfigChainAddrKindName {
 }
 
 impl ConfigInit {
-    pub async fn load(path: PathBuf) -> anyhow::Result<Self> {
+    pub async fn load(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
+        Self::load_inner(tokio::fs::read_to_string(path.into()).await?)
+    }
+
+    pub fn load_sync(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
+        Self::load_inner(std::fs::read_to_string(path.into())?)
+    }
+
+    fn load_inner(s: String) -> anyhow::Result<Self> {
         // first load from the file
-        let config = tokio::fs::read_to_string(path).await?;
-        let mut config: Self = toml::from_str(&config)?;
+        let mut config: Self = toml::from_str(&s)?;
 
         // next load .env file, if specified
         if let Some(dotenv) = &config.dotenv {

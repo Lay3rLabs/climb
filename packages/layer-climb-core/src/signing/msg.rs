@@ -11,7 +11,7 @@ impl SigningClient {
 
         let amount = layer_climb_proto::Coin {
             amount: amount.to_string(),
-            denom: denom.parse().map_err(|err| anyhow!("{}", err))?,
+            denom: denom.to_string(),
         };
 
         Ok(layer_climb_proto::bank::MsgSend {

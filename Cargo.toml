@@ -72,7 +72,9 @@ clap = { version = "4.5.7", features = ["derive"] }
 dotenvy = {version = "0.15.7", features = ["cli"]}
 tokio = { version = "1", features = ["full"] }
 axum = {version = "0.7.7", features = ["macros"]}
-tower-http = {version = "0.6.1", features = ["cors"] }
+tower-http = {version = "0.6.1", features = ["cors", "trace"] }
+tower = { version = "0.5.1", features = ["util"] }
+http-body-util = "0.1.2"
 
 # Pool
 deadpool = "0.12.1"

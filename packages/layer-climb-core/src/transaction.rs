@@ -360,6 +360,15 @@ impl<'a> TxBuilder<'a> {
             tx_response
         };
 
+        if tx_response.code != 0 {
+            bail!(
+                "tx failed with code: {}, codespace: {}, raw_log: {}",
+                tx_response.code,
+                tx_response.codespace,
+                tx_response.raw_log
+            );
+        }
+
         if let Some(middleware) = self.middleware_map_resp.as_ref() {
             for middleware in middleware.iter() {
                 tx_response = match middleware.map_resp(tx_response).await {

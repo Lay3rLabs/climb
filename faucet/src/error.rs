@@ -20,10 +20,15 @@ impl IntoResponse for AnyError {
     fn into_response(self) -> Response<Body> {
         match self.0.downcast::<AppError>() {
             Ok(app_error) => app_error.into_response(),
-            Err(_) => Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::empty())
-                .unwrap(),
+            Err(e) => {
+                let e = e.to_string();
+                tracing::warn!("{}", e);
+
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(e.into())
+                    .unwrap()
+            }
         }
     }
 }
