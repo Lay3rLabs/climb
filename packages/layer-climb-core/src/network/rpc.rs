@@ -1,21 +1,15 @@
 use crate::prelude::*;
-use std::sync::LazyLock;
 use tendermint_rpc::Response;
-
-pub static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
 #[derive(Clone, Debug)]
 pub struct RpcClient {
-    inner: reqwest::Client,
+    http_client: reqwest::Client,
     url: String,
 }
 
 impl RpcClient {
-    pub fn new(url: String) -> Self {
-        Self {
-            inner: CLIENT.clone(),
-            url,
-        }
+    pub fn new(url: String, http_client: reqwest::Client) -> Self {
+        Self { url, http_client }
     }
 
     pub async fn commit(&self, height: u64) -> Result<tendermint_rpc::endpoint::commit::Response> {
@@ -57,7 +51,7 @@ impl RpcClient {
 
     async fn send<T: tendermint_rpc::Request>(&self, req: T) -> Result<T::Response> {
         let res = self
-            .inner
+            .http_client
             .post(self.url.clone())
             .header("Content-Type", "application/json")
             .body(req.into_json().into_bytes())

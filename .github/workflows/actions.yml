@@ -33,7 +33,7 @@ jobs:
         run: cargo clippy --all --all-features --tests -- -D warnings
 
       - name: cargo test
-        run: cargo test --all-features
+        run: cargo test --all-features --lib
 
   pages_build:
     name: Build Pages 

@@ -66,4 +66,4 @@ getrandom = "0.2"
 futures-timer = {version = "3.0.3", default-features = false}
 tonic = {version = "0.12", default-features = false, features = ["transport", "tls-native-roots", "tls-webpki-roots"]}
 deadpool = {workspace = true}
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["sync"] } # do not use from workspace which pulls in "full"

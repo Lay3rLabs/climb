@@ -23,6 +23,8 @@ pub struct TxBuilder<'a> {
     /// The account number of the sender. If not set, it will be derived from the sender's account
     pub account_number: Option<u64>,
 
+    pub memo: Option<String>,
+
     /// The gas coin to use. Gas price (in gas_coin.denom) = gas_coin.amount * gas_units
     /// If not set, it will be derived from querier.chain_config (without hitting the network)
     pub gas_coin: Option<layer_climb_proto::Coin>,
@@ -73,6 +75,7 @@ impl<'a> TxBuilder<'a> {
             signer,
             gas_coin: None,
             sender: None,
+            memo: None,
             tx_timeout_blocks: None,
             sequence_strategy: None,
             gas_units_or_simulate: None,
@@ -89,6 +92,11 @@ impl<'a> TxBuilder<'a> {
 
     pub fn set_tx_timeout_blocks(&mut self, tx_timeout_blocks: u64) -> &mut Self {
         self.tx_timeout_blocks = Some(tx_timeout_blocks);
+        self
+    }
+
+    pub fn set_memo(&mut self, memo: impl Into<String>) -> &mut Self {
+        self.memo = Some(memo.into());
         self
     }
 
@@ -189,7 +197,7 @@ impl<'a> TxBuilder<'a> {
 
         let mut body = layer_climb_proto::tx::TxBody {
             messages: messages.into_iter().map(Into::into).collect(),
-            memo: "".to_string(),
+            memo: self.memo.as_deref().unwrap_or("").to_string(),
             timeout_height: block_height + tx_timeout_blocks,
             extension_options: Default::default(),
             non_critical_extension_options: Default::default(),
@@ -351,6 +359,15 @@ impl<'a> TxBuilder<'a> {
         } else {
             tx_response
         };
+
+        if tx_response.code != 0 {
+            bail!(
+                "tx failed with code: {}, codespace: {}, raw_log: {}",
+                tx_response.code,
+                tx_response.codespace,
+                tx_response.raw_log
+            );
+        }
 
         if let Some(middleware) = self.middleware_map_resp.as_ref() {
             for middleware in middleware.iter() {

@@ -1,0 +1,31 @@
+# This file is for local, on-chain tests
+# NOT testnet
+
+# chain config
+"chain_id"="slay3r-local"
+"chain_rpc_endpoint"="http://localhost:26657"
+"chain_grpc_endpoint"="http://localhost:9090"
+"chain_gas_price"=0.025
+"chain_gas_denom"="uslay"
+"chain_address_kind"="cosmos"
+"chain_address_bech32_prefix"="layer"
+
+# optional. if set, will load environment variables from here
+dotenv=".env"
+
+# the env var to load the mnemonic from
+mnemonic_env_var="LOCAL_FAUCET_MNEMONIC"
+
+# can be one of "trace", "debug", "info", "warn", "error"
+log_level="info"
+
+# the port to listen on, will always be bound to 0.0.0.0
+port=8000
+
+# the number of concurrent clients
+concurrency=5
+
+# currency amounts
+credit_amount="1000000"
+minimum_credit_balance_threshhold="5000000"
+minimum_credit_balance_topup="100000000"

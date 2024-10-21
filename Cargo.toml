@@ -1,8 +1,15 @@
 [workspace]
-members = ["packages/*", "examples/*"]
+members = ["packages/*", "examples/*", "faucet"]
 resolver = "2"
 
 [workspace.dependencies]
+# Local
+layer-climb = { path = "packages/layer-climb" }
+layer-climb-address = { path = "packages/layer-climb-address" }
+layer-climb-cli = { path = "packages/layer-climb-cli" }
+layer-climb-config = { path = "packages/layer-climb-config" }
+layer-climb-core = { path = "packages/layer-climb-core" }
+
 # General
 cfg-if = "1.0.0"
 async-trait = "0.1.82"
@@ -60,9 +67,14 @@ wasm-bindgen-futures = "0.4.43"
 serde-wasm-bindgen = "0.6.5"
 js-sys = "0.3.70"
 
-# CLI stuff
+# Native application (cli/server) stuff
 clap = { version = "4.5.7", features = ["derive"] }
 dotenvy = {version = "0.15.7", features = ["cli"]}
+tokio = { version = "1", features = ["full"] }
+axum = {version = "0.7.7", features = ["macros"]}
+tower-http = {version = "0.6.1", features = ["cors", "trace"] }
+tower = { version = "0.5.1", features = ["util"] }
+http-body-util = "0.1.2"
 
 # Pool
 deadpool = "0.12.1"

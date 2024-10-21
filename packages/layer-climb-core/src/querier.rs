@@ -16,13 +16,14 @@ use std::{
 
 use middleware::{QueryMiddlewareMapReq, QueryMiddlewareMapResp, QueryMiddlewareRun};
 
-use crate::{network::rpc::RpcClient, prelude::*};
+use crate::{cache::ClimbCache, network::rpc::RpcClient, prelude::*};
 
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         #[derive(Clone)]
         pub struct QueryClient {
             pub chain_config: ChainConfig,
+            pub cache: ClimbCache,
             pub grpc_channel: tonic_web_wasm_client::Client,
             pub rpc_client: RpcClient,
             pub middleware_map_req: Arc<Vec<QueryMiddlewareMapReq>>,
@@ -36,6 +37,7 @@ cfg_if::cfg_if! {
         #[derive(Clone)]
         pub struct QueryClient {
             pub chain_config: ChainConfig,
+            pub cache: ClimbCache,
             pub grpc_channel: tonic::transport::Channel,
             pub rpc_client: RpcClient,
             pub middleware_map_req: Arc<Vec<QueryMiddlewareMapReq>>,
@@ -59,14 +61,20 @@ const DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION: std::time::Duration =
     std::time::Duration::from_secs(1);
 
 impl QueryClient {
+    pub async fn new(chain_config: ChainConfig) -> Result<Self> {
+        let cache = ClimbCache::default();
+        Self::new_with_cache(chain_config, cache).await
+    }
+
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
-            pub async fn new(chain_config: ChainConfig) -> Result<Self> {
-                let grpc_channel = crate::network::grpc_web::get_grpc_client(&chain_config).await?;
-                let rpc_client = RpcClient::new(chain_config.rpc_endpoint.clone());
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache) -> Result<Self> {
+                let grpc_channel = cache.get_grpc(&chain_config).await?;
+                let rpc_client = cache.get_rpc_client(&chain_config.rpc_endpoint);
 
                 let _self = Self {
                     chain_config,
+                    cache,
                     grpc_channel,
                     rpc_client,
                     middleware_map_req: Arc::new(QueryMiddlewareMapReq::default_list()),
@@ -82,12 +90,13 @@ impl QueryClient {
                 Ok(_self)
             }
         } else {
-            pub async fn new(chain_config: ChainConfig) -> Result<Self> {
-                let grpc_channel = crate::network::grpc_native::get_grpc_channel(&chain_config).await?;
-                let rpc_client = RpcClient::new(chain_config.rpc_endpoint.clone());
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache) -> Result<Self> {
+                let grpc_channel = cache.get_grpc(&chain_config).await?;
+                let rpc_client = cache.get_rpc_client(&chain_config.rpc_endpoint);
 
                 let _self = Self {
                     chain_config,
+                    cache,
                     grpc_channel,
                     rpc_client,
                     middleware_map_req: Arc::new(QueryMiddlewareMapReq::default_list()),
