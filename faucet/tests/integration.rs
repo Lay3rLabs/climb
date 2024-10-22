@@ -253,7 +253,7 @@ async fn send_to_self_works() {
     let status = app.status().await;
 
     assert!(
-        status.distributors.len() > 0,
+        !status.distributors.is_empty(),
         "Expected at least one distributor."
     );
 
