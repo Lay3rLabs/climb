@@ -11,7 +11,8 @@ use std::{path::PathBuf, str::FromStr};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConfigInit {
     pub dotenv: Option<PathBuf>,
-    pub log_level: LogLevel,
+    /// list of tracing env directives
+    pub tracing_directives: Vec<String>,
     pub cors_allowed_origins: Option<Vec<String>>,
     pub port: u16,
     pub concurrency: usize,
@@ -44,7 +45,8 @@ pub struct ConfigInit {
 // This is simply derived from ConfigInit in a format that's more reasonable to pass around
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub tracing_level: tracing::Level,
+    /// list of tracing env directives
+    pub tracing_directives: Vec<String>,
     pub mnemonic: String,
     pub cors_allowed_origins: Option<Vec<String>>,
     pub port: u16,
@@ -96,8 +98,11 @@ impl ConfigInit {
         }
 
         // now update from env vars - none of these should fail, just silently ignore if not found
-        if let Ok(log_level) = std::env::var("FAUCET_LOG_LEVEL") {
-            config.log_level = log_level.parse().unwrap_or(config.log_level);
+        if let Ok(tracing_directives) = std::env::var("FAUCET_TRACING_FILTER") {
+            config.tracing_directives = tracing_directives
+                .split(',')
+                .map(|s| s.to_string())
+                .collect();
         }
 
         if let Ok(cors_allowed_origins) = std::env::var("FAUCET_CORS_ALLOWED_ORIGINS") {
@@ -178,7 +183,7 @@ impl TryFrom<ConfigInit> for Config {
         let credit = new_coin(config.credit_amount, credit_denom);
 
         Ok(Self {
-            tracing_level: tracing::Level::from(config.log_level),
+            tracing_directives: config.tracing_directives,
             cors_allowed_origins: config.cors_allowed_origins,
             port: config.port,
             concurrency: config.concurrency,
@@ -211,42 +216,5 @@ impl TryFrom<ConfigInit> for Config {
                 .parse()
                 .context("couldn't parse minimum credit topup")?,
         })
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warn,
-    Error,
-}
-
-impl FromStr for LogLevel {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "trace" => Ok(Self::Trace),
-            "debug" => Ok(Self::Debug),
-            "info" => Ok(Self::Info),
-            "warn" => Ok(Self::Warn),
-            "error" => Ok(Self::Error),
-            _ => Err(format!("Unknown log level: {}", s)),
-        }
-    }
-}
-
-impl From<LogLevel> for tracing::Level {
-    fn from(log_level: LogLevel) -> Self {
-        match log_level {
-            LogLevel::Trace => tracing::Level::TRACE,
-            LogLevel::Debug => tracing::Level::DEBUG,
-            LogLevel::Info => tracing::Level::INFO,
-            LogLevel::Warn => tracing::Level::WARN,
-            LogLevel::Error => tracing::Level::ERROR,
-        }
     }
 }

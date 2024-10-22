@@ -5,6 +5,7 @@ use layer_climb_faucet::{
     config::{Config, ConfigInit},
     router::make_router,
 };
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -12,11 +13,20 @@ async fn main() -> Result<()> {
     let config = Config::try_from(ConfigInit::load(args.config).await?)?;
     let port = config.port;
 
-    tracing_subscriber::fmt()
-        .without_time()
-        .with_target(false)
-        .with_max_level(config.tracing_level)
-        .init();
+    let mut tracing_env = tracing_subscriber::EnvFilter::from_default_env();
+    for directive in &config.tracing_directives {
+        tracing_env = tracing_env.add_directive(directive.parse().unwrap());
+    }
+
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .without_time()
+                .with_target(false),
+        )
+        .with(tracing_env)
+        .try_init()
+        .unwrap();
 
     let router = make_router(config).await?;
 

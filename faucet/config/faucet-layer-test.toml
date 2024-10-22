@@ -16,8 +16,8 @@ dotenv=".env"
 # the env var to load the mnemonic from
 mnemonic_env_var="LOCAL_FAUCET_MNEMONIC"
 
-# can be one of "trace", "debug", "info", "warn", "error"
-log_level="info"
+# see https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html 
+tracing_directives=["layer_climb_faucet=debug", "layer_climb=debug", "integration=debug", "info"]
 
 # the port to listen on, will always be bound to 0.0.0.0
 port=8000

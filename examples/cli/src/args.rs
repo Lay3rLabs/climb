@@ -11,10 +11,9 @@ pub struct CliArgs {
     #[arg(long, value_enum, default_value_t = TargetEnvironment::Local)]
     pub target_env: TargetEnvironment,
 
-    /// Set the logging level
-    #[arg(long, value_enum, default_value_t = LogLevel::Info)]
-    //#[arg(long, value_enum, default_value_t = LogLevel::Debug)]
-    pub log_level: LogLevel,
+    /// Set the comma-separated list of tracing directives
+    #[arg(long, default_value = "info")]
+    pub tracing_directives: String,
 
     #[command(subcommand)]
     /// The command to run
@@ -55,27 +54,6 @@ pub struct FaucetArgs {
 pub struct PoolArgs {
     #[command(subcommand)]
     pub command: PoolCommand,
-}
-
-#[derive(Copy, Clone, Debug, clap::ValueEnum)]
-pub enum LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warn,
-    Error,
-}
-
-impl From<LogLevel> for tracing::Level {
-    fn from(log_level: LogLevel) -> Self {
-        match log_level {
-            LogLevel::Trace => tracing::Level::TRACE,
-            LogLevel::Debug => tracing::Level::DEBUG,
-            LogLevel::Info => tracing::Level::INFO,
-            LogLevel::Warn => tracing::Level::WARN,
-            LogLevel::Error => tracing::Level::ERROR,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]

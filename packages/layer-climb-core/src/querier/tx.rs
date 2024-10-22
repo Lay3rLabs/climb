@@ -68,12 +68,12 @@ impl QueryClient {
                     return Ok(PollTxResponse { tx, tx_response });
                 }
                 Err(e) => {
-                    tracing::debug!(
-                        "failed GetTxRequest [code: {}]. Full error: {:?}",
-                        e.code(),
-                        e
-                    );
                     if e.code() != tonic::Code::Ok && e.code() != tonic::Code::NotFound {
+                        tracing::debug!(
+                            "failed GetTxRequest [code: {}]. Full error: {:?}",
+                            e.code(),
+                            e
+                        );
                         return Err(e.into());
                     }
                 }
