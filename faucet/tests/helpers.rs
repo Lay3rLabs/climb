@@ -17,18 +17,19 @@ use layer_climb_faucet::{
     config::{Config, ConfigInit},
     handlers::{
         credit::{CreditRequest, CreditResponse},
-        status::StatusResponse,
+        status::{StatusCoin, StatusResponse},
     },
 };
 use rand::{prelude::*, rngs::OsRng};
 use serde::de::DeserializeOwned;
 use tower::Service;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // // need a static reference to the app to avoid double initialization
 // static ROUTER: LazyLock<Mutex<Option<Router>>> = LazyLock::new(|| Mutex::new(None));
 
 // just so we don't reload it each time
-static CONFIG: LazyLock<Config> = LazyLock::new(|| {
+pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     Config::try_from(ConfigInit::load_sync("./config/faucet-layer-test.toml").unwrap()).unwrap()
 });
 
@@ -37,6 +38,18 @@ static INIT: LazyLock<tokio::sync::Mutex<bool>> = LazyLock::new(|| tokio::sync::
 static FAUCET: LazyLock<tokio::sync::Mutex<Option<SigningClient>>> =
     LazyLock::new(|| tokio::sync::Mutex::new(None));
 static ORIGINAL_FAUCET: OnceLock<SigningClient> = OnceLock::new();
+
+// we fund the per-test unique faucet by some amount that should cover all test cases
+// right now it's the max of the topup and credit, times 1000... why not
+pub static FAUCET_FUND_AMOUNT: LazyLock<u128> = LazyLock::new(|| {
+    CONFIG
+        .credit
+        .amount
+        .parse::<u128>()
+        .unwrap()
+        .max(CONFIG.minimum_credit_balance_topup)
+        .mul(1000)
+});
 
 //static CACHE: LazyLock<ClimbCache> = LazyLock::new(|| ClimbCache::default());
 
@@ -51,12 +64,21 @@ async fn init() {
 
     if !*lock {
         *lock = true;
-        tracing_subscriber::fmt()
-            .without_time()
-            //.with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
-            .with_target(false)
-            .with_max_level(CONFIG.tracing_level)
-            .init();
+
+        let mut tracing_env = tracing_subscriber::EnvFilter::from_default_env();
+        for directive in &CONFIG.tracing_directives {
+            tracing_env = tracing_env.add_directive(directive.parse().unwrap());
+        }
+
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_target(false),
+            )
+            .with(tracing_env)
+            .try_init()
+            .unwrap();
 
         let original_faucet_signer =
             KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
@@ -69,6 +91,7 @@ async fn init() {
     }
 }
 
+// this is called from every test, but we gate it with an async-aware lock so there's no sequence errors
 async fn fund_faucet(addr: &Address) {
     let mut lock = FAUCET.lock().await;
     if lock.is_none() {
@@ -80,19 +103,21 @@ async fn fund_faucet(addr: &Address) {
         *lock = Some(faucet);
     }
 
-    let amount = CONFIG
-        .credit
-        .amount
-        .parse::<u128>()
-        .unwrap()
-        .max(CONFIG.minimum_credit_balance_topup)
-        .mul(1000);
-
-    tracing::debug!("Transferring {} to per-router faucet {}", amount, addr);
+    tracing::debug!(
+        "FUNDING PER-ROUTER FAUCET ({} from {} to {})",
+        *FAUCET_FUND_AMOUNT,
+        lock.as_ref().unwrap().addr,
+        addr
+    );
 
     lock.as_ref()
         .unwrap()
-        .transfer(amount, addr, Some(CONFIG.credit.denom.as_str()), None)
+        .transfer(
+            *FAUCET_FUND_AMOUNT,
+            addr,
+            Some(CONFIG.credit.denom.as_str()),
+            None,
+        )
         .await
         .unwrap();
 }
@@ -101,7 +126,8 @@ impl App {
     pub async fn new() -> Self {
         init().await;
 
-        // generate a new faucet per application - otherwise they run in different threads altogether and will have sequence errors
+        // generate a new faucet per application - otherwise they will have sequence errors
+        // because each test is run in a different thread
         let faucet_mnemonic = generate_mnemonic();
         let faucet_addr = CONFIG
             .chain_config
@@ -194,4 +220,12 @@ async fn assert_empty_response(response: axum::http::Response<Body>) {
 async fn map_response<T: DeserializeOwned>(response: axum::http::Response<Body>) -> T {
     let bytes = response.into_body().collect().await.unwrap().to_bytes();
     serde_json::from_slice(&bytes).unwrap()
+}
+
+pub fn extract_status_balance(balances: &[StatusCoin]) -> u128 {
+    balances
+        .iter()
+        .find(|b| b.denom == CONFIG.credit.denom)
+        .map(|b| b.amount.parse::<u128>().unwrap())
+        .unwrap_or(0)
 }

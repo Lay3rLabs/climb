@@ -8,6 +8,7 @@ use args::{CliArgs, Command, ContractArgs, FaucetArgs, PoolArgs, WalletArgs};
 use clap::Parser;
 use context::AppContext;
 use layer_climb_cli::command::{ContractLog, WalletLog};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -19,11 +20,20 @@ async fn main() -> Result<()> {
     // load the args before setting up the logger, since it uses the log level
     let args = CliArgs::parse();
 
-    tracing_subscriber::fmt()
-        .without_time()
-        .with_target(false)
-        .with_max_level(tracing::Level::from(args.log_level))
-        .init();
+    let mut tracing_env = tracing_subscriber::EnvFilter::from_default_env();
+    for directive in args.tracing_directives.split(',').map(|s| s.trim()) {
+        tracing_env = tracing_env.add_directive(directive.parse().unwrap());
+    }
+
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .without_time()
+                .with_target(false),
+        )
+        .with(tracing_env)
+        .try_init()
+        .unwrap();
 
     // now we can get our context, which will contain the args too
     let mut ctx = AppContext::new(args).await?;
