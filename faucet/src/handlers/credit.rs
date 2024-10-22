@@ -37,23 +37,6 @@ async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditR
         }
     }
 
-    // do not send to ourselves
-    // TODO - improve this... looping is fine, but there's no guarantee
-    // that we'll actually move onto the next sender here.
-    // We need to hold and release each, one at a time
-    //
-    // Alternatively - get rid of it, maybe it's not a bug to send to ourselves?
-    // let sender = loop {
-    //     let sender = state
-    //         .client_pool
-    //         .get()
-    //         .await
-    //         .map_err(|e| anyhow::anyhow!("{e:?}"))?;
-    //     if sender.addr != address {
-    //         break sender;
-    //     }
-    // };
-
     let sender = state
         .client_pool
         .get()

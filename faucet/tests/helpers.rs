@@ -53,8 +53,10 @@ pub static FAUCET_FUND_AMOUNT: LazyLock<u128> = LazyLock::new(|| {
 
 //static CACHE: LazyLock<ClimbCache> = LazyLock::new(|| ClimbCache::default());
 
+#[derive(Clone)]
 pub struct App {
     _router: Router,
+    pub query_client: QueryClient,
     pub config: Config,
 }
 
@@ -155,6 +157,7 @@ impl App {
         // and we're off!
         Self {
             _router: router,
+            query_client: QueryClient::new(config.chain_config.clone()).await.unwrap(),
             config,
         }
     }
