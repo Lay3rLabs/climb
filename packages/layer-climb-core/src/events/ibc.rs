@@ -75,7 +75,7 @@ pub enum IbcPacketKind {
     Timeout,
 }
 
-impl<'a> TryFrom<&Event<'a>> for IbcPacketKind {
+impl TryFrom<&Event<'_>> for IbcPacketKind {
     type Error = anyhow::Error;
 
     fn try_from(event: &Event) -> Result<Self> {

@@ -470,7 +470,7 @@ pub enum FeeCalculation<'a> {
     },
 }
 
-impl<'a> FeeCalculation<'a> {
+impl FeeCalculation<'_> {
     pub fn calculate(&self) -> Result<layer_climb_proto::tx::Fee> {
         let (gas_coin, gas_limit) = match self {
             Self::Simulation { chain_config } => (new_coin(0, &chain_config.gas_denom), 0),

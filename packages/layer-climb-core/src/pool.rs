@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicU32;
 
-use crate::{cache::ClimbCache, signing::SigningClient};
+use crate::{cache::ClimbCache, querier::ConnectionMode, signing::SigningClient};
 use anyhow::{bail, Result};
 use deadpool::managed::{Manager, Metrics, RecycleResult};
 use layer_climb_address::*;
@@ -14,6 +14,7 @@ pub struct SigningClientPoolManager {
     pub chain_config: ChainConfig,
     pub balance_maintainer: Option<BalanceMaintainer>,
     pub cache: ClimbCache,
+    pub connection_mode: Option<ConnectionMode>,
 }
 
 impl SigningClientPoolManager {
@@ -28,6 +29,7 @@ impl SigningClientPoolManager {
             derivation_index: AtomicU32::new(start_index.unwrap_or_default()),
             balance_maintainer: None,
             cache: ClimbCache::default(),
+            connection_mode: None,
         }
     }
 
@@ -72,6 +74,11 @@ impl SigningClientPoolManager {
         Ok(self)
     }
 
+    pub fn with_connection_mode(mut self, connection_mode: ConnectionMode) -> Self {
+        self.connection_mode = Some(connection_mode);
+        self
+    }
+
     async fn create_client(&self) -> Result<SigningClient> {
         let signer: KeySigner = match &self.chain_config.address_kind {
             layer_climb_config::AddrKind::Cosmos { .. } => {
@@ -86,7 +93,13 @@ impl SigningClientPoolManager {
             }
         };
 
-        SigningClient::new_with_cache(self.chain_config.clone(), signer, self.cache.clone()).await
+        SigningClient::new_with_cache(
+            self.chain_config.clone(),
+            signer,
+            self.cache.clone(),
+            self.connection_mode,
+        )
+        .await
     }
 
     async fn maybe_top_up(&self, client: &SigningClient) -> Result<()> {

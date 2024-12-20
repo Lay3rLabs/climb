@@ -2,6 +2,8 @@ use tracing::instrument;
 
 use crate::prelude::*;
 
+use super::{abci::AbciProofKind, ConnectionMode};
+
 impl QueryClient {
     #[instrument]
     pub async fn balance(&self, addr: Address, denom: Option<String>) -> Result<Option<u128>> {
@@ -156,21 +158,74 @@ impl QueryRequest for BaseAccountReq {
     type QueryResponse = layer_climb_proto::auth::BaseAccount;
 
     async fn request(&self, client: QueryClient) -> Result<Self::QueryResponse> {
-        let mut query_client =
-            layer_climb_proto::auth::query_client::QueryClient::new(client.grpc_channel.clone());
+        match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::auth::query_client::QueryClient::new(
+                    client.grpc_channel.clone(),
+                );
 
-        let account = query_client
-            .account(layer_climb_proto::auth::QueryAccountRequest {
-                address: self.addr.to_string(),
-            })
-            .await
-            .map(|res| res.into_inner().account)?
-            .ok_or_else(|| anyhow!("account {} not found", self.addr))?;
+                let account = query_client
+                    .account(layer_climb_proto::auth::QueryAccountRequest {
+                        address: self.addr.to_string(),
+                    })
+                    .await
+                    .map(|res| res.into_inner().account)?
+                    .ok_or_else(|| anyhow!("account {} not found", self.addr))?;
 
-        let account = layer_climb_proto::auth::BaseAccount::decode(account.value.as_slice())
-            .context("couldn't decode account")?;
+                let account =
+                    layer_climb_proto::auth::BaseAccount::decode(account.value.as_slice())
+                        .context("couldn't decode account")?;
 
-        Ok(account)
+                Ok(account)
+            }
+            ConnectionMode::Rpc => {
+                let abci_kind = AbciProofKind::AuthBaseAccount {
+                    address: self.addr.clone(),
+                };
+                let height = BlockHeightReq {}.request(client.clone()).await?;
+
+                let resp = client
+                    .rpc_client
+                    .abci_query(
+                        abci_kind.path().to_string(),
+                        abci_kind.data_bytes(),
+                        height,
+                        false,
+                    )
+                    .await?;
+
+                match layer_climb_proto::Any::decode(resp.value.as_slice()) {
+                    Ok(any) => match any.type_url.to_lowercase().as_str() {
+                        "/cosmos.auth.v1beta1.baseaccount" => {
+                            let account =
+                                layer_climb_proto::auth::BaseAccount::decode(any.value.as_slice())
+                                    .context("couldn't decode account")?;
+
+                            if account.address.is_empty() {
+                                bail!("account not found (base account addr empty)");
+                            }
+
+                            if account.address.to_lowercase()
+                                != self.addr.to_string().to_lowercase()
+                            {
+                                bail!(
+                                    "account address mismatch: {} vs. {}",
+                                    account.address.to_ascii_lowercase(),
+                                    self.addr.to_string().to_lowercase()
+                                );
+                            }
+                            Ok(account)
+                        }
+                        _ => {
+                            bail!("unexpected account response type: {}", any.type_url);
+                        }
+                    },
+                    Err(e) => {
+                        bail!("Error decoding account: {:?}", e);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -209,47 +264,60 @@ impl QueryRequest for BlockReq {
     type QueryResponse = BlockResp;
 
     async fn request(&self, client: QueryClient) -> Result<Self::QueryResponse> {
-        let mut query_client = layer_climb_proto::tendermint::service_client::ServiceClient::new(
-            client.grpc_channel.clone(),
-        );
         let height = self.height;
 
-        match height {
-            Some(height) => query_client
-                .get_block_by_height(layer_climb_proto::tendermint::GetBlockByHeightRequest {
-                    height: height.try_into()?,
+        match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client =
+                    layer_climb_proto::tendermint::service_client::ServiceClient::new(
+                        client.grpc_channel.clone(),
+                    );
+
+                match height {
+                    Some(height) => query_client
+                        .get_block_by_height(
+                            layer_climb_proto::tendermint::GetBlockByHeightRequest {
+                                height: height.try_into()?,
+                            },
+                        )
+                        .await
+                        .map_err(|err| err.into())
+                        .and_then(|res| {
+                            let res = res.into_inner();
+                            match res.sdk_block {
+                                Some(block) => Ok(BlockResp::Sdk(block)),
+                                None => res
+                                    .block
+                                    .map(BlockResp::Old)
+                                    .ok_or(anyhow!("no block found")),
+                            }
+                        }),
+                    None => query_client
+                        .get_latest_block(layer_climb_proto::tendermint::GetLatestBlockRequest {})
+                        .await
+                        .map_err(|err| err.into())
+                        .and_then(|res| {
+                            let res = res.into_inner();
+                            match res.sdk_block {
+                                Some(block) => Ok(BlockResp::Sdk(block)),
+                                None => res
+                                    .block
+                                    .map(BlockResp::Old)
+                                    .ok_or(anyhow!("no block found")),
+                            }
+                        }),
+                }
+                .with_context(move || match height {
+                    Some(height) => format!("no block found at height {}", height),
+                    None => "no latest block found".to_string(),
                 })
-                .await
-                .map_err(|err| err.into())
-                .and_then(|res| {
-                    let res = res.into_inner();
-                    match res.sdk_block {
-                        Some(block) => Ok(BlockResp::Sdk(block)),
-                        None => res
-                            .block
-                            .map(BlockResp::Old)
-                            .ok_or(anyhow!("no block found")),
-                    }
-                }),
-            None => query_client
-                .get_latest_block(layer_climb_proto::tendermint::GetLatestBlockRequest {})
-                .await
-                .map_err(|err| err.into())
-                .and_then(|res| {
-                    let res = res.into_inner();
-                    match res.sdk_block {
-                        Some(block) => Ok(BlockResp::Sdk(block)),
-                        None => res
-                            .block
-                            .map(BlockResp::Old)
-                            .ok_or(anyhow!("no block found")),
-                    }
-                }),
+            }
+            ConnectionMode::Rpc => {
+                let resp = client.rpc_client.block(height).await?;
+
+                Ok(BlockResp::Old(resp.block.into()))
+            }
         }
-        .with_context(move || match height {
-            Some(height) => format!("no block found at height {}", height),
-            None => "no latest block found".to_string(),
-        })
     }
 }
 

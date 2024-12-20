@@ -85,7 +85,7 @@ async fn init() {
         let original_faucet_signer =
             KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
         let original_faucet =
-            SigningClient::new(CONFIG.chain_config.clone(), original_faucet_signer)
+            SigningClient::new(CONFIG.chain_config.clone(), original_faucet_signer, None)
                 .await
                 .unwrap();
 
@@ -98,7 +98,7 @@ async fn fund_faucet(addr: &Address) {
     let mut lock = FAUCET.lock().await;
     if lock.is_none() {
         let faucet_signer = KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
-        let faucet = SigningClient::new(CONFIG.chain_config.clone(), faucet_signer)
+        let faucet = SigningClient::new(CONFIG.chain_config.clone(), faucet_signer, None)
             .await
             .unwrap();
 
@@ -157,7 +157,9 @@ impl App {
         // and we're off!
         Self {
             _router: router,
-            query_client: QueryClient::new(config.chain_config.clone()).await.unwrap(),
+            query_client: QueryClient::new(config.chain_config.clone(), None)
+                .await
+                .unwrap(),
             config,
         }
     }
@@ -207,7 +209,7 @@ fn generate_mnemonic() -> Mnemonic {
 pub async fn generate_signing_client() -> SigningClient {
     let signer = KeySigner::new_mnemonic_iter(generate_mnemonic().word_iter(), None).unwrap();
 
-    SigningClient::new(CONFIG.chain_config.clone(), signer)
+    SigningClient::new(CONFIG.chain_config.clone(), signer, None)
         .await
         .unwrap()
 }

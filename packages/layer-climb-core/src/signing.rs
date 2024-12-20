@@ -6,6 +6,7 @@ pub mod msg;
 use crate::{
     cache::ClimbCache,
     prelude::*,
+    querier::ConnectionMode,
     transaction::{SequenceStrategy, SequenceStrategyKind},
 };
 use layer_climb_address::TxSigner;
@@ -41,18 +42,31 @@ impl std::fmt::Debug for SigningClient {
 }
 
 impl SigningClient {
-    pub async fn new(chain_config: ChainConfig, signer: impl TxSigner + 'static) -> Result<Self> {
-        Self::new_with_cache(chain_config, signer, ClimbCache::default()).await
+    pub async fn new(
+        chain_config: ChainConfig,
+        signer: impl TxSigner + 'static,
+        default_connection_mode: Option<ConnectionMode>,
+    ) -> Result<Self> {
+        Self::new_with_cache(
+            chain_config,
+            signer,
+            ClimbCache::default(),
+            default_connection_mode,
+        )
+        .await
     }
 
     pub async fn new_with_cache(
         chain_config: ChainConfig,
         signer: impl TxSigner + 'static,
         cache: ClimbCache,
+        default_connection_mode: Option<ConnectionMode>,
     ) -> Result<Self> {
         let addr = chain_config.address_from_pub_key(&signer.public_key().await?)?;
 
-        let querier = QueryClient::new_with_cache(chain_config.clone(), cache).await?;
+        let querier =
+            QueryClient::new_with_cache(chain_config.clone(), cache, default_connection_mode)
+                .await?;
 
         let base_account = querier.base_account(&addr).await?;
 
