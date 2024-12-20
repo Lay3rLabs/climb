@@ -67,6 +67,23 @@ impl RpcClient {
         Ok(resp)
     }
 
+    pub async fn abci_protobuf_query<REQ, RESP>(
+        &self,
+        path: impl ToString,
+        req: REQ,
+        height: u64,
+    ) -> Result<RESP>
+    where
+        REQ: layer_climb_proto::Name,
+        RESP: layer_climb_proto::Name + Default,
+    {
+        let resp = self
+            .abci_query(path.to_string(), req.encode_to_vec(), height, false)
+            .await?;
+
+        RESP::decode(resp.value.as_slice()).map_err(|err| anyhow::anyhow!(err))
+    }
+
     async fn send<T: tendermint_rpc::Request>(&self, req: T) -> Result<T::Response> {
         let res = self
             .http_client

@@ -2,7 +2,7 @@ use tracing::instrument;
 
 use crate::prelude::*;
 
-use super::{abci::AbciProofKind, ConnectionMode};
+use super::ConnectionMode;
 
 impl QueryClient {
     #[instrument]
@@ -102,9 +102,6 @@ impl QueryRequest for AllBalancesReq {
     type QueryResponse = Vec<layer_climb_proto::Coin>;
 
     async fn request(&self, client: QueryClient) -> Result<Self::QueryResponse> {
-        let mut query_client =
-            layer_climb_proto::bank::query_client::QueryClient::new(client.grpc_channel.clone());
-
         let mut coins = Vec::new();
 
         let mut pagination = None;
@@ -113,15 +110,38 @@ impl QueryRequest for AllBalancesReq {
             .limit_per_page
             .unwrap_or(client.balances_pagination_limit);
 
+        let mut grpc_query_client = match client.get_connection_mode() {
+            ConnectionMode::Grpc => Some(layer_climb_proto::bank::query_client::QueryClient::new(
+                client.grpc_channel.clone(),
+            )),
+            ConnectionMode::Rpc => None,
+        };
+
+        let height = BlockHeightReq {}.request(client.clone()).await?;
+
         loop {
-            let resp = query_client
-                .all_balances(layer_climb_proto::bank::QueryAllBalancesRequest {
-                    address: self.addr.to_string(),
-                    pagination,
-                    resolve_denom: true,
-                })
-                .await
-                .map(|res| res.into_inner())?;
+            let req = layer_climb_proto::bank::QueryAllBalancesRequest {
+                address: self.addr.to_string(),
+                pagination,
+                resolve_denom: true,
+            };
+
+            let resp = match client.get_connection_mode() {
+                ConnectionMode::Grpc => grpc_query_client
+                    .as_mut()
+                    .unwrap()
+                    .all_balances(req)
+                    .await
+                    .map(|res| res.into_inner())?,
+                ConnectionMode::Rpc => client
+                    .rpc_client
+                    .abci_protobuf_query::<_, layer_climb_proto::bank::QueryAllBalancesResponse>(
+                        "/cosmos.bank.v1beta1.Query/AllBalances",
+                        req,
+                        height,
+                    )
+                    .await?,
+            };
 
             coins.extend(resp.balances);
 
@@ -158,74 +178,42 @@ impl QueryRequest for BaseAccountReq {
     type QueryResponse = layer_climb_proto::auth::BaseAccount;
 
     async fn request(&self, client: QueryClient) -> Result<Self::QueryResponse> {
-        match client.get_connection_mode() {
+        let req = layer_climb_proto::auth::QueryAccountRequest {
+            address: self.addr.to_string(),
+        };
+
+        let query_resp = match client.get_connection_mode() {
             ConnectionMode::Grpc => {
                 let mut query_client = layer_climb_proto::auth::query_client::QueryClient::new(
                     client.grpc_channel.clone(),
                 );
 
-                let account = query_client
-                    .account(layer_climb_proto::auth::QueryAccountRequest {
-                        address: self.addr.to_string(),
-                    })
+                query_client
+                    .account(req)
                     .await
                     .map(|res| res.into_inner().account)?
-                    .ok_or_else(|| anyhow!("account {} not found", self.addr))?;
-
-                let account =
-                    layer_climb_proto::auth::BaseAccount::decode(account.value.as_slice())
-                        .context("couldn't decode account")?;
-
-                Ok(account)
+                    .ok_or_else(|| anyhow!("account {} not found", self.addr))?
             }
             ConnectionMode::Rpc => {
-                let abci_kind = AbciProofKind::AuthBaseAccount {
-                    address: self.addr.clone(),
-                };
                 let height = BlockHeightReq {}.request(client.clone()).await?;
 
-                let resp = client
+                client
                     .rpc_client
-                    .abci_query(
-                        abci_kind.path().to_string(),
-                        abci_kind.data_bytes(),
+                    .abci_protobuf_query::<_, layer_climb_proto::auth::QueryAccountResponse>(
+                        "/cosmos.auth.v1beta1.Query/Account",
+                        req,
                         height,
-                        false,
                     )
-                    .await?;
-
-                match layer_climb_proto::Any::decode(resp.value.as_slice()) {
-                    Ok(any) => match any.type_url.to_lowercase().as_str() {
-                        "/cosmos.auth.v1beta1.baseaccount" => {
-                            let account =
-                                layer_climb_proto::auth::BaseAccount::decode(any.value.as_slice())
-                                    .context("couldn't decode account")?;
-
-                            if account.address.is_empty() {
-                                bail!("account not found (base account addr empty)");
-                            }
-
-                            if account.address.to_lowercase()
-                                != self.addr.to_string().to_lowercase()
-                            {
-                                bail!(
-                                    "account address mismatch: {} vs. {}",
-                                    account.address.to_ascii_lowercase(),
-                                    self.addr.to_string().to_lowercase()
-                                );
-                            }
-                            Ok(account)
-                        }
-                        _ => {
-                            bail!("unexpected account response type: {}", any.type_url);
-                        }
-                    },
-                    Err(e) => {
-                        bail!("Error decoding account: {:?}", e);
-                    }
-                }
+                    .await?
+                    .account
+                    .ok_or_else(|| anyhow!("account {} not found", self.addr))?
             }
-        }
+        };
+
+        let account = layer_climb_proto::auth::BaseAccount::decode(query_resp.value.as_slice())
+            .context("couldn't decode account")?;
+
+        Ok(account)
     }
 }
 

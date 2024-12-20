@@ -66,7 +66,7 @@ pub enum AbciProofKind {
     },
 }
 impl AbciProofKind {
-    pub fn path(&self) -> &'static str {
+    pub fn path(&self) -> &str {
         match self {
             Self::IbcClientState { .. }
             | Self::IbcConnection { .. }
@@ -119,15 +119,7 @@ impl AbciProofKind {
             Self::AuthBaseAccount { address } => {
                 let mut data = vec![0x01];
                 data.extend(address.as_bytes());
-
                 data
-
-                // if data.len() != 21 {
-                //     panic!("invalid address length: {}", data.len());
-                // }
-
-                // let encoded = hex::encode(data);
-                // encoded.into_bytes()
             }
         }
     }
