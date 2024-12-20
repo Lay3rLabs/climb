@@ -4,9 +4,8 @@ use crate::{
     ibc_types::{IbcChannelId, IbcClientId, IbcConnectionId, IbcPortId},
     prelude::*,
 };
-use std::sync::atomic::Ordering;
 
-use super::QueryClientMode;
+use super::ConnectionMode;
 
 impl QueryClient {
     // from looking at other implementations, it might seem like getting proof_height from the current remote block height is the way to go
@@ -21,43 +20,6 @@ impl QueryClient {
             height,
         })
         .await
-    }
-
-    // if None, will make a best-guess attempt
-    #[instrument]
-    pub async fn set_abci_query_client_mode(&self, mode: Option<QueryClientMode>) -> Result<()> {
-        match mode {
-            Some(mode) => {
-                self._abci_query_mode.store(mode.into(), Ordering::SeqCst);
-            }
-            None => {
-                let height = self.block_height().await?;
-
-                let modes = vec![QueryClientMode::Grpc, QueryClientMode::Rpc];
-
-                for mode in modes {
-                    self._abci_query_mode.store(mode.into(), Ordering::SeqCst);
-                    let is_valid = AbciProofReq {
-                        kind: AbciProofKind::StakingParams,
-                        height,
-                    }
-                    .request(self.clone())
-                    .await
-                    .is_ok();
-
-                    if is_valid {
-                        break;
-                    }
-                }
-            }
-        };
-
-        Ok(())
-    }
-
-    // for now, internal only, so we don't confuse "get best guess" with "get actual"
-    fn get_abci_query_client_mode(&self) -> QueryClientMode {
-        self._abci_query_mode.load(Ordering::SeqCst).into()
     }
 }
 
@@ -99,6 +61,9 @@ pub enum AbciProofKind {
         sequence: u64,
     },
     StakingParams,
+    AuthBaseAccount {
+        address: Address,
+    },
 }
 impl AbciProofKind {
     pub fn path(&self) -> &'static str {
@@ -111,6 +76,7 @@ impl AbciProofKind {
             | Self::IbcPacketReceive { .. }
             | Self::IbcPacketAck { .. } => "store/ibc/key",
             Self::StakingParams => "store/staking/key",
+            Self::AuthBaseAccount { .. } => "store/acc/key",
         }
     }
     pub fn data_bytes(&self) -> Vec<u8> {
@@ -150,6 +116,19 @@ impl AbciProofKind {
             } => format!("acks/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")
                 .into_bytes(),
             Self::StakingParams => vec![0x01],
+            Self::AuthBaseAccount { address } => {
+                let mut data = vec![0x01];
+                data.extend(address.as_bytes());
+
+                data
+
+                // if data.len() != 21 {
+                //     panic!("invalid address length: {}", data.len());
+                // }
+
+                // let encoded = hex::encode(data);
+                // encoded.into_bytes()
+            }
         }
     }
 }
@@ -165,8 +144,8 @@ impl QueryRequest for AbciProofReq {
     type QueryResponse = AbciProofResponse;
 
     async fn request(&self, client: QueryClient) -> Result<AbciProofResponse> {
-        match client.get_abci_query_client_mode() {
-            QueryClientMode::Grpc => {
+        match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
                 let req = tonic::Request::new(layer_climb_proto::tendermint::AbciQueryRequest {
                     path: self.kind.path().to_string(),
                     data: self.kind.data_bytes(),
@@ -199,7 +178,7 @@ impl QueryRequest for AbciProofReq {
                     value: resp.value,
                 })
             }
-            QueryClientMode::Rpc => {
+            ConnectionMode::Rpc => {
                 // https://github.com/cosmos/ibc-go/blob/73061ee020a6be676f2d5843b7430082d2fe275c/modules/core/client/query.go#L26
                 let resp = client
                     .rpc_client
@@ -209,8 +188,8 @@ impl QueryRequest for AbciProofReq {
                         self.height,
                         true,
                     )
-                    .await?
-                    .response;
+                    .await?;
+
                 let proof_ops = resp.proof.context("missing proof_ops in abci_query")?;
 
                 let proof = AbciProofToConvert::Rpc(proof_ops).convert_abci_proof()?;

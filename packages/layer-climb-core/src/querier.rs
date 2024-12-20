@@ -10,11 +10,16 @@ pub mod validator;
 
 use std::{
     future::Future,
-    sync::{atomic::AtomicU8, Arc},
+    sync::{
+        atomic::{AtomicU8, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
+use abci::{AbciProofKind, AbciProofReq};
 use middleware::{QueryMiddlewareMapReq, QueryMiddlewareMapResp, QueryMiddlewareRun};
+use tracing::instrument;
 
 use crate::{cache::ClimbCache, network::rpc::RpcClient, prelude::*};
 
@@ -31,7 +36,7 @@ cfg_if::cfg_if! {
             pub middleware_run: Arc<Vec<QueryMiddlewareRun>>,
             pub balances_pagination_limit: u64,
             pub wait_blocks_poll_sleep_duration: Duration,
-            _abci_query_mode: Arc<AtomicU8>,
+            _connection_mode: Arc<AtomicU8>,
         }
     } else {
         #[derive(Clone)]
@@ -45,7 +50,7 @@ cfg_if::cfg_if! {
             pub middleware_run: Arc<Vec<QueryMiddlewareRun>>,
             pub balances_pagination_limit: u64,
             pub wait_blocks_poll_sleep_duration: Duration,
-            _abci_query_mode: Arc<AtomicU8>,
+            _connection_mode: Arc<AtomicU8>,
         }
     }
 }
@@ -69,16 +74,58 @@ const DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION: std::time::Duration =
     std::time::Duration::from_secs(1);
 
 impl QueryClient {
-    pub async fn new(chain_config: ChainConfig) -> Result<Self> {
+    pub async fn new(
+        chain_config: ChainConfig,
+        default_connection_mode: Option<ConnectionMode>,
+    ) -> Result<Self> {
         let cache = ClimbCache::default();
-        Self::new_with_cache(chain_config, cache).await
+        Self::new_with_cache(chain_config, cache, default_connection_mode).await
+    }
+
+    // if None, will make a best-guess attempt via abci query
+    #[instrument]
+    pub async fn set_connection_mode(&self, mode: Option<ConnectionMode>) -> Result<()> {
+        match mode {
+            Some(mode) => {
+                self._connection_mode.store(mode.into(), Ordering::SeqCst);
+            }
+            None => {
+                let modes = vec![ConnectionMode::Grpc, ConnectionMode::Rpc];
+
+                for mode in modes {
+                    self._connection_mode.store(mode.into(), Ordering::SeqCst);
+
+                    if let Ok(height) = self.block_height().await {
+                        let is_valid = AbciProofReq {
+                            kind: AbciProofKind::StakingParams,
+                            height,
+                        }
+                        .request(self.clone())
+                        .await
+                        .is_ok();
+
+                        if is_valid {
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn get_connection_mode(&self) -> ConnectionMode {
+        self._connection_mode.load(Ordering::SeqCst).into()
     }
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
-            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache) -> Result<Self> {
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
                 let grpc_channel = cache.get_grpc(&chain_config).await?;
                 let rpc_client = cache.get_rpc_client(&chain_config.rpc_endpoint);
+
+                let default_connection_mode = default_connection_mode.unwrap_or(ConnectionMode::Grpc);
 
                 let _self = Self {
                     chain_config,
@@ -90,17 +137,17 @@ impl QueryClient {
                     middleware_run: Arc::new(QueryMiddlewareRun::default_list()),
                     balances_pagination_limit: DEFAULT_BALANCES_PAGINATION_LIMIT,
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
-                    _abci_query_mode: Arc::new(AtomicU8::new(QueryClientMode::Grpc as u8))
+                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode as u8))
                 };
-
-                _self.set_abci_query_client_mode(None).await?;
 
                 Ok(_self)
             }
         } else {
-            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache) -> Result<Self> {
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
                 let grpc_channel = cache.get_grpc(&chain_config).await?;
                 let rpc_client = cache.get_rpc_client(&chain_config.rpc_endpoint);
+
+                let default_connection_mode = default_connection_mode.unwrap_or(ConnectionMode::Grpc);
 
                 let _self = Self {
                     chain_config,
@@ -112,10 +159,8 @@ impl QueryClient {
                     middleware_run: Arc::new(QueryMiddlewareRun::default_list()),
                     balances_pagination_limit: DEFAULT_BALANCES_PAGINATION_LIMIT,
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
-                    _abci_query_mode: Arc::new(AtomicU8::new(QueryClientMode::Grpc as u8))
+                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode as u8))
                 };
-
-                _self.set_abci_query_client_mode(None).await?;
 
                 Ok(_self)
             }
@@ -187,23 +232,23 @@ impl QueryClient {
 // TODO: make this more general
 #[derive(Clone, Copy, Debug)]
 #[repr(u8)]
-pub enum QueryClientMode {
+pub enum ConnectionMode {
     Grpc,
     Rpc,
 }
 
-impl From<QueryClientMode> for u8 {
-    fn from(mode: QueryClientMode) -> u8 {
+impl From<ConnectionMode> for u8 {
+    fn from(mode: ConnectionMode) -> u8 {
         mode as u8
     }
 }
 
-impl From<u8> for QueryClientMode {
-    fn from(mode: u8) -> QueryClientMode {
+impl From<u8> for ConnectionMode {
+    fn from(mode: u8) -> ConnectionMode {
         match mode {
-            0 => QueryClientMode::Grpc,
-            1 => QueryClientMode::Rpc,
-            _ => panic!("invalid QueryClientMode"),
+            0 => ConnectionMode::Grpc,
+            1 => ConnectionMode::Rpc,
+            _ => panic!("invalid ConnectionMode"),
         }
     }
 }

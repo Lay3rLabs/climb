@@ -113,7 +113,7 @@ impl WalletFaucetUi {
                 .clone(),
         };
         let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
-        let faucet = SigningClient::new(query_client().chain_config.clone(), signer).await?;
+        let faucet = SigningClient::new(query_client().chain_config.clone(), signer, None).await?;
 
         faucet
             .transfer(1_000_000, &signing_client().addr, None, None)

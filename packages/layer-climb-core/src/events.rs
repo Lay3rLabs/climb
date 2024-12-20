@@ -163,7 +163,7 @@ impl<'a> Event<'a> {
     }
 }
 
-impl<'a> Attribute<'a> {
+impl Attribute<'_> {
     pub fn key(&self) -> &str {
         match self {
             Attribute::String(a) => &a.key,

@@ -36,7 +36,7 @@ impl AppState {
             .max_size(config.concurrency)
             .build()?;
 
-        let query_client = QueryClient::new(config.chain_config.clone()).await?;
+        let query_client = QueryClient::new(config.chain_config.clone(), None).await?;
 
         Ok(Self {
             config: Arc::new(config),

@@ -71,6 +71,16 @@ impl Address {
         Self::new_cosmos(decoded_bytes, &decoded_prefix)
     }
 
+    pub fn as_bytes(&self) -> Vec<u8> {
+        match self {
+            Address::Cosmos { bech32_addr, .. } => {
+                let (_, bytes) = bech32::decode(bech32_addr).unwrap();
+                bytes
+            }
+            Address::Eth(addr_eth) => addr_eth.as_bytes().to_vec(),
+        }
+    }
+
     /// if you just have a string address, use new_cosmos_string instead
     pub fn new_cosmos_pub_key(pub_key: &PublicKey, prefix: &str) -> Result<Self> {
         match pub_key {

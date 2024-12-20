@@ -43,7 +43,7 @@ impl AppContext {
     }
 
     pub async fn chain_querier(&self) -> Result<QueryClient> {
-        QueryClient::new(self.chain_config()?).await
+        QueryClient::new(self.chain_config()?, None).await
     }
 
     pub fn client_mnemonic(&self) -> Result<String> {
@@ -70,7 +70,7 @@ impl AppContext {
             Ok(mnemonic) => {
                 let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
                 Ok(AnyClient::Signing(
-                    SigningClient::new(self.chain_config()?, signer).await?,
+                    SigningClient::new(self.chain_config()?, signer, None).await?,
                 ))
             }
             Err(_) => Ok(AnyClient::Query(self.chain_querier().await?)),
@@ -99,6 +99,6 @@ impl AppContext {
             }
         };
         let signer = KeySigner::new_mnemonic_str(mnemonic, None)?;
-        SigningClient::new(self.chain_config()?, signer).await
+        SigningClient::new(self.chain_config()?, signer, None).await
     }
 }

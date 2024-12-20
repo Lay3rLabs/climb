@@ -106,7 +106,7 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
         ClientKeyKind::DirectInput { mnemonic } => {
             let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
             Client::Any {
-                client: SigningClient::new(chain_config, signer).await?,
+                client: SigningClient::new(chain_config, signer, None).await?,
             }
         }
 
@@ -121,7 +121,7 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
             let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
 
             Client::Any {
-                client: SigningClient::new(chain_config, signer).await?,
+                client: SigningClient::new(chain_config, signer, None).await?,
             }
         }
         ClientKeyKind::Keplr => {
@@ -141,7 +141,7 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
             .await?;
 
             Client::Keplr {
-                client: SigningClient::new(chain_config, signer.inner.clone()).await?,
+                client: SigningClient::new(chain_config, signer.inner.clone(), None).await?,
                 signer,
             }
         }
