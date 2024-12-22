@@ -98,16 +98,29 @@ impl QueryRequest for ContractSmartRawReq {
     type QueryResponse = Vec<u8>;
 
     async fn request(&self, client: QueryClient) -> Result<Vec<u8>> {
-        let mut query_client =
-            layer_climb_proto::wasm::query_client::QueryClient::new(client.clone_grpc_channel()?);
+        let req = layer_climb_proto::wasm::QuerySmartContractStateRequest {
+            address: self.address.to_string(),
+            query_data: self.msg.clone(),
+        };
 
-        let res = query_client
-            .smart_contract_state(layer_climb_proto::wasm::QuerySmartContractStateRequest {
-                address: self.address.to_string(),
-                query_data: self.msg.clone(),
-            })
-            .await
-            .map(|res| res.into_inner())?;
+        let res = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::wasm::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
+
+                query_client
+                    .smart_contract_state(req)
+                    .await
+                    .map(|res| res.into_inner())?
+            }
+            ConnectionMode::Rpc => {
+                client
+                    .rpc_client()?
+                    .abci_protobuf_query("/cosmwasm.wasm.v1.Query/SmartContractState", req, None)
+                    .await?
+            }
+        };
 
         Ok(res.data)
     }
@@ -125,15 +138,25 @@ impl QueryRequest for ContractCodeInfoReq {
         &self,
         client: QueryClient,
     ) -> Result<layer_climb_proto::wasm::CodeInfoResponse> {
-        let mut query_client =
-            layer_climb_proto::wasm::query_client::QueryClient::new(client.clone_grpc_channel()?);
+        let req = layer_climb_proto::wasm::QueryCodeRequest {
+            code_id: self.code_id,
+        };
 
-        let res = query_client
-            .code(layer_climb_proto::wasm::QueryCodeRequest {
-                code_id: self.code_id,
-            })
-            .await
-            .map(|res| res.into_inner())?;
+        let res = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::wasm::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
+
+                query_client.code(req).await.map(|res| res.into_inner())?
+            }
+            ConnectionMode::Rpc => {
+                client
+                    .rpc_client()?
+                    .abci_protobuf_query("/cosmwasm.wasm.v1.Query/Code", req, None)
+                    .await?
+            }
+        };
 
         res.code_info.context("no code info found")
     }
@@ -151,16 +174,35 @@ impl QueryRequest for ContractInfoReq {
         &self,
         client: QueryClient,
     ) -> Result<layer_climb_proto::wasm::QueryContractInfoResponse> {
-        let mut query_client =
-            layer_climb_proto::wasm::query_client::QueryClient::new(client.clone_grpc_channel()?);
+        let req = layer_climb_proto::wasm::QueryContractInfoRequest {
+            address: self.address.to_string(),
+        };
 
-        let res = query_client
-            .contract_info(layer_climb_proto::wasm::QueryContractInfoRequest {
-                address: self.address.to_string(),
-            })
-            .await
-            .map(|res| res.into_inner())?;
+        match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::wasm::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
 
-        Ok(res)
+                let resp = query_client
+                    .contract_info(req)
+                    .await
+                    .map(|res| res.into_inner())?;
+
+                Ok(resp)
+            }
+            ConnectionMode::Rpc => {
+                let resp = client
+                    .rpc_client()?
+                    .abci_protobuf_query::<_, layer_climb_proto::wasm::QueryContractInfoResponse>(
+                        "/cosmwasm.wasm.v1.Query/ContractInfo",
+                        req,
+                        None,
+                    )
+                    .await?;
+
+                Ok(resp)
+            }
+        }
     }
 }
