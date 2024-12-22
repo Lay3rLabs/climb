@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::querier::tx::AnyTxResponse;
 use crate::signing::middleware::{SigningMiddlewareMapBody, SigningMiddlewareMapResp};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64},
@@ -190,13 +191,23 @@ impl<'a> TxBuilder<'a> {
         messages: impl IntoIterator<Item = layer_climb_proto::Any>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
         let messages = messages.into_iter().map(Into::into).collect();
-        self.broadcast_inner(messages).await
+        let resp = self.broadcast_raw(messages).await?;
+
+        match resp {
+            AnyTxResponse::Abci(tx_response) => Ok(tx_response),
+            AnyTxResponse::Rpc(_) => Err(anyhow!(
+                "Unexpected AnyTxResponse type - did you mean to call broadcast_raw instead?"
+            )),
+        }
     }
 
-    async fn broadcast_inner(
+    /// Typically do _not_ want to do this directly, use `broadcast` instead
+    /// however, in a case where you do not want to wait for the tx to be committed, you can use this
+    /// (and if the original tx response is AnyTxResponse::Rpc, it will stay that way)
+    pub async fn broadcast_raw(
         self,
         messages: Vec<layer_climb_proto::Any>,
-    ) -> Result<layer_climb_proto::abci::TxResponse> {
+    ) -> Result<AnyTxResponse> {
         let block_height = self.querier.block_height().await?;
 
         let tx_timeout_blocks = self
@@ -289,6 +300,7 @@ impl<'a> TxBuilder<'a> {
                     chain_config: &self.querier.chain_config,
                 }
                 .calculate()?;
+
                 let simulate_tx_resp = self
                     .querier
                     .simulate_tx(
@@ -296,6 +308,7 @@ impl<'a> TxBuilder<'a> {
                             .await?,
                     )
                     .await?;
+
                 let gas_info = simulate_tx_resp
                     .gas_info
                     .context("unable to get gas from simulation")?;
@@ -343,12 +356,12 @@ impl<'a> TxBuilder<'a> {
             }
         }
 
-        if tx_response.code != 0 {
+        if tx_response.code() != 0 {
             bail!(
                 "tx failed with code: {}, codespace: {}, raw_log: {}",
-                tx_response.code,
-                tx_response.codespace,
-                tx_response.raw_log
+                tx_response.code(),
+                tx_response.codespace(),
+                tx_response.raw_log()
             );
         }
 
@@ -360,20 +373,22 @@ impl<'a> TxBuilder<'a> {
                 .broadcast_poll_timeout_duration
                 .unwrap_or(Self::DEFAULT_BROADCAST_POLL_TIMEOUT_DURATION);
 
-            self.querier
-                .poll_until_tx_ready(tx_response.txhash, sleep_duration, timeout_duration)
-                .await?
-                .tx_response
+            AnyTxResponse::Abci(
+                self.querier
+                    .poll_until_tx_ready(tx_response.tx_hash(), sleep_duration, timeout_duration)
+                    .await?
+                    .tx_response,
+            )
         } else {
             tx_response
         };
 
-        if tx_response.code != 0 {
+        if tx_response.code() != 0 {
             bail!(
                 "tx failed with code: {}, codespace: {}, raw_log: {}",
-                tx_response.code,
-                tx_response.codespace,
-                tx_response.raw_log
+                tx_response.code(),
+                tx_response.codespace(),
+                tx_response.raw_log()
             );
         }
 

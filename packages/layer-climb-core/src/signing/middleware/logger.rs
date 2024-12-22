@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, querier::tx::AnyTxResponse};
 
 use std::sync::Arc;
 
@@ -33,12 +33,12 @@ impl SigningLoggerMiddlewareMapBody {
 }
 
 pub struct SigningLoggerMiddlewareMapResp {
-    pub logger_fn: Arc<dyn Fn(&layer_climb_proto::abci::TxResponse) + Send + Sync>,
+    pub logger_fn: Arc<dyn Fn(&AnyTxResponse) + Send + Sync>,
 }
 impl SigningLoggerMiddlewareMapResp {
     pub fn new<F>(logger_fn: F) -> Self
     where
-        F: Fn(&layer_climb_proto::abci::TxResponse) + Send + Sync + 'static,
+        F: Fn(&AnyTxResponse) + Send + Sync + 'static,
     {
         Self {
             logger_fn: Arc::new(logger_fn),
@@ -52,10 +52,7 @@ impl Default for SigningLoggerMiddlewareMapResp {
 }
 
 impl SigningLoggerMiddlewareMapResp {
-    pub async fn map_resp(
-        &self,
-        resp: layer_climb_proto::abci::TxResponse,
-    ) -> Result<layer_climb_proto::abci::TxResponse> {
+    pub async fn map_resp(&self, resp: AnyTxResponse) -> Result<AnyTxResponse> {
         (self.logger_fn)(&resp);
         Ok(resp)
     }

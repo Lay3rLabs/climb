@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use serde::{Deserialize, Serialize};
 use tendermint_rpc::Response;
 
 #[derive(Clone, Debug)]
@@ -16,6 +17,31 @@ impl RpcClient {
         let height = tendermint::block::Height::try_from(height)?;
         self.send(tendermint_rpc::endpoint::commit::Request::new(height))
             .await
+    }
+
+    pub async fn broadcast_tx(
+        &self,
+        tx: Vec<u8>,
+        mode: layer_climb_proto::tx::BroadcastMode,
+    ) -> Result<TxResponse> {
+        match mode {
+            layer_climb_proto::tx::BroadcastMode::Sync
+            | layer_climb_proto::tx::BroadcastMode::Block => self
+                .send(tendermint_rpc::endpoint::broadcast::tx_sync::Request::new(
+                    tx,
+                ))
+                .await
+                .map(|resp| resp.into()),
+            layer_climb_proto::tx::BroadcastMode::Async => self
+                .send(tendermint_rpc::endpoint::broadcast::tx_async::Request::new(
+                    tx,
+                ))
+                .await
+                .map(|resp| resp.into()),
+            layer_climb_proto::tx::BroadcastMode::Unspecified => {
+                Err(anyhow!("broadcast mode unspecified"))
+            }
+        }
     }
 
     pub async fn block_results(
@@ -103,5 +129,48 @@ impl RpcClient {
             .await?;
 
         T::Response::from_string(res).map_err(|err| anyhow::anyhow!(err))
+    }
+}
+
+/// Response from any kind of transaction broadcast request.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct TxResponse {
+    /// Code space
+    pub codespace: String,
+
+    /// Code
+    pub code: tendermint::abci::Code,
+
+    /// Data
+    pub data: Vec<u8>,
+
+    /// Log
+    pub log: String,
+
+    /// Transaction hash
+    pub hash: tendermint::Hash,
+}
+
+impl From<tendermint_rpc::endpoint::broadcast::tx_sync::Response> for TxResponse {
+    fn from(resp: tendermint_rpc::endpoint::broadcast::tx_sync::Response) -> Self {
+        Self {
+            codespace: resp.codespace,
+            code: resp.code,
+            data: resp.data.into(),
+            log: resp.log,
+            hash: resp.hash,
+        }
+    }
+}
+
+impl From<tendermint_rpc::endpoint::broadcast::tx_async::Response> for TxResponse {
+    fn from(resp: tendermint_rpc::endpoint::broadcast::tx_async::Response) -> Self {
+        Self {
+            codespace: resp.codespace,
+            code: resp.code,
+            data: resp.data.into(),
+            log: resp.log,
+            hash: resp.hash,
+        }
     }
 }
