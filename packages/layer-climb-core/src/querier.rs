@@ -147,7 +147,7 @@ impl QueryClient {
             pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
                 let default_connection_mode = default_connection_mode.unwrap_or(ConnectionMode::Grpc);
 
-                let _grpc_channel = cache.get_grpc(&chain_config).await?;
+                let _grpc_channel = cache.get_web_grpc(&chain_config).await?;
                 let _rpc_client = cache.get_rpc_client(&chain_config);
 
 
