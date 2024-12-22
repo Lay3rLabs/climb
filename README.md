@@ -16,7 +16,14 @@ As of right now, this isn't published anywhere, so just run `cargo doc --open`
 
 ## Wasm compatibility
 
-All features besides [pools](#pools) work in browsers, including gRPC (over gRPC-web) - just enable the `web` feature.
+All features besides [pools](#pools) work in browsers over gRPC-web (no need for gateway!) - just enable the `web` feature.
+
+## RPC vs. gRPC
+When creating either a query or signing client, you can choose to use the default of gRPC by supplying None, or force it to RPC.
+You can also auto-detect if gRPC is available.
+
+There's an [issue](https://github.com/Lay3rLabs/climb/issues/43) to finish up making the RPC fallback work everywhere, but most of the stuff besides IBC is covered including account info and balances, smart contracts (both queries and transactions), abci proofs, etc.
+
 
 ## Prelude
 
@@ -35,7 +42,7 @@ A SigningClient needs only two things, a ChainConfig and a TxSigner:
 ```rust
 use layer_climb::prelude::*;
 
-SigningClient::new(chain_config, signer).await
+SigningClient::new(chain_config, signer, None).await
 ```
 
 The `SigningClient` is cheap to clone and also fairly cheap to create.
@@ -94,7 +101,7 @@ However, often you want to make queries against other addresses for which you do
 All you need for this is the `ChainConfig`:
 
 ```rust
-QueryClient::new(chain_config).await
+QueryClient::new(chain_config, None).await
 ```
 
 The `QueryClient` is cheap to clone and also cheap to create (it uses a cache to re-use a global reqwest client as well as one grpc channel or client per-endpont).
@@ -221,7 +228,7 @@ client_pool_manager = client_pool_manager.with_minimum_balance(200_000, 1_000_00
 // Minimum Balance Option 1
 // give it a separate funder client, like a faucet, to send from
 let faucet_signer = KeySigner::new_mnemonic_str(&faucet.mnemonic, None)?;
-let faucet = SigningClient::new(chain_config, faucet_signer).await?;
+let faucet = SigningClient::new(chain_config, faucet_signer, None).await?;
 client_pool_manager = client_pool_manager.with_minimum_balance(200_000, 1_000_000, Some(faucet), None).await?;
 
 // In both of those, the last Option is just the denom
