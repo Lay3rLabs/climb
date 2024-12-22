@@ -1,6 +1,6 @@
 pub mod logger;
 
-use crate::prelude::*;
+use crate::{prelude::*, querier::tx::AnyTxResponse};
 use logger::{SigningLoggerMiddlewareMapBody, SigningLoggerMiddlewareMapResp};
 
 pub enum SigningMiddlewareMapBody {
@@ -28,10 +28,7 @@ pub enum SigningMiddlewareMapResp {
 }
 
 impl SigningMiddlewareMapResp {
-    pub async fn map_resp(
-        &self,
-        resp: layer_climb_proto::abci::TxResponse,
-    ) -> Result<layer_climb_proto::abci::TxResponse> {
+    pub async fn map_resp(&self, resp: AnyTxResponse) -> Result<AnyTxResponse> {
         match self {
             Self::Logger(m) => m.map_resp(resp).await,
         }
