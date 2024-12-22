@@ -6,13 +6,13 @@ impl SigningClient {
     pub async fn ibc_check_compat(&self) -> Result<layer_climb_proto::tendermint::VersionInfo> {
         let _ = self
             .querier
-            .rpc_client
+            .rpc_client()?
             .health()
             .await
             .context("couldn't get health over rpc")?;
 
         let node_info_resp = layer_climb_proto::tendermint::service_client::ServiceClient::new(
-            self.querier.grpc_channel.clone(),
+            self.querier.clone_grpc_channel()?,
         )
         .get_node_info(layer_climb_proto::tendermint::GetNodeInfoRequest {})
         .await
@@ -23,10 +23,8 @@ impl SigningClient {
             .application_version
             .context("missing application version")?;
 
-        let height = self.querier.block_height().await?;
-
         self.querier
-            .abci_proof(AbciProofKind::StakingParams, height)
+            .abci_proof(AbciProofKind::StakingParams, None)
             .await
             .context("couldn't get staking params proof")?;
 

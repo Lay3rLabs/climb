@@ -114,7 +114,7 @@ pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
             let status = StatusResponse {
                 status: "ok".to_string(),
                 chain_id: status.chain_config.chain_id.to_string(),
-                node_url: status.chain_config.rpc_endpoint.clone(),
+                node_url: status.chain_config.rpc_endpoint.unwrap().clone(),
                 chain_tokens: vec![status.chain_config.gas_denom.clone()],
                 available_tokens,
                 holder: AddressWithBalance {

@@ -47,18 +47,23 @@ impl ClimbCache {
         }
     }
 
-    pub fn get_rpc_client(&self, url: &str) -> RpcClient {
-        let rpc = { self.rpc.lock().unwrap().get(url).cloned() };
+    pub fn get_rpc_client(&self, config: &ChainConfig) -> Option<RpcClient> {
+        match config.rpc_endpoint.as_ref() {
+            None => None,
+            Some(endpoint) => {
+                let rpc = { self.rpc.lock().unwrap().get(endpoint).cloned() };
 
-        match rpc {
-            Some(rpc) => rpc,
-            None => {
-                let rpc = RpcClient::new(url.to_string(), self.get_http_client());
-                self.rpc
-                    .lock()
-                    .unwrap()
-                    .insert(url.to_string(), rpc.clone());
-                rpc
+                Some(match rpc {
+                    Some(rpc) => rpc,
+                    None => {
+                        let rpc = RpcClient::new(endpoint.to_string(), self.get_http_client());
+                        self.rpc
+                            .lock()
+                            .unwrap()
+                            .insert(endpoint.to_string(), rpc.clone());
+                        rpc
+                    }
+                })
             }
         }
     }
@@ -66,44 +71,51 @@ impl ClimbCache {
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         impl ClimbCache {
-            pub async fn get_grpc(&self, chain_config: &ChainConfig) -> Result<tonic_web_wasm_client::Client> {
+            pub async fn get_web_grpc(&self, chain_config: &ChainConfig) -> Result<Option<tonic_web_wasm_client::Client>> {
+                let endpoint = match chain_config.grpc_web_endpoint.as_ref() {
+                    Some(endpoint) => endpoint.to_string(),
+                    None => match chain_config.grpc_endpoint.as_ref() {
+                        Some(endpoint) => endpoint.to_string(),
+                        None => return Ok(None),
+                    }
+                };
 
-                let endpoint = chain_config
-                    .grpc_web_endpoint
-                    .as_ref()
-                    .unwrap_or(&chain_config.grpc_endpoint)
-                    .to_string();
 
                 let grpc = {
                     self.grpc.lock().unwrap().get(&endpoint).cloned()
                 };
 
-                Ok(match grpc {
+                Ok(Some(match grpc {
                     Some(grpc) => grpc,
                     None => {
                         let grpc = crate::network::grpc_web::make_grpc_client(endpoint.clone()).await?;
                         self.grpc.lock().unwrap().insert(endpoint, grpc.clone());
                         grpc
                     }
-                })
+                }))
             }
         }
     } else {
         impl ClimbCache {
-            pub async fn get_grpc(&self, chain_config: &ChainConfig) -> Result<tonic::transport::Channel> {
-                let grpc = {
-                    self.grpc.lock().unwrap().get(&chain_config.grpc_endpoint).cloned()
-                };
+            pub async fn get_grpc(&self, chain_config: &ChainConfig) -> Result<Option<tonic::transport::Channel>> {
+                match chain_config.grpc_endpoint.as_ref() {
+                    None => Ok(None),
+                    Some(endpoint) => {
+                        let grpc = {
+                            self.grpc.lock().unwrap().get(endpoint).cloned()
+                        };
 
-                Ok(match grpc {
-                    Some(grpc) => grpc,
-                    None => {
-                        tracing::debug!("Creating new grpc channel for {}", chain_config.grpc_endpoint);
-                        let grpc = crate::network::grpc_native::make_grpc_channel(&chain_config.grpc_endpoint).await?;
-                        self.grpc.lock().unwrap().insert(chain_config.grpc_endpoint.to_string(), grpc.clone());
-                        grpc
+                        Ok(Some(match grpc {
+                            Some(grpc) => grpc,
+                            None => {
+                                tracing::debug!("Creating new grpc channel for {}", endpoint);
+                                let grpc = crate::network::grpc_native::make_grpc_channel(endpoint).await?;
+                                self.grpc.lock().unwrap().insert(endpoint.to_string(), grpc.clone());
+                                grpc
+                            }
+                        }))
                     }
-                })
+                }
             }
         }
     }

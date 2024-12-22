@@ -134,7 +134,7 @@ impl App {
         let faucet_addr = CONFIG
             .chain_config
             .address_from_pub_key(
-                &KeySigner::new_mnemonic_iter(faucet_mnemonic.word_iter(), None)
+                &KeySigner::new_mnemonic_iter(faucet_mnemonic.words(), None)
                     .unwrap()
                     .public_key()
                     .await
@@ -207,7 +207,7 @@ fn generate_mnemonic() -> Mnemonic {
 }
 
 pub async fn generate_signing_client() -> SigningClient {
-    let signer = KeySigner::new_mnemonic_iter(generate_mnemonic().word_iter(), None).unwrap();
+    let signer = KeySigner::new_mnemonic_iter(generate_mnemonic().words(), None).unwrap();
 
     SigningClient::new(CONFIG.chain_config.clone(), signer, None)
         .await

@@ -4,7 +4,7 @@ use clap::Subcommand;
 use layer_climb::{prelude::*, proto::abci::TxResponse};
 use rand::Rng;
 
-#[derive(Clone, Subcommand)]
+#[derive(Debug, Clone, Subcommand)]
 pub enum WalletCommand {
     /// Creates a wallet with a random mnemonic
     Create,
@@ -51,7 +51,7 @@ impl WalletCommand {
                 let entropy: [u8; 32] = rng.gen();
                 let mnemonic = Mnemonic::from_entropy(&entropy)?;
 
-                let signer = KeySigner::new_mnemonic_iter(mnemonic.word_iter(), None)?;
+                let signer = KeySigner::new_mnemonic_iter(mnemonic.words(), None)?;
                 let addr = client
                     .as_querier()
                     .chain_config

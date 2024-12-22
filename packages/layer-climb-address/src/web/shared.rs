@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WebChainConfig {
     pub chain_id: ChainId,
-    pub rpc_endpoint: String,
-    pub grpc_endpoint: String,
+    pub rpc_endpoint: Option<String>,
+    pub grpc_endpoint: Option<String>,
     // if not specified, will fallback to `grpc_endpoint`
     pub grpc_web_endpoint: Option<String>,
     // needed for wallets like Keplr
-    pub rest_endpoint: String,
+    pub rest_endpoint: Option<String>,
     // not micro-units, e.g. 0.025 would be a typical value
     pub gas_price: f32,
     pub gas_denom: String,
@@ -34,7 +34,10 @@ impl From<WebChainConfig> for ChainConfig {
 /// but changes the port to 1317
 impl From<ChainConfig> for WebChainConfig {
     fn from(chain_config: ChainConfig) -> Self {
-        let rest_endpoint = set_port_in_url(&chain_config.rpc_endpoint, 1317).unwrap();
+        let rest_endpoint = chain_config
+            .rpc_endpoint
+            .as_ref()
+            .map(|endpoint| set_port_in_url(endpoint, 1317).unwrap());
 
         Self {
             chain_id: chain_config.chain_id,

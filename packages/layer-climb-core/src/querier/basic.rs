@@ -63,21 +63,37 @@ impl QueryRequest for BalanceReq {
     type QueryResponse = Option<u128>;
 
     async fn request(&self, client: QueryClient) -> Result<Self::QueryResponse> {
-        let mut query_client =
-            layer_climb_proto::bank::query_client::QueryClient::new(client.grpc_channel.clone());
-
         let denom = self
             .denom
             .clone()
             .unwrap_or(client.chain_config.gas_denom.clone());
 
-        let coin = query_client
-            .balance(layer_climb_proto::bank::QueryBalanceRequest {
-                address: self.addr.to_string(),
-                denom,
-            })
-            .await
-            .map(|res| res.into_inner().balance)?;
+        let req = layer_climb_proto::bank::QueryBalanceRequest {
+            address: self.addr.to_string(),
+            denom,
+        };
+
+        let coin = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::bank::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
+
+                query_client
+                    .balance(req)
+                    .await
+                    .map(|res| res.into_inner().balance)?
+            }
+            ConnectionMode::Rpc => client
+                .rpc_client()?
+                .abci_protobuf_query::<_, layer_climb_proto::bank::QueryBalanceResponse>(
+                    "/cosmos.bank.v1beta1.Query/Balance",
+                    req,
+                    None,
+                )
+                .await
+                .map(|res| res.balance)?,
+        };
 
         match coin {
             None => Ok(None),
@@ -112,12 +128,16 @@ impl QueryRequest for AllBalancesReq {
 
         let mut grpc_query_client = match client.get_connection_mode() {
             ConnectionMode::Grpc => Some(layer_climb_proto::bank::query_client::QueryClient::new(
-                client.grpc_channel.clone(),
+                client.clone_grpc_channel()?,
             )),
             ConnectionMode::Rpc => None,
         };
 
-        let height = BlockHeightReq {}.request(client.clone()).await?;
+        // for RPC, keep a consistent height
+        let height = match client.get_connection_mode() {
+            ConnectionMode::Grpc => None,
+            ConnectionMode::Rpc => Some(BlockHeightReq {}.request(client.clone()).await?),
+        };
 
         loop {
             let req = layer_climb_proto::bank::QueryAllBalancesRequest {
@@ -134,7 +154,7 @@ impl QueryRequest for AllBalancesReq {
                     .await
                     .map(|res| res.into_inner())?,
                 ConnectionMode::Rpc => client
-                    .rpc_client
+                    .rpc_client()?
                     .abci_protobuf_query::<_, layer_climb_proto::bank::QueryAllBalancesResponse>(
                         "/cosmos.bank.v1beta1.Query/AllBalances",
                         req,
@@ -185,7 +205,7 @@ impl QueryRequest for BaseAccountReq {
         let query_resp = match client.get_connection_mode() {
             ConnectionMode::Grpc => {
                 let mut query_client = layer_climb_proto::auth::query_client::QueryClient::new(
-                    client.grpc_channel.clone(),
+                    client.clone_grpc_channel()?,
                 );
 
                 query_client
@@ -194,20 +214,16 @@ impl QueryRequest for BaseAccountReq {
                     .map(|res| res.into_inner().account)?
                     .ok_or_else(|| anyhow!("account {} not found", self.addr))?
             }
-            ConnectionMode::Rpc => {
-                let height = BlockHeightReq {}.request(client.clone()).await?;
-
-                client
-                    .rpc_client
-                    .abci_protobuf_query::<_, layer_climb_proto::auth::QueryAccountResponse>(
-                        "/cosmos.auth.v1beta1.Query/Account",
-                        req,
-                        height,
-                    )
-                    .await?
-                    .account
-                    .ok_or_else(|| anyhow!("account {} not found", self.addr))?
-            }
+            ConnectionMode::Rpc => client
+                .rpc_client()?
+                .abci_protobuf_query::<_, layer_climb_proto::auth::QueryAccountResponse>(
+                    "/cosmos.auth.v1beta1.Query/Account",
+                    req,
+                    None,
+                )
+                .await?
+                .account
+                .ok_or_else(|| anyhow!("account {} not found", self.addr))?,
         };
 
         let account = layer_climb_proto::auth::BaseAccount::decode(query_resp.value.as_slice())
@@ -224,14 +240,29 @@ impl QueryRequest for StakingParamsReq {
     type QueryResponse = layer_climb_proto::staking::Params;
 
     async fn request(&self, client: QueryClient) -> Result<layer_climb_proto::staking::Params> {
-        let mut query_client =
-            layer_climb_proto::staking::query_client::QueryClient::new(client.grpc_channel.clone());
+        let resp = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::staking::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
 
-        let resp = query_client
-            .params(layer_climb_proto::staking::QueryParamsRequest {})
-            .await
-            .map(|res| res.into_inner())
-            .context("couldn't get staking params")?;
+                query_client
+                    .params(layer_climb_proto::staking::QueryParamsRequest {})
+                    .await
+                    .map(|res| res.into_inner())
+                    .context("couldn't get staking params")?
+            }
+            ConnectionMode::Rpc => {
+                client
+                    .rpc_client()?
+                    .abci_protobuf_query::<_, layer_climb_proto::staking::QueryParamsResponse>(
+                        "/cosmos.staking.v1beta1.Query/Params",
+                        layer_climb_proto::staking::QueryParamsRequest {},
+                        None,
+                    )
+                    .await?
+            }
+        };
 
         resp.params.ok_or(anyhow!("no staking params found"))
     }
@@ -258,7 +289,7 @@ impl QueryRequest for BlockReq {
             ConnectionMode::Grpc => {
                 let mut query_client =
                     layer_climb_proto::tendermint::service_client::ServiceClient::new(
-                        client.grpc_channel.clone(),
+                        client.clone_grpc_channel()?,
                     );
 
                 match height {
@@ -301,7 +332,7 @@ impl QueryRequest for BlockReq {
                 })
             }
             ConnectionMode::Rpc => {
-                let resp = client.rpc_client.block(height).await?;
+                let resp = client.rpc_client()?.block(height).await?;
 
                 Ok(BlockResp::Old(resp.block.into()))
             }
