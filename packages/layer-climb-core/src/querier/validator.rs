@@ -32,13 +32,9 @@ impl<'a> QueryRequest for ValidatorSetReq<'a> {
         &self,
         client: QueryClient,
     ) -> Result<layer_climb_proto::tendermint::ValidatorSet> {
-        let mut query_client = layer_climb_proto::tendermint::service_client::ServiceClient::new(
-            client.grpc_channel.clone(),
-        );
-
         let height = match self.height {
             Some(height) => height,
-            None => BlockHeightReq {}.request(client).await?,
+            None => BlockHeightReq {}.request(client.clone()).await?,
         };
 
         let mut validators = Vec::new();
@@ -51,17 +47,39 @@ impl<'a> QueryRequest for ValidatorSetReq<'a> {
             .map(|addr| tendermint::account::Id::try_from(addr.to_vec()))
             .transpose()?;
 
+        let mut grpc_query_client = match client.get_connection_mode() {
+            ConnectionMode::Grpc => Some(
+                layer_climb_proto::tendermint::service_client::ServiceClient::new(
+                    client.clone_grpc_channel()?,
+                ),
+            ),
+            ConnectionMode::Rpc => None,
+        };
+
         loop {
-            let resp = query_client
-                .get_validator_set_by_height(
-                    layer_climb_proto::tendermint::GetValidatorSetByHeightRequest {
-                        height: height.try_into()?,
-                        pagination,
-                    },
-                )
-                .await
-                .map(|res| res.into_inner())
-                .context("couldn't get validator set")?;
+            let req = layer_climb_proto::tendermint::GetValidatorSetByHeightRequest {
+                height: height.try_into()?,
+                pagination,
+            };
+
+            let resp = match client.get_connection_mode() {
+                ConnectionMode::Grpc => grpc_query_client
+                    .as_mut()
+                    .unwrap()
+                    .get_validator_set_by_height(req)
+                    .await
+                    .map(|res| res.into_inner())
+                    .context("couldn't get validator set")?,
+                ConnectionMode::Rpc => client
+                    .rpc_client()?
+                    .abci_protobuf_query(
+                        "/cosmos.base.tendermint.v1beta1.Service/GetValidatorSetByHeight",
+                        req,
+                        Some(height),
+                    )
+                    .await
+                    .context("couldn't get validator set")?,
+            };
 
             for validator in resp.validators {
                 let pub_key = validator.pub_key.context("couldn't get public key")?;

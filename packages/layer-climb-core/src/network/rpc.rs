@@ -47,14 +47,21 @@ impl RpcClient {
         &self,
         path: String,
         data: Vec<u8>,
-        height: u64,
+        height: Option<u64>,
         prove: bool,
     ) -> Result<tendermint_rpc::endpoint::abci_query::AbciQuery> {
+        let height = match height {
+            Some(height) => Some(tendermint::block::Height::try_from(height)?),
+            None => {
+                // according to the rpc docs, 0 is latest... not sure what native None means
+                Some(tendermint::block::Height::try_from(0u64)?)
+            }
+        };
         let resp = self
             .send(tendermint_rpc::endpoint::abci_query::Request {
                 path: Some(path),
                 data,
-                height: Some(tendermint::block::Height::try_from(height)?),
+                height,
                 prove,
             })
             .await?
@@ -71,7 +78,7 @@ impl RpcClient {
         &self,
         path: impl ToString,
         req: REQ,
-        height: u64,
+        height: Option<u64>,
     ) -> Result<RESP>
     where
         REQ: layer_climb_proto::Name,

@@ -24,8 +24,8 @@ pub struct ConfigInit {
     /// if not set, will use `chain_gas_denom`
     pub credit_denom: Option<String>,
     pub chain_id: ChainId,
-    pub chain_rpc_endpoint: String,
-    pub chain_grpc_endpoint: String,
+    pub chain_rpc_endpoint: Option<String>,
+    pub chain_grpc_endpoint: Option<String>,
     /// not micro-units, e.g. 0.025 would be a typical value
     pub chain_gas_price: f32,
     pub chain_gas_denom: String,
@@ -131,11 +131,11 @@ impl ConfigInit {
         }
 
         if let Ok(chain_rpc_endpoint) = std::env::var("FAUCET_CHAIN_RPC_ENDPOINT") {
-            config.chain_rpc_endpoint = chain_rpc_endpoint;
+            config.chain_rpc_endpoint = Some(chain_rpc_endpoint);
         }
 
         if let Ok(chain_grpc_endpoint) = std::env::var("FAUCET_CHAIN_GRPC_ENDPOINT") {
-            config.chain_grpc_endpoint = chain_grpc_endpoint;
+            config.chain_grpc_endpoint = Some(chain_grpc_endpoint);
         }
 
         if let Ok(gas_price) = std::env::var("FAUCET_CHAIN_GAS_PRICE") {

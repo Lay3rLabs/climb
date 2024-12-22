@@ -99,7 +99,7 @@ impl QueryRequest for ContractSmartRawReq {
 
     async fn request(&self, client: QueryClient) -> Result<Vec<u8>> {
         let mut query_client =
-            layer_climb_proto::wasm::query_client::QueryClient::new(client.grpc_channel.clone());
+            layer_climb_proto::wasm::query_client::QueryClient::new(client.clone_grpc_channel()?);
 
         let res = query_client
             .smart_contract_state(layer_climb_proto::wasm::QuerySmartContractStateRequest {
@@ -126,7 +126,7 @@ impl QueryRequest for ContractCodeInfoReq {
         client: QueryClient,
     ) -> Result<layer_climb_proto::wasm::CodeInfoResponse> {
         let mut query_client =
-            layer_climb_proto::wasm::query_client::QueryClient::new(client.grpc_channel.clone());
+            layer_climb_proto::wasm::query_client::QueryClient::new(client.clone_grpc_channel()?);
 
         let res = query_client
             .code(layer_climb_proto::wasm::QueryCodeRequest {
@@ -152,7 +152,7 @@ impl QueryRequest for ContractInfoReq {
         client: QueryClient,
     ) -> Result<layer_climb_proto::wasm::QueryContractInfoResponse> {
         let mut query_client =
-            layer_climb_proto::wasm::query_client::QueryClient::new(client.grpc_channel.clone());
+            layer_climb_proto::wasm::query_client::QueryClient::new(client.clone_grpc_channel()?);
 
         let res = query_client
             .contract_info(layer_climb_proto::wasm::QueryContractInfoRequest {

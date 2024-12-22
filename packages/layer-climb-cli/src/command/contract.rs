@@ -3,7 +3,7 @@ use clap::Subcommand;
 use layer_climb::{prelude::*, proto::abci::TxResponse};
 use std::path::PathBuf;
 
-#[derive(Clone, Subcommand)]
+#[derive(Debug, Clone, Subcommand)]
 pub enum ContractCommand {
     /// Uploads a contract to the chain
     Upload {

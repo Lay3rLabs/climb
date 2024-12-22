@@ -14,7 +14,11 @@ impl QueryClient {
 
     // height - 1 is documented here: https://github.com/cosmos/ibc-go/blob/main/modules/core/client/query.go#L26
     #[instrument]
-    pub async fn abci_proof(&self, kind: AbciProofKind, height: u64) -> Result<AbciProofResponse> {
+    pub async fn abci_proof(
+        &self,
+        kind: AbciProofKind,
+        height: Option<u64>,
+    ) -> Result<AbciProofResponse> {
         self.run_with_middleware(AbciProofReq {
             kind: kind.clone(),
             height,
@@ -26,7 +30,7 @@ impl QueryClient {
 #[derive(Clone, Debug)]
 pub struct AbciProofReq {
     pub kind: AbciProofKind,
-    pub height: u64,
+    pub height: Option<u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -141,7 +145,11 @@ impl QueryRequest for AbciProofReq {
                 let req = tonic::Request::new(layer_climb_proto::tendermint::AbciQueryRequest {
                     path: self.kind.path().to_string(),
                     data: self.kind.data_bytes(),
-                    height: self.height.try_into()?,
+                    height: match self.height {
+                        Some(height) => height.try_into()?,
+                        // according to the rpc docs, 0 is latest...
+                        None => 0.into(),
+                    },
                     prove: true,
                 });
 
@@ -150,7 +158,7 @@ impl QueryRequest for AbciProofReq {
 
                 let mut query_client =
                     layer_climb_proto::tendermint::service_client::ServiceClient::new(
-                        client.grpc_channel.clone(),
+                        client.clone_grpc_channel()?,
                     );
                 let resp: layer_climb_proto::tendermint::AbciQueryResponse = query_client
                     .abci_query(req)
@@ -173,7 +181,7 @@ impl QueryRequest for AbciProofReq {
             ConnectionMode::Rpc => {
                 // https://github.com/cosmos/ibc-go/blob/73061ee020a6be676f2d5843b7430082d2fe275c/modules/core/client/query.go#L26
                 let resp = client
-                    .rpc_client
+                    .rpc_client()?
                     .abci_query(
                         self.kind.path().to_string(),
                         self.kind.data_bytes(),

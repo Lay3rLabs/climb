@@ -11,7 +11,7 @@ impl QueryClient {
         tx_bytes: Vec<u8>,
     ) -> Result<layer_climb_proto::tx::SimulateResponse> {
         let mut query_client =
-            layer_climb_proto::tx::service_client::ServiceClient::new(self.grpc_channel.clone());
+            layer_climb_proto::tx::service_client::ServiceClient::new(self.clone_grpc_channel()?);
 
         Ok(query_client
             .simulate(
@@ -28,7 +28,7 @@ impl QueryClient {
         mode: layer_climb_proto::tx::BroadcastMode,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
         let mut query_client =
-            layer_climb_proto::tx::service_client::ServiceClient::new(self.grpc_channel.clone());
+            layer_climb_proto::tx::service_client::ServiceClient::new(self.clone_grpc_channel()?);
 
         query_client
             .broadcast_tx(layer_climb_proto::tx::BroadcastTxRequest {
@@ -48,7 +48,7 @@ impl QueryClient {
         timeout_duration: Duration,
     ) -> Result<PollTxResponse> {
         let mut query_client =
-            layer_climb_proto::tx::service_client::ServiceClient::new(self.grpc_channel.clone());
+            layer_climb_proto::tx::service_client::ServiceClient::new(self.clone_grpc_channel()?);
 
         let mut total_duration = Duration::default();
 

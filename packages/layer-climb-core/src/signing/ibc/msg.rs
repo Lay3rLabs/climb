@@ -458,7 +458,7 @@ impl SigningClient {
                     channel_id: packet.src_channel_id.clone(),
                     sequence: packet.sequence,
                 },
-                query_height,
+                Some(query_height),
             )
             .await?;
 
@@ -500,7 +500,7 @@ impl SigningClient {
                     channel_id: packet.src_channel_id.clone(),
                     sequence: packet.sequence,
                 },
-                query_height,
+                Some(query_height),
             )
             .await?;
 

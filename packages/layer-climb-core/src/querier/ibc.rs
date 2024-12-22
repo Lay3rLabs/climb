@@ -10,6 +10,8 @@ use super::{
     basic::{BlockHeaderReq, BlockHeightReq, StakingParamsReq},
 };
 
+// TODO - finish up RPC fallbacks
+
 impl QueryClient {
     #[instrument]
     pub async fn ibc_connection_proofs(
@@ -141,7 +143,7 @@ impl QueryRequest for IbcConnectionProofsReq {
             kind: AbciProofKind::IbcConnection {
                 connection_id: connection_id.clone(),
             },
-            height: query_height,
+            height: Some(query_height),
         }
         .request(client.clone())
         .await?
@@ -157,7 +159,7 @@ impl QueryRequest for IbcConnectionProofsReq {
             kind: AbciProofKind::IbcClientState {
                 client_id: client_id.clone(),
             },
-            height: query_height,
+            height: Some(query_height),
         }
         .request(client.clone())
         .await?
@@ -173,7 +175,7 @@ impl QueryRequest for IbcConnectionProofsReq {
                 client_id: client_id.clone(),
                 height: consensus_height,
             },
-            height: query_height,
+            height: Some(query_height),
         }
         .request(client.clone())
         .await?
@@ -233,7 +235,7 @@ impl QueryRequest for IbcChannelProofsReq {
                 channel_id: channel_id.clone(),
                 port_id: port_id.clone(),
             },
-            height: query_height,
+            height: Some(query_height),
         }
         .request(client)
         .await?
@@ -274,7 +276,7 @@ impl QueryRequest for IbcClientStateReq {
         apply_grpc_height(&mut req, *height)?;
 
         let mut query_client = layer_climb_proto::ibc::client::query_client::QueryClient::new(
-            client.grpc_channel.clone(),
+            client.clone_grpc_channel()?,
         );
         let resp: layer_climb_proto::ibc::client::QueryClientStateResponse = query_client
             .client_state(req)
@@ -329,7 +331,7 @@ impl QueryRequest for IbcConnectionReq {
         apply_grpc_height(&mut req, *height)?;
 
         let mut query_client = layer_climb_proto::ibc::connection::query_client::QueryClient::new(
-            client.grpc_channel.clone(),
+            client.clone_grpc_channel()?,
         );
 
         query_client
@@ -360,7 +362,7 @@ impl QueryRequest for IbcConnectionConsensusStateReq {
         } = self;
 
         let mut query_client = layer_climb_proto::ibc::connection::query_client::QueryClient::new(
-            client.grpc_channel.clone(),
+            client.clone_grpc_channel()?,
         );
 
         let consensus_height = match consensus_height {
@@ -422,7 +424,7 @@ impl QueryRequest for IbcChannelReq {
         apply_grpc_height(&mut req, *height)?;
 
         let mut query_client = layer_climb_proto::ibc::channel::query_client::QueryClient::new(
-            client.grpc_channel.clone(),
+            client.clone_grpc_channel()?,
         );
 
         query_client
