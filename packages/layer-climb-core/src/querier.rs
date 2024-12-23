@@ -145,8 +145,6 @@ impl QueryClient {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
-                let default_connection_mode = default_connection_mode.unwrap_or(ConnectionMode::Grpc);
-
                 let _grpc_channel = cache.get_web_grpc(&chain_config).await?;
                 let _rpc_client = cache.get_rpc_client(&chain_config);
 
@@ -161,15 +159,18 @@ impl QueryClient {
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
                     _grpc_channel,
                     _rpc_client,
-                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode as u8))
+                    // if None, this will be overriden, just set _something_
+                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode.unwrap_or(ConnectionMode::Grpc) as u8))
                 };
+
+                if default_connection_mode.is_none() {
+                    _self.set_connection_mode(None).await?;
+                }
 
                 Ok(_self)
             }
         } else {
             pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
-                let default_connection_mode = default_connection_mode.unwrap_or(ConnectionMode::Grpc);
-
                 let _grpc_channel = cache.get_grpc(&chain_config).await?;
                 let _rpc_client = cache.get_rpc_client(&chain_config);
 
@@ -184,8 +185,13 @@ impl QueryClient {
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
                     _grpc_channel,
                     _rpc_client,
-                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode as u8))
+                    // if None, this will be overriden, just set _something_
+                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode.unwrap_or(ConnectionMode::Grpc) as u8))
                 };
+
+                if default_connection_mode.is_none() {
+                    _self.set_connection_mode(None).await?;
+                }
 
                 Ok(_self)
             }

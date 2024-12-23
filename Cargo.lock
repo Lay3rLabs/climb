@@ -1107,6 +1107,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "example-gui"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "async-broadcast",
+ "awsm_web",
+ "cfg-if",
+ "console_error_panic_hook",
+ "cosmwasm-std",
+ "dominator",
+ "dominator_helpers",
+ "dotenvy",
+ "futures",
+ "futures-signals",
+ "futures-timer",
+ "gloo-events 0.2.0",
+ "gloo-timers 0.3.0",
+ "layer-climb",
+ "log",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1730,7 +1758,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -1740,7 +1768,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-address"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1766,7 +1794,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-cli"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bip39",
@@ -1785,7 +1813,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-config"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -1794,7 +1822,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1851,41 +1879,13 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-proto"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto",
  "ibc-proto",
  "tendermint-proto",
  "thiserror",
-]
-
-[[package]]
-name = "layer-climb-web"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "async-broadcast",
- "awsm_web",
- "cfg-if",
- "console_error_panic_hook",
- "cosmwasm-std",
- "dominator",
- "dominator_helpers",
- "dotenvy",
- "futures",
- "futures-signals",
- "futures-timer",
- "gloo-events 0.2.0",
- "gloo-timers 0.3.0",
- "layer-climb",
- "log",
- "serde",
- "serde_json",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-logger",
- "web-sys",
 ]
 
 [[package]]

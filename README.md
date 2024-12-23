@@ -19,11 +19,8 @@ As of right now, this isn't published anywhere, so just run `cargo doc --open`
 All features besides [pools](#pools) work in browsers over gRPC-web (no need for gateway!) - just enable the `web` feature.
 
 ## RPC vs. gRPC
-When creating either a query or signing client, you can choose to use the default of gRPC by supplying None, or force it to RPC.
-You can also auto-detect if gRPC is available.
 
-There's an [issue](https://github.com/Lay3rLabs/climb/issues/43) to finish up making the RPC fallback work everywhere, but most of the stuff besides IBC is covered including account info and balances, smart contracts (both queries and transactions), abci proofs, etc.
-
+When creating either a query or signing client, you may choose to use force RPC or gRPC. Setting `None` will auto-detect availability, and prefer gRPC. 
 
 ## Prelude
 
@@ -104,7 +101,7 @@ All you need for this is the `ChainConfig`:
 QueryClient::new(chain_config, None).await
 ```
 
-The `QueryClient` is cheap to clone and also cheap to create (it uses a cache to re-use a global reqwest client as well as one grpc channel or client per-endpont).
+The `QueryClient` is cheap to clone and also cheap to create (it uses a cache and reference-counting where applicable).
 
 The QueryClient struct is slightly different for web targets, but this is all dealt with as an abstraction, methods are the same everywhere.
 
@@ -165,7 +162,7 @@ Internally, Query methods turn the arguments into a struct which implements a Qu
 
 [source code](./src/querier.rs#L52)
 
-The exact implementation here is likely to change, but it's a way to support generic middleware over all requests so we can do things like retry requests on failure, switch from grpc to rpc on any given request (not yet supported), etc. More details on this below.
+The exact implementation here is likely to change, but it's a way to support generic middleware over all requests so we can do things like retry requests on failure, write out logs, etc. More details on this below.
 
 As an example, calling the [contract_code_info](./src/querier/contract.rs#L29) method on `QueryClient` creates an internal [ContractCodeInfoReq](./src/querier/contract.rs#L114) struct and the actual query is implemented on that struct's [request](./src/querier/contract.rs#L117) method.
 

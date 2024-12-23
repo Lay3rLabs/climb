@@ -1,3 +1,4 @@
+// TODO - test RPC mode
 use tracing::instrument;
 
 use crate::{
@@ -9,8 +10,6 @@ use super::{
     abci::{AbciProofKind, AbciProofReq},
     basic::{BlockHeaderReq, BlockHeightReq, StakingParamsReq},
 };
-
-// TODO - finish up RPC fallbacks
 
 impl QueryClient {
     #[instrument]
@@ -268,21 +267,38 @@ impl QueryRequest for IbcClientStateReq {
             height,
         } = self;
 
-        let mut req =
-            tonic::Request::new(layer_climb_proto::ibc::client::QueryClientStateRequest {
-                client_id: ibc_client_id.to_string(),
-            });
+        let req = layer_climb_proto::ibc::client::QueryClientStateRequest {
+            client_id: ibc_client_id.to_string(),
+        };
 
-        apply_grpc_height(&mut req, *height)?;
+        let resp = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut req = tonic::Request::new(req);
+                apply_grpc_height(&mut req, *height)?;
 
-        let mut query_client = layer_climb_proto::ibc::client::query_client::QueryClient::new(
-            client.clone_grpc_channel()?,
-        );
-        let resp: layer_climb_proto::ibc::client::QueryClientStateResponse = query_client
-            .client_state(req)
-            .await
-            .map(|res| res.into_inner())
-            .context("couldn't get client state")?;
+                let mut query_client =
+                    layer_climb_proto::ibc::client::query_client::QueryClient::new(
+                        client.clone_grpc_channel()?,
+                    );
+                let resp: layer_climb_proto::ibc::client::QueryClientStateResponse = query_client
+                    .client_state(req)
+                    .await
+                    .map(|res| res.into_inner())
+                    .context("couldn't get client state")?;
+
+                resp
+            }
+
+            ConnectionMode::Rpc => client
+                .rpc_client()?
+                .abci_protobuf_query::<_, layer_climb_proto::ibc::client::QueryClientStateResponse>(
+                    "/ibc.core.client.v1.Query/ClientState",
+                    req,
+                    *height,
+                )
+                .await
+                .context("couldn't get client state")?,
+        };
 
         let client_state = resp
             .client_state
@@ -300,7 +316,6 @@ impl QueryRequest for IbcClientStateReq {
             })
             .transpose()?
             .context("missing client state")?;
-
         Ok(client_state)
     }
 }
@@ -323,24 +338,36 @@ impl QueryRequest for IbcConnectionReq {
             height,
         } = self;
 
-        let mut req =
-            tonic::Request::new(layer_climb_proto::ibc::connection::QueryConnectionRequest {
-                connection_id: connection_id.to_string(),
-            });
+        let req = layer_climb_proto::ibc::connection::QueryConnectionRequest {
+            connection_id: connection_id.to_string(),
+        };
 
-        apply_grpc_height(&mut req, *height)?;
+        let resp = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut req = tonic::Request::new(req);
 
-        let mut query_client = layer_climb_proto::ibc::connection::query_client::QueryClient::new(
-            client.clone_grpc_channel()?,
-        );
+                apply_grpc_height(&mut req, *height)?;
 
-        query_client
-            .connection(req)
-            .await
-            .map(|res| res.into_inner())
-            .context("couldn't get connection")?
-            .connection
-            .context("missing connection")
+                let mut query_client = layer_climb_proto::ibc::connection::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
+
+                query_client
+                    .connection(req)
+                    .await
+                    .map(|res| res.into_inner())
+                    .context("couldn't get connection")?
+            }
+
+            ConnectionMode::Rpc => {
+                client.rpc_client()?
+                    .abci_protobuf_query::<_, layer_climb_proto::ibc::connection::QueryConnectionResponse>("/ibc.core.connection.v1.Query/Connection", req, *height)
+                    .await
+                    .context("couldn't get connection")?
+            }
+        };
+
+        resp.connection.context("missing connection")
     }
 }
 
@@ -361,38 +388,49 @@ impl QueryRequest for IbcConnectionConsensusStateReq {
             height,
         } = self;
 
-        let mut query_client = layer_climb_proto::ibc::connection::query_client::QueryClient::new(
-            client.clone_grpc_channel()?,
-        );
-
         let consensus_height = match consensus_height {
             Some(h) => *h,
             None => layer_climb_proto::RevisionHeight {
                 revision_number: client.chain_config.ibc_client_revision()?,
                 revision_height: match height {
                     Some(h) => *h,
-                    None => BlockHeightReq {}.request(client).await?,
+                    None => BlockHeightReq {}.request(client.clone()).await?,
                 },
             },
         };
 
-        let mut req = tonic::Request::new(
-            layer_climb_proto::ibc::connection::QueryConnectionConsensusStateRequest {
-                connection_id: connection_id.to_string(),
-                revision_number: consensus_height.revision_number,
-                revision_height: consensus_height.revision_height,
+        let req = layer_climb_proto::ibc::connection::QueryConnectionConsensusStateRequest {
+            connection_id: connection_id.to_string(),
+            revision_number: consensus_height.revision_number,
+            revision_height: consensus_height.revision_height,
+        };
+
+        let resp = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut query_client = layer_climb_proto::ibc::connection::query_client::QueryClient::new(
+                    client.clone_grpc_channel()?,
+                );
+
+
+                let mut req = tonic::Request::new(req);
+
+                apply_grpc_height(&mut req, *height)?;
+
+                query_client
+                    .connection_consensus_state(req)
+                    .await
+                    .map(|res| res.into_inner())
+                    .context("couldn't get consensus state")?
             },
-        );
+            ConnectionMode::Rpc => {
+                client.rpc_client()?
+                    .abci_protobuf_query::<_, layer_climb_proto::ibc::connection::QueryConnectionConsensusStateResponse>("/ibc.core.connection.v1.Query/ConnectionConsensusState", req, *height)
+                    .await
+                    .context("couldn't get consensus state")?
+            }
+        };
 
-        apply_grpc_height(&mut req, *height)?;
-
-        query_client
-            .connection_consensus_state(req)
-            .await
-            .map(|res| res.into_inner())
-            .context("couldn't get consensus state")?
-            .consensus_state
-            .context("missing consensus state")
+        resp.consensus_state.context("missing consensus state")
     }
 }
 
@@ -416,24 +454,40 @@ impl QueryRequest for IbcChannelReq {
             height,
         } = self;
 
-        let mut req = tonic::Request::new(layer_climb_proto::ibc::channel::QueryChannelRequest {
+        let req = layer_climb_proto::ibc::channel::QueryChannelRequest {
             channel_id: channel_id.to_string(),
             port_id: port_id.to_string(),
-        });
+        };
 
-        apply_grpc_height(&mut req, *height)?;
+        let resp = match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                let mut req = tonic::Request::new(req);
 
-        let mut query_client = layer_climb_proto::ibc::channel::query_client::QueryClient::new(
-            client.clone_grpc_channel()?,
-        );
+                apply_grpc_height(&mut req, *height)?;
 
-        query_client
-            .channel(req)
-            .await
-            .map(|res| res.into_inner())
-            .context("couldn't get channel")?
-            .channel
-            .context("missing channel")
+                let mut query_client =
+                    layer_climb_proto::ibc::channel::query_client::QueryClient::new(
+                        client.clone_grpc_channel()?,
+                    );
+
+                query_client
+                    .channel(req)
+                    .await
+                    .map(|res| res.into_inner())
+                    .context("couldn't get channel")?
+            }
+            ConnectionMode::Rpc => client
+                .rpc_client()?
+                .abci_protobuf_query::<_, layer_climb_proto::ibc::channel::QueryChannelResponse>(
+                    "/ibc.core.channel.v1.Query/Channel",
+                    req,
+                    *height,
+                )
+                .await
+                .context("couldn't get channel")?,
+        };
+
+        resp.channel.context("missing channel")
     }
 }
 
