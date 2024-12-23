@@ -51,6 +51,11 @@ impl QueryClient {
     pub async fn block_height(&self) -> Result<u64> {
         self.run_with_middleware(BlockHeightReq {}).await
     }
+
+    #[instrument]
+    pub async fn node_info(&self) -> Result<layer_climb_proto::tendermint::GetNodeInfoResponse> {
+        self.run_with_middleware(NodeInfoReq {}).await
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -265,6 +270,41 @@ impl QueryRequest for StakingParamsReq {
         };
 
         resp.params.ok_or(anyhow!("no staking params found"))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct NodeInfoReq {}
+
+impl QueryRequest for NodeInfoReq {
+    type QueryResponse = layer_climb_proto::tendermint::GetNodeInfoResponse;
+
+    async fn request(
+        &self,
+        client: QueryClient,
+    ) -> Result<layer_climb_proto::tendermint::GetNodeInfoResponse> {
+        let req = layer_climb_proto::tendermint::GetNodeInfoRequest {};
+
+        match client.get_connection_mode() {
+            ConnectionMode::Grpc => {
+                layer_climb_proto::tendermint::service_client::ServiceClient::new(
+                    client.clone_grpc_channel()?,
+                )
+                .get_node_info(req)
+                .await
+                .map(|resp| resp.into_inner())
+                .context("couldn't get node info")
+            }
+            ConnectionMode::Rpc => client
+                .rpc_client()?
+                .abci_protobuf_query::<_, layer_climb_proto::tendermint::GetNodeInfoResponse>(
+                    "/cosmos.base.tendermint.v1beta1.Service/GetNodeInfo",
+                    req,
+                    None,
+                )
+                .await
+                .context("couldn't get node info"),
+        }
     }
 }
 

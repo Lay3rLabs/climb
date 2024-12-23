@@ -11,13 +11,7 @@ impl SigningClient {
             .await
             .context("couldn't get health over rpc")?;
 
-        let node_info_resp = layer_climb_proto::tendermint::service_client::ServiceClient::new(
-            self.querier.clone_grpc_channel()?,
-        )
-        .get_node_info(layer_climb_proto::tendermint::GetNodeInfoRequest {})
-        .await
-        .map(|resp| resp.into_inner())
-        .context("couldn't get status over grpc")?;
+        let node_info_resp = self.querier.node_info().await?;
 
         let version = node_info_resp
             .application_version
