@@ -17,7 +17,7 @@ use std::{
     time::Duration,
 };
 
-use abci::{AbciProofKind, AbciProofReq};
+use basic::BlockHeightReq;
 use middleware::{QueryMiddlewareMapReq, QueryMiddlewareMapResp, QueryMiddlewareRun};
 use tracing::instrument;
 
@@ -100,7 +100,7 @@ impl QueryClient {
         Self::new_with_cache(chain_config, cache, default_connection_mode).await
     }
 
-    // if None, will make a best-guess attempt via abci query
+    // if None, will make a best-guess attempt via block query
     #[instrument]
     pub async fn set_connection_mode(&self, mode: Option<ConnectionMode>) -> Result<()> {
         match mode {
@@ -113,16 +113,13 @@ impl QueryClient {
                 for mode in modes {
                     self._connection_mode.store(mode.into(), Ordering::SeqCst);
 
-                    let is_valid = AbciProofReq {
-                        kind: AbciProofKind::StakingParams,
-                        height: None,
-                    }
-                    .request(self.clone())
-                    .await
-                    .is_ok();
+                    let block_height = BlockHeightReq {}.request(self.clone()).await;
 
-                    if is_valid {
-                        break;
+                    if let Ok(block_height) = block_height {
+                        if block_height > 0 {
+                            log::info!("{}: {:?}", mode, block_height);
+                            break;
+                        }
                     }
                 }
             }
@@ -192,6 +189,7 @@ impl QueryClient {
                 if default_connection_mode.is_none() {
                     _self.set_connection_mode(None).await?;
                 }
+
 
                 Ok(_self)
             }

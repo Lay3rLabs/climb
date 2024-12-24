@@ -28,6 +28,7 @@ base64 = {workspace = true}
 
 # Logging
 tracing = {workspace = true} 
+log = {workspace = true}
 
 # Serdeish
 toml = {workspace = true} 
