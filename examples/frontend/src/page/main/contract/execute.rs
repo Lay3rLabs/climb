@@ -14,8 +14,14 @@ impl ContractExecuteUi {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             loader: AsyncLoader::new(),
-            address: Mutable::new(None),
-            msg: Mutable::new(None),
+            address: Mutable::new(
+                CONFIG
+                    .debug
+                    .contract_execute_address
+                    .clone()
+                    .map(|address| query_client().chain_config.parse_address(&address).unwrap()),
+            ),
+            msg: Mutable::new(CONFIG.debug.contract_execute_message.clone()),
             error: Mutable::new(None),
             success: Mutable::new(None),
         })
@@ -38,6 +44,7 @@ impl ContractExecuteUi {
                 .with_direction(LabelDirection::Column)
                 .render(TextInput::new()
                     .with_placeholder("e.g. slayaddr...")
+                    .with_intial_value(CONFIG.debug.contract_execute_address.clone().unwrap_or_default())
                     .with_mixin(|dom| {
                         dom
                             .style("width", "30rem")
@@ -60,6 +67,7 @@ impl ContractExecuteUi {
                 .render(
                     TextArea::new()
                     .with_placeholder(r#"e.g. {\"foo\":\"bar\"}"#)
+                    .with_intial_value(CONFIG.debug.contract_execute_message.clone().unwrap_or_default())
                     .with_mixin(|dom| {
                         dom
                             .style("width", "30rem")
