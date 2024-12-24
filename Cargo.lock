@@ -1838,6 +1838,7 @@ dependencies = [
  "layer-climb-address",
  "layer-climb-config",
  "layer-climb-proto",
+ "log",
  "rand",
  "reqwest",
  "serde",

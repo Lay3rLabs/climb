@@ -140,10 +140,9 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
             })
             .await?;
 
-            Client::Keplr {
-                client: SigningClient::new(chain_config, signer.inner.clone(), None).await?,
-                signer,
-            }
+            let client = SigningClient::new(chain_config, signer.inner.clone(), None).await?;
+
+            Client::Keplr { client, signer }
         }
     };
 

@@ -103,7 +103,7 @@ impl QueryClient {
                     match res {
                         Ok(res) => Ok(Some(res)),
                         Err(e) => {
-                            if e.code() == tonic::Code::Ok && e.code() == tonic::Code::NotFound {
+                            if e.code() == tonic::Code::Ok || e.code() == tonic::Code::NotFound {
                                 Ok(None)
                             } else {
                                 tracing::debug!(
