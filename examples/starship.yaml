@@ -1,0 +1,17 @@
+name: local 
+ 
+chains:
+  - id: juno-1 
+    name: juno 
+    numValidators: 1
+    faucet:
+      enabled: false
+    ports:
+      rest: 1317
+      rpc: 26657
+      # waiting on https://github.com/cosmology-tech/starship/issues/556#issuecomment-2556630421
+      # grpc: 9190
+      # grpc-web: 9091
+
+registry:
+  enabled: false
