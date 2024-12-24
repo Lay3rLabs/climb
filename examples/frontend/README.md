@@ -4,6 +4,8 @@
 
 * Trunk: https://trunkrs.dev/
 
+* For local dev, start local chains (in examples dir): `starship start --config ./starship.yaml` (to stop it: `starship stop --config ./starship.yaml`)
+
 ## Run in browser
 
 ```
