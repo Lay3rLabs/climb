@@ -201,6 +201,30 @@ impl<'a> TxBuilder<'a> {
         }
     }
 
+    pub async fn simulate_gas(
+        &self,
+        signer_info: layer_climb_proto::tx::SignerInfo,
+        account_number: u64,
+        tx_body: &layer_climb_proto::tx::TxBody,
+    ) -> Result<layer_climb_proto::abci::GasInfo> {
+        let fee = FeeCalculation::Simulation {
+            chain_config: &self.querier.chain_config,
+        }
+        .calculate()?;
+
+        let simulate_tx_resp = self
+            .querier
+            .simulate_tx(
+                self.sign_tx(signer_info, account_number, tx_body, fee, true)
+                    .await?,
+            )
+            .await?;
+
+        simulate_tx_resp
+            .gas_info
+            .context("unable to get gas from simulation")
+    }
+
     /// Typically do _not_ want to do this directly, use `broadcast` instead
     /// however, in a case where you do not want to wait for the tx to be committed, you can use this
     /// (and if the original tx response is AnyTxResponse::Rpc, it will stay that way)
@@ -278,17 +302,7 @@ impl<'a> TxBuilder<'a> {
             },
         };
 
-        let signer_info = layer_climb_proto::tx::SignerInfo {
-            public_key: Some(self.signer.public_key_as_proto().await?),
-            mode_info: Some(layer_climb_proto::tx::ModeInfo {
-                sum: Some(layer_climb_proto::tx::mode_info::Sum::Single(
-                    layer_climb_proto::tx::mode_info::Single {
-                        mode: layer_climb_proto::tx::SignMode::Direct.into(),
-                    },
-                )),
-            }),
-            sequence,
-        };
+        let signer_info = self.signer.signer_info(sequence).await?;
 
         let gas_units = match self.gas_units_or_simulate {
             Some(gas_units) => gas_units,
@@ -296,22 +310,11 @@ impl<'a> TxBuilder<'a> {
                 let gas_multiplier = self
                     .gas_simulate_multiplier
                     .unwrap_or(Self::DEFAULT_GAS_MULTIPLIER);
-                let fee = FeeCalculation::Simulation {
-                    chain_config: &self.querier.chain_config,
-                }
-                .calculate()?;
 
-                let simulate_tx_resp = self
-                    .querier
-                    .simulate_tx(
-                        self.sign_tx(signer_info.clone(), account_number, &body, fee)
-                            .await?,
-                    )
+                let gas_info = self
+                    .simulate_gas(signer_info.clone(), account_number, &body)
                     .await?;
 
-                let gas_info = simulate_tx_resp
-                    .gas_info
-                    .context("unable to get gas from simulation")?;
                 (gas_info.gas_used as f32 * gas_multiplier).ceil() as u64
             }
         };
@@ -330,7 +333,7 @@ impl<'a> TxBuilder<'a> {
         };
 
         let tx_bytes = self
-            .sign_tx(signer_info.clone(), account_number, &body, fee)
+            .sign_tx(signer_info.clone(), account_number, &body, fee, false)
             .await?;
         let broadcast_mode = self.broadcast_mode.unwrap_or(Self::DEFAULT_BROADCAST_MODE);
 
@@ -410,6 +413,7 @@ impl<'a> TxBuilder<'a> {
         account_number: u64,
         body: &layer_climb_proto::tx::TxBody,
         fee: layer_climb_proto::tx::Fee,
+        simulate_only: bool,
     ) -> Result<Vec<u8>> {
         #[allow(deprecated)]
         let auth_info = layer_climb_proto::tx::AuthInfo {
@@ -425,7 +429,10 @@ impl<'a> TxBuilder<'a> {
             account_number,
         };
 
-        let signature = self.signer.sign(&sign_doc).await?;
+        let signature = match simulate_only {
+            true => Vec::new(),
+            false => self.signer.sign(&sign_doc).await?,
+        };
 
         let tx_raw = layer_climb_proto::tx::TxRaw {
             body_bytes: sign_doc.body_bytes.clone(),

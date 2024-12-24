@@ -54,6 +54,8 @@ impl Config {
 pub struct ConfigDebug {
     pub auto_connect: Option<ConfigDebugAutoConnect>,
     pub start_route: Mutex<Option<Route>>,
+    pub contract_execute_address: Option<String>,
+    pub contract_execute_message: Option<String>,
 }
 
 impl Default for ConfigDebug {
@@ -61,6 +63,8 @@ impl Default for ConfigDebug {
         Self {
             auto_connect: None,
             start_route: Mutex::new(Some(Route::WalletFaucet)),
+            contract_execute_address: None,
+            contract_execute_message: None,
         }
     }
 }
@@ -75,7 +79,10 @@ cfg_if::cfg_if! {
                         //key_kind: ClientKeyKind::Keplr,
                         target_env: TargetEnvironment::Local
                     }),
-                    start_route: Mutex::new(Some(Route::BlockEvents))
+                    start_route: Mutex::new(Some(Route::BlockEvents)),
+                    contract_execute_address: Some("layer1p8cyts27z9p022gu9z3qm7sxvdma0y09ur36u2nrhvjrdmmf38mqkq6kzz".to_string()),
+                    contract_execute_message: Some(r#"{"stash_message": { "message": "hello world"}}"#.to_string()),
+                    ..ConfigDebug::default()
                 }
             }
         }
@@ -84,6 +91,9 @@ cfg_if::cfg_if! {
             pub fn dev_mode() -> Self {
                 Self {
                     auto_connect: None,
+                    start_route: Mutex::new(Some(Route::ContractExecute)),
+                    contract_execute_address: Some("layer1p8cyts27z9p022gu9z3qm7sxvdma0y09ur36u2nrhvjrdmmf38mqkq6kzz".to_string()),
+                    contract_execute_message: Some(r#"{"stash_message": { "message": "hello world"}}"#.to_string()),
                     ..ConfigDebug::default()
                 }
             }
