@@ -3,6 +3,8 @@ name: local
 chains:
   - id: local-osmosis 
     name: osmosis
+    # need to set this so that our `local-*` chainId works
+    # if we try to use something like `osmosis-42` to get a "different" chain id but with right image, Keplr gets confused
     # https://github.com/cosmology-tech/starship/blob/5635e853ac9e364f0ae9c87646536c30b6519748/starship/charts/devnet/defaults.yaml#L7C5-L7C59
     image: ghcr.io/cosmology-tech/starship/osmosis:v25.0.0
     numValidators: 1
