@@ -43,7 +43,7 @@ impl ContractExecuteUi {
                 .with_text("Address")
                 .with_direction(LabelDirection::Column)
                 .render(TextInput::new()
-                    .with_placeholder("e.g. slayaddr...")
+                    .with_placeholder("e.g. cosmoaddr...")
                     .with_intial_value(CONFIG.debug.contract_execute_address.clone().unwrap_or_default())
                     .with_mixin(|dom| {
                         dom

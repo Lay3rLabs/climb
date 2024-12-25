@@ -117,7 +117,6 @@ impl QueryClient {
 
                     if let Ok(block_height) = block_height {
                         if block_height > 0 {
-                            log::info!("{}: {:?}", mode, block_height);
                             break;
                         }
                     }

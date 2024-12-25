@@ -94,33 +94,33 @@ impl WalletFaucetUi {
     }
 
     async fn get_tokens(&self) -> Result<()> {
-        let mnemonic = match ENVIRONMENT.get().unwrap_ext() {
-            TargetEnvironment::Local => CONFIG
-                .data
-                .local
-                .as_ref()
-                .context("no local config found")?
-                .faucet
-                .mnemonic
-                .clone(),
-            TargetEnvironment::Testnet => CONFIG
-                .data
-                .testnet
-                .as_ref()
-                .context("no testnet config found")?
-                .faucet
-                .mnemonic
-                .clone(),
-        };
-        let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
-        let faucet = SigningClient::new(query_client().chain_config.clone(), signer, None).await?;
-
-        faucet
-            .transfer(1_000_000, &signing_client().addr, None, None)
-            .await?;
+        tap_faucet(*ENVIRONMENT.get().unwrap(), &signing_client().addr).await?;
 
         self.update_balance().await;
 
         Ok(())
     }
+}
+
+pub async fn tap_faucet(environment: TargetEnvironment, addr: &Address) -> Result<()> {
+    let chain_info = match environment {
+        TargetEnvironment::Local => CONFIG
+            .data
+            .local
+            .as_ref()
+            .context("no local config found")?,
+
+        TargetEnvironment::Testnet => CONFIG
+            .data
+            .testnet
+            .as_ref()
+            .context("no testnet config found")?,
+    };
+
+    let signer = KeySigner::new_mnemonic_str(&chain_info.faucet.mnemonic, None)?;
+    let faucet = SigningClient::new(chain_info.chain.clone().into(), signer, None).await?;
+
+    faucet.transfer(1_000_000, addr, None, None).await?;
+
+    Ok(())
 }

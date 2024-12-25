@@ -1781,6 +1781,7 @@ dependencies = [
  "k256",
  "layer-climb-config",
  "layer-climb-proto",
+ "log",
  "serde",
  "serde-wasm-bindgen",
  "signature",

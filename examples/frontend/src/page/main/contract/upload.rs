@@ -73,7 +73,6 @@ impl ContractUploadUi {
                                             state.success.set(Some((code_id, tx_resp)));
                                         },
                                         Err(err) => {
-                                            log::error!("{:?}", err);
                                             state.error.set(Some(format!("Error uploading contract: {:?}", err)));
                                         }
                                     }
