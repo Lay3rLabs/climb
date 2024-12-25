@@ -125,11 +125,16 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
             }
         }
         ClientKeyKind::Keplr => {
+            log::info!(
+                "keplr chain config address kind: {:?}",
+                chain_config.address_kind
+            );
             let signer = KeplrSigner::new(&chain_config.chain_id, || {
                 // account was changed - replace the signing client after refreshing its inner public key etc.
                 spawn_local(async move {
                     let mut client = signing_client();
                     client.refresh_signer().await.unwrap_ext();
+
                     SIGNING_CLIENT
                         .with(|x| x.borrow_mut().as_mut().unwrap_ext().replace_signing(client));
                     CLIENT_EVENTS
@@ -167,7 +172,7 @@ pub async fn add_keplr_chain(target_env: TargetEnvironment) -> Result<()> {
             .data
             .local
             .as_ref()
-            .context("testnet chain not configured")?
+            .context("local chain not configured")?
             .chain
             .clone(),
     };

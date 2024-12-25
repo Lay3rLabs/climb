@@ -1,5 +1,6 @@
 use crate::{
     client::{add_keplr_chain, client_connect, ClientKeyKind, TargetEnvironment},
+    page::main::wallet::faucet::tap_faucet,
     prelude::*,
 };
 
@@ -56,7 +57,6 @@ impl LandingUi {
                     // 2. only one time (not if we intentionally come back to landing)
                     if connected {
                         let start_route = CONFIG.debug.start_route.lock().unwrap_ext().take();
-                        log::info!("Starting at route: {:?}", start_route);
                         if let Some(start_route) = start_route {
                             start_route.go_to_url();
                         }
@@ -96,17 +96,76 @@ impl LandingUi {
                             }
                         },
                         Phase::Connecting => {
-                            let res = client_connect(
-                                // guaranteed to exist here
-                                state.client_key_kind.lock().unwrap_ext().clone().unwrap_ext(),
-                                state.target_environment.get_cloned().unwrap_ext(),
-                            ).await;
+
+                            // guaranteed to exist here
+                            let key_kind = state.client_key_kind.lock().unwrap_ext().clone().unwrap_ext();
+                            let target_environment = state.target_environment.get_cloned().unwrap_ext();
+
+                            let res = client_connect(key_kind.clone(), target_environment).await;
 
                             match res {
                                 Ok(_) => {
                                     state.wallet_connected.set(true);
+                                    return;
                                 },
-                                Err(e) => {
+                                Err(mut e) => {
+                                    let text = e.to_string().to_lowercase();
+
+                                    // if the account is not found, we can try to tap the faucet
+                                    if text.contains("account") && text.contains("not found") {
+                                        let extract_address = || -> Option<Address> {
+                                            let needle = "account ";
+                                            let account_pos = text.find(needle)?;
+                                            let start_addr = account_pos + needle.len();
+
+                                            let addr = if let Some(end_addr) = text[start_addr..].find(' ') {
+                                                text[start_addr..start_addr + end_addr].to_string()
+                                            } else {
+                                                // no spaces found, so the address goes until the end of the string
+                                                text[start_addr..].to_string()
+                                            };
+
+                                            let chain_config = match target_environment {
+                                                TargetEnvironment::Testnet => CONFIG
+                                                    .data
+                                                    .testnet
+                                                    .as_ref()
+                                                    .context("testnet chain not configured")
+                                                    .unwrap_ext()
+                                                    .chain
+                                                    .clone(),
+                                                TargetEnvironment::Local => CONFIG
+                                                    .data
+                                                    .local
+                                                    .as_ref()
+                                                    .context("local chain not configured")
+                                                    .unwrap_ext()
+                                                    .chain
+                                                    .clone(),
+                                            };
+
+                                            ChainConfig::from(chain_config)
+                                                .parse_address(&addr)
+                                                .ok()
+                                        };
+
+                                        if let Some(address) = extract_address() {
+                                            log::info!("Attempting to tap faucet for address: {}", address);
+                                            tap_faucet(target_environment, &address).await;
+                                            let res = client_connect(key_kind, target_environment).await;
+
+                                            match res {
+                                                Ok(_) => {
+                                                    state.wallet_connected.set(true);
+
+                                                },
+                                                Err(new_error) => {
+                                                    e = new_error;
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     log::error!("Error connecting: {:?}", e);
 
                                     match state.client_key_kind.lock().unwrap_ext().as_ref().unwrap_ext() {
@@ -176,7 +235,8 @@ impl LandingUi {
                         })
                     },
                     Phase::KeplrError(e) => {
-                        state.render_wallet_select(Some(e))
+                        //state.render_wallet_select(Some(e))
+                        state.render_missing_keplr_chain()
                     }
                     Phase::MissingKeplrChain => {
                         state.render_missing_keplr_chain()

@@ -302,8 +302,6 @@ impl<'a> TxBuilder<'a> {
             },
         };
 
-        let signer_info = self.signer.signer_info(sequence).await?;
-
         let gas_units = match self.gas_units_or_simulate {
             Some(gas_units) => gas_units,
             None => {
@@ -311,8 +309,13 @@ impl<'a> TxBuilder<'a> {
                     .gas_simulate_multiplier
                     .unwrap_or(Self::DEFAULT_GAS_MULTIPLIER);
 
+                let signer_info = self
+                    .signer
+                    .signer_info(sequence, layer_climb_proto::tx::SignMode::Unspecified)
+                    .await?;
+
                 let gas_info = self
-                    .simulate_gas(signer_info.clone(), account_number, &body)
+                    .simulate_gas(signer_info, account_number, &body)
                     .await?;
 
                 (gas_info.gas_used as f32 * gas_multiplier).ceil() as u64
@@ -332,8 +335,13 @@ impl<'a> TxBuilder<'a> {
             .calculate()?,
         };
 
+        let signer_info = self
+            .signer
+            .signer_info(sequence, layer_climb_proto::tx::SignMode::Direct)
+            .await?;
+
         let tx_bytes = self
-            .sign_tx(signer_info.clone(), account_number, &body, fee, false)
+            .sign_tx(signer_info, account_number, &body, fee, false)
             .await?;
         let broadcast_mode = self.broadcast_mode.unwrap_or(Self::DEFAULT_BROADCAST_MODE);
 

@@ -1,7 +1,7 @@
 mod block;
 mod contract;
 mod sidebar;
-mod wallet;
+pub mod wallet;
 
 use crate::prelude::*;
 use block::events::BlockEventsUi;

@@ -65,7 +65,11 @@ impl Address {
         .context(format!("invalid bech32: '{}'", value))?;
 
         if matches!(prefix, Some(prefix) if prefix != decoded_prefix) {
-            bail!("Address prefix does not match expected prefix");
+            bail!(
+                "Address prefix \"{}\" does not match expected prefix \"{}\"",
+                decoded_prefix,
+                prefix.unwrap()
+            );
         }
 
         Self::new_cosmos(decoded_bytes, &decoded_prefix)

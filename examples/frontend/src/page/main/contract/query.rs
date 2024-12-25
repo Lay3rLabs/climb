@@ -37,7 +37,7 @@ impl ContractQueryUi {
                 .with_text("Address")
                 .with_direction(LabelDirection::Column)
                 .render(TextInput::new()
-                    .with_placeholder("e.g. slayaddr...")
+                    .with_placeholder("e.g. cosmoaddr...")
                     .with_mixin(|dom| {
                         dom
                             .style("width", "30rem")

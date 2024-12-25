@@ -13,8 +13,8 @@ cfg_if::cfg_if! {
             async fn public_key_as_proto(&self) -> Result<layer_climb_proto::Any> {
                 public_key_to_proto(&self.public_key().await?)
             }
-            async fn signer_info(&self, sequence: u64) -> Result<layer_climb_proto::tx::SignerInfo> {
-                Ok(signer_info(self.public_key_as_proto().await?, sequence))
+            async fn signer_info(&self, sequence: u64, sign_mode: layer_climb_proto::tx::SignMode) -> Result<layer_climb_proto::tx::SignerInfo> {
+                Ok(signer_info(self.public_key_as_proto().await?, sequence, sign_mode))
             }
         }
     } else {
@@ -25,8 +25,8 @@ cfg_if::cfg_if! {
             async fn public_key_as_proto(&self) -> Result<layer_climb_proto::Any> {
                 public_key_to_proto(&self.public_key().await?)
             }
-            async fn signer_info(&self, sequence: u64) -> Result<layer_climb_proto::tx::SignerInfo> {
-                Ok(signer_info(self.public_key_as_proto().await?, sequence))
+            async fn signer_info(&self, sequence: u64, sign_mode: layer_climb_proto::tx::SignMode) -> Result<layer_climb_proto::tx::SignerInfo> {
+                Ok(signer_info(self.public_key_as_proto().await?, sequence, sign_mode))
             }
         }
     }
@@ -64,13 +64,14 @@ fn public_key_to_proto(public_key: &PublicKey) -> Result<layer_climb_proto::Any>
 fn signer_info(
     public_key: layer_climb_proto::Any,
     sequence: u64,
+    sign_mode: layer_climb_proto::tx::SignMode,
 ) -> layer_climb_proto::tx::SignerInfo {
     layer_climb_proto::tx::SignerInfo {
         public_key: Some(public_key),
         mode_info: Some(layer_climb_proto::tx::ModeInfo {
             sum: Some(layer_climb_proto::tx::mode_info::Sum::Single(
                 layer_climb_proto::tx::mode_info::Single {
-                    mode: layer_climb_proto::tx::SignMode::Direct.into(),
+                    mode: sign_mode.into(),
                 },
             )),
         }),

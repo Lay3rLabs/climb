@@ -216,7 +216,10 @@ impl QueryRequest for BaseAccountReq {
                 query_client
                     .account(req)
                     .await
-                    .map(|res| res.into_inner().account)?
+                    .map(|res| res.into_inner().account)
+                    .map_err(|err| {
+                        anyhow::Error::from(err).context(format!("account {} not found", self.addr))
+                    })?
                     .ok_or_else(|| anyhow!("account {} not found", self.addr))?
             }
             ConnectionMode::Rpc => client
