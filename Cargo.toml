@@ -79,6 +79,9 @@ http-body-util = "0.1.2"
 # Pool
 deadpool = "0.12.1"
 
+# Alloy
+alloy-primitives = "0.8.18"
+
 # Browser stuff
 dominator = "0.5.38"
 futures-signals = "0.3.34"
