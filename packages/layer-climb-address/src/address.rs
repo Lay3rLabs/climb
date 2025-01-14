@@ -171,6 +171,23 @@ impl std::fmt::Display for Address {
     }
 }
 
+impl From<alloy_primitives::Address> for Address {
+    fn from(addr: alloy_primitives::Address) -> Self {
+        Self::Eth(addr.into())
+    }
+}
+
+impl TryFrom<Address> for alloy_primitives::Address {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: Address) -> Result<Self> {
+        match addr {
+            Address::Eth(addr_eth) => Ok(addr_eth.into()),
+            Address::Cosmos { .. } => Err(anyhow!("Expected Eth address, got Cosmos")),
+        }
+    }
+}
+
 ///// Ethereum address
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -231,6 +248,18 @@ impl TryFrom<Address> for AddrEth {
 impl From<AddrEth> for Address {
     fn from(addr: AddrEth) -> Self {
         Self::Eth(addr)
+    }
+}
+
+impl From<alloy_primitives::Address> for AddrEth {
+    fn from(addr: alloy_primitives::Address) -> Self {
+        Self(**addr)
+    }
+}
+
+impl From<AddrEth> for alloy_primitives::Address {
+    fn from(addr: AddrEth) -> Self {
+        alloy_primitives::Address::new(addr.0)
     }
 }
 

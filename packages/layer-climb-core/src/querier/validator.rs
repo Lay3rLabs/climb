@@ -25,7 +25,7 @@ pub struct ValidatorSetReq<'a> {
     pub proposer_address: Option<&'a [u8]>,
 }
 
-impl<'a> QueryRequest for ValidatorSetReq<'a> {
+impl QueryRequest for ValidatorSetReq<'_> {
     type QueryResponse = layer_climb_proto::tendermint::ValidatorSet;
 
     async fn request(

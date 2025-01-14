@@ -1,6 +1,6 @@
 [package]
 name = "layer-climb-address"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 license = "Apache-2.0"
 
@@ -9,6 +9,9 @@ crate-type = ["lib"]
 
 [features]
 web = ["dep:web-sys", "dep:js-sys"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)'] }
 
 [dependencies]
 ######## Local dependencies ########
@@ -29,6 +32,7 @@ base64 = {workspace = true}
 tendermint = {workspace = true} 
 thiserror = {workspace = true} 
 log = {workspace = true} 
+alloy-primitives = {workspace = true} 
 
 ######## Target-specific dependencies ########
 [target.'cfg(target_arch = "wasm32")'.dependencies]
