@@ -10,6 +10,9 @@ crate-type = ["lib"]
 [features]
 web = ["dep:web-sys", "dep:js-sys"]
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)'] }
+
 [dependencies]
 ######## Local dependencies ########
 layer-climb-proto = { path = "../layer-climb-proto"}
