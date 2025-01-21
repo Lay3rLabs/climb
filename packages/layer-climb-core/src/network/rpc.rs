@@ -7,22 +7,13 @@ use tendermint_rpc::Response;
 
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
-        // we assume that any signer we use in wasm32 is purely single-threaded
         #[async_trait(?Send)]
         pub trait RpcTransport: Send + Sync {
-            fn default() -> Self
-            where
-                Self: Sized;
-
             async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String>;
         }
 
         #[async_trait(?Send)]
         impl RpcTransport for reqwest::Client {
-            fn default() -> Self {
-                reqwest::Client::new()
-            }
-
             async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
                 self.post(url)
                     .header("Content-Type", "application/json")
@@ -36,22 +27,13 @@ cfg_if::cfg_if! {
             }
         }
     } else {
-        // we assume that any signer we use in wasm32 is purely single-threaded
         #[async_trait]
         pub trait RpcTransport: Send + Sync {
-            fn default() -> Self
-            where
-                Self: Sized;
-
             async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String>;
         }
 
         #[async_trait]
         impl RpcTransport for reqwest::Client {
-            fn default() -> Self {
-                reqwest::Client::new()
-            }
-
             async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
                 self.post(url)
                     .header("Content-Type", "application/json")
