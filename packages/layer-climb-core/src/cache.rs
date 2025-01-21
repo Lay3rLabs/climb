@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::network::rpc::RpcClient;
+use crate::network::rpc::{RpcClient, RpcTransport};
 
 /// This cache is on the QueryClient and can be used
 /// to either pre-populate the cache with resources created on the outside
@@ -20,33 +20,20 @@ pub struct ClimbCache {
     #[cfg(not(target_arch = "wasm32"))]
     grpc: Arc<Mutex<HashMap<String, tonic::transport::Channel>>>,
     rpc: Arc<Mutex<HashMap<String, RpcClient>>>,
-    http: Arc<Mutex<Option<reqwest::Client>>>,
+    rpc_transport: Arc<dyn RpcTransport>,
 }
 
-impl Default for ClimbCache {
-    fn default() -> Self {
+impl ClimbCache {
+    pub fn new(rpc_transport: Arc<dyn RpcTransport>) -> Self {
         Self {
             grpc: Arc::new(Mutex::new(HashMap::new())),
             rpc: Arc::new(Mutex::new(HashMap::new())),
-            http: Arc::new(Mutex::new(None)),
+            rpc_transport,
         }
     }
 }
 
 impl ClimbCache {
-    pub fn get_http_client(&self) -> reqwest::Client {
-        let client = { self.http.lock().unwrap().clone() };
-
-        match client {
-            Some(client) => client,
-            None => {
-                let client = reqwest::Client::new();
-                *self.http.lock().unwrap() = Some(client.clone());
-                client
-            }
-        }
-    }
-
     pub fn get_rpc_client(&self, config: &ChainConfig) -> Option<RpcClient> {
         match config.rpc_endpoint.as_ref() {
             None => None,
@@ -56,7 +43,7 @@ impl ClimbCache {
                 Some(match rpc {
                     Some(rpc) => rpc,
                     None => {
-                        let rpc = RpcClient::new(endpoint.to_string(), self.get_http_client());
+                        let rpc = RpcClient::new(endpoint.to_string(), self.rpc_transport.clone());
                         self.rpc
                             .lock()
                             .unwrap()

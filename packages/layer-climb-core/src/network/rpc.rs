@@ -1,15 +1,80 @@
+use std::sync::Arc;
+
 use crate::prelude::*;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tendermint_rpc::Response;
 
-#[derive(Clone, Debug)]
+cfg_if::cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        // we assume that any signer we use in wasm32 is purely single-threaded
+        #[async_trait(?Send)]
+        pub trait RpcTransport: Send + Sync {
+            fn default() -> Self
+            where
+                Self: Sized;
+
+            async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String>;
+        }
+
+        #[async_trait(?Send)]
+        impl RpcTransport for reqwest::Client {
+            fn default() -> Self {
+                reqwest::Client::new()
+            }
+
+            async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
+                self.post(url)
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .send()
+                    .await
+                    .map_err(|e| anyhow!("{}", e))?
+                    .text()
+                    .await
+                    .map_err(|e| anyhow!("{}", e))
+            }
+        }
+    } else {
+        // we assume that any signer we use in wasm32 is purely single-threaded
+        #[async_trait]
+        pub trait RpcTransport: Send + Sync {
+            fn default() -> Self
+            where
+                Self: Sized;
+
+            async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String>;
+        }
+
+        #[async_trait]
+        impl RpcTransport for reqwest::Client {
+            fn default() -> Self {
+                reqwest::Client::new()
+            }
+
+            async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
+                self.post(url)
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .send()
+                    .await
+                    .map_err(|e| anyhow!("{}", e))?
+                    .text()
+                    .await
+                    .map_err(|e| anyhow!("{}", e))
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct RpcClient {
-    http_client: reqwest::Client,
+    http_client: Arc<dyn RpcTransport>,
     url: String,
 }
 
 impl RpcClient {
-    pub fn new(url: String, http_client: reqwest::Client) -> Self {
+    pub fn new(url: String, http_client: Arc<dyn RpcTransport>) -> Self {
         Self { url, http_client }
     }
 
@@ -120,12 +185,7 @@ impl RpcClient {
     async fn send<T: tendermint_rpc::Request>(&self, req: T) -> Result<T::Response> {
         let res = self
             .http_client
-            .post(self.url.clone())
-            .header("Content-Type", "application/json")
-            .body(req.into_json().into_bytes())
-            .send()
-            .await?
-            .text()
+            .post_json_bytes(&self.url, req.into_json().into_bytes())
             .await?;
 
         T::Response::from_string(res).map_err(|err| anyhow::anyhow!(err))

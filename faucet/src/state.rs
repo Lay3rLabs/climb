@@ -23,6 +23,7 @@ impl AppState {
             config.mnemonic.clone(),
             config.chain_config.clone(),
             None,
+            None,
         )
         .with_minimum_balance(
             config.minimum_credit_balance_threshhold,
