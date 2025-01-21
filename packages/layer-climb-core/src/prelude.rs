@@ -11,7 +11,7 @@ pub use crate::{
     cache::ClimbCache,
     contract_helpers::contract_str_to_msg,
     events::CosmosTxEvents,
-    querier::{ConnectionMode, QueryClient, QueryRequest},
+    querier::{Connection, ConnectionMode, QueryClient, QueryRequest},
     signing::SigningClient,
     transaction::TxBuilder,
 };

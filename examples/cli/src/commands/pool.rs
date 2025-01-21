@@ -91,6 +91,7 @@ impl PoolCommand {
                     ctx.client_mnemonic()?,
                     ctx.chain_config()?,
                     start_derivation_index,
+                    None,
                 )
                 .with_minimum_balance(
                     minimum_balance_threshhold,

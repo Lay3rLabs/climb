@@ -21,7 +21,11 @@ use basic::BlockHeightReq;
 use middleware::{QueryMiddlewareMapReq, QueryMiddlewareMapResp, QueryMiddlewareRun};
 use tracing::instrument;
 
-use crate::{cache::ClimbCache, network::rpc::RpcClient, prelude::*};
+use crate::{
+    cache::ClimbCache,
+    network::rpc::{RpcClient, RpcTransport},
+    prelude::*,
+};
 
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
@@ -34,6 +38,7 @@ cfg_if::cfg_if! {
             pub middleware_run: Arc<Vec<QueryMiddlewareRun>>,
             pub balances_pagination_limit: u64,
             pub wait_blocks_poll_sleep_duration: Duration,
+            pub connection: Connection,
             _grpc_channel: Option<tonic_web_wasm_client::Client>,
             _rpc_client: Option<RpcClient>,
             _connection_mode: Arc<AtomicU8>,
@@ -57,6 +62,7 @@ cfg_if::cfg_if! {
             pub middleware_run: Arc<Vec<QueryMiddlewareRun>>,
             pub balances_pagination_limit: u64,
             pub wait_blocks_poll_sleep_duration: Duration,
+            pub connection: Connection,
             _grpc_channel: Option<tonic::transport::Channel>,
             _rpc_client: Option<RpcClient>,
             _connection_mode: Arc<AtomicU8>,
@@ -92,12 +98,10 @@ const DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION: std::time::Duration =
     std::time::Duration::from_secs(1);
 
 impl QueryClient {
-    pub async fn new(
-        chain_config: ChainConfig,
-        default_connection_mode: Option<ConnectionMode>,
-    ) -> Result<Self> {
-        let cache = ClimbCache::default();
-        Self::new_with_cache(chain_config, cache, default_connection_mode).await
+    pub async fn new(chain_config: ChainConfig, connection: Option<Connection>) -> Result<Self> {
+        let connection = connection.unwrap_or_default();
+        let cache = ClimbCache::new(connection.rpc.clone());
+        Self::new_with_cache(chain_config, cache, Some(connection)).await
     }
 
     // if None, will make a best-guess attempt via block query
@@ -140,12 +144,15 @@ impl QueryClient {
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
-            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, connection: Option<Connection>) -> Result<Self> {
                 let _grpc_channel = cache.get_web_grpc(&chain_config).await?;
                 let _rpc_client = cache.get_rpc_client(&chain_config);
 
+                let connection = connection.unwrap_or_default();
 
                 let _self = Self {
+                    // if None, this will be overriden, just set _something_
+                    _connection_mode: Arc::new(AtomicU8::new(connection.preferred_mode.unwrap_or(ConnectionMode::Grpc) as u8)),
                     chain_config,
                     cache,
                     middleware_map_req: Arc::new(QueryMiddlewareMapReq::default_list()),
@@ -155,23 +162,25 @@ impl QueryClient {
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
                     _grpc_channel,
                     _rpc_client,
-                    // if None, this will be overriden, just set _something_
-                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode.unwrap_or(ConnectionMode::Grpc) as u8))
+                    connection,
                 };
 
-                if default_connection_mode.is_none() {
+                if _self.connection.preferred_mode.is_none() {
                     _self.set_connection_mode(None).await?;
                 }
 
                 Ok(_self)
             }
         } else {
-            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, default_connection_mode: Option<ConnectionMode>) -> Result<Self> {
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, connection: Option<Connection>) -> Result<Self> {
                 let _grpc_channel = cache.get_grpc(&chain_config).await?;
                 let _rpc_client = cache.get_rpc_client(&chain_config);
 
+                let connection = connection.unwrap_or_default();
 
                 let _self = Self {
+                    // if None, this will be overriden, just set _something_
+                    _connection_mode: Arc::new(AtomicU8::new(connection.preferred_mode.unwrap_or(ConnectionMode::Grpc) as u8)),
                     chain_config,
                     cache,
                     middleware_map_req: Arc::new(QueryMiddlewareMapReq::default_list()),
@@ -181,11 +190,10 @@ impl QueryClient {
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
                     _grpc_channel,
                     _rpc_client,
-                    // if None, this will be overriden, just set _something_
-                    _connection_mode: Arc::new(AtomicU8::new(default_connection_mode.unwrap_or(ConnectionMode::Grpc) as u8))
+                    connection,
                 };
 
-                if default_connection_mode.is_none() {
+                if _self.connection.preferred_mode.is_none() {
                     _self.set_connection_mode(None).await?;
                 }
 
@@ -256,10 +264,25 @@ impl QueryClient {
     }
 }
 
+#[derive(Clone)]
+pub struct Connection {
+    // Todo - expand for gRPC, get rid of feature-gating
+    pub rpc: Arc<dyn RpcTransport>,
+    pub preferred_mode: Option<ConnectionMode>,
+}
+
+impl Default for Connection {
+    fn default() -> Self {
+        Self {
+            rpc: Arc::new(reqwest::Client::new()),
+            preferred_mode: None,
+        }
+    }
+}
+
 // currently only used via automatic fallback in very specific cases
 // TODO: make this more general
 #[derive(Clone, Copy, Debug)]
-#[repr(u8)]
 pub enum ConnectionMode {
     Grpc,
     Rpc,

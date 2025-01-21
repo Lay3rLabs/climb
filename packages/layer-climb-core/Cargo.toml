@@ -1,6 +1,6 @@
 [package]
 name = "layer-climb-core"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 license = "Apache-2.0"
 
@@ -39,7 +39,7 @@ serde_json = {workspace = true}
 bip39 = {workspace = true} 
 
 # Networking
-reqwest = {workspace = true } 
+reqwest = {workspace = true} 
 
 # Async
 futures = {workspace = true} 
