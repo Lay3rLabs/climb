@@ -128,7 +128,7 @@ async fn fund_faucet(addr: &Address) {
 impl App {
     pub async fn new() -> Option<Self> {
         if let Err(e) = init().await {
-            tracing::error!("Failed to initialize app: {}", e);
+            tracing::warn!("skipping faucet test: {}", e);
             return None;
         }
 
