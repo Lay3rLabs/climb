@@ -33,7 +33,11 @@ jobs:
         run: cargo clippy --all --all-features --tests -- -D warnings
 
       - name: cargo test
-        run: cargo test --all-features --lib
+        run: cargo test --all-features --workspace
+        env:
+          RUST_BACKTRACE: 1
+          RUST_LOG: info
+          CLIMB_TEST_MNEMONIC: "session fatigue usage album plunge yard slice bicycle pig fly crack spin abandon dust misery minute orange lava raven sausage pill urge assault drop"
 
   pages_build:
     name: Build Pages 
