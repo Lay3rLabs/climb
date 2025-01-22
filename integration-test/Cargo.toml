@@ -1,0 +1,17 @@
+[package]
+name = "layer-climb-tests"
+version = "0.3.3"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+######## Local dependencies ########
+layer-climb = { workspace = true } 
+layer-climb-cli = { workspace = true } 
+tracing-subscriber = { workspace = true } 
+tracing = { workspace = true } 
+dotenvy = { workspace = true } 
+tokio = { workspace = true } 

@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "examples/*", "faucet"]
+members = ["packages/*", "examples/*", "faucet", "integration-test"]
 resolver = "2"
 
 [workspace.dependencies]

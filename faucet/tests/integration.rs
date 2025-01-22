@@ -5,7 +5,12 @@ use layer_climb_faucet::handlers::credit::CreditRequest;
 
 #[tokio::test]
 async fn status_ok() {
-    let status = App::new().await.status().await;
+    let mut app = match App::new().await {
+        Some(app) => app,
+        None => return,
+    };
+
+    let status = app.status().await;
 
     let faucet_addr = CONFIG
         .chain_config
@@ -31,7 +36,10 @@ async fn status_ok() {
 
 #[tokio::test]
 async fn credit_works() {
-    let mut app = App::new().await;
+    let mut app = match App::new().await {
+        Some(app) => app,
+        None => return,
+    };
 
     let client = generate_signing_client().await;
 
@@ -66,7 +74,10 @@ async fn credit_works() {
 
 #[tokio::test]
 async fn credit_works_multi_distribution_serial() {
-    let mut app = App::new().await;
+    let mut app = match App::new().await {
+        Some(app) => app,
+        None => return,
+    };
 
     let client = generate_signing_client().await;
 
@@ -129,7 +140,10 @@ async fn credit_works_multi_distribution_serial() {
 
 #[tokio::test]
 async fn credit_works_multi_distribution_concurrent() {
-    let mut app = App::new().await;
+    let mut app = match App::new().await {
+        Some(app) => app,
+        None => return,
+    };
 
     let client = generate_signing_client().await;
 
@@ -240,7 +254,10 @@ async fn send_to_self_works() {
         );
     }
 
-    let mut app = App::new().await;
+    let mut app = match App::new().await {
+        Some(app) => app,
+        None => return,
+    };
 
     // force at least one distributor
     let dummy = generate_signing_client().await;

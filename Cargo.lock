@@ -2152,6 +2152,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "layer-climb-tests"
+version = "0.3.3"
+dependencies = [
+ "dotenvy",
+ "layer-climb",
+ "layer-climb-cli",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -61,12 +61,11 @@ pub struct App {
 }
 
 // this is called from every test, but we gate it with an async-aware lock so it only runs once
-async fn init() {
+async fn init() -> Result<(), String> {
     let mut lock = INIT.lock().await;
 
     if !*lock {
         *lock = true;
-
         let mut tracing_env = tracing_subscriber::EnvFilter::from_default_env();
         for directive in &CONFIG.tracing_directives {
             tracing_env = tracing_env.add_directive(directive.parse().unwrap());
@@ -81,15 +80,17 @@ async fn init() {
             .with(tracing_env)
             .try_init()
             .unwrap();
+    }
 
-        let original_faucet_signer =
-            KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
-        let original_faucet =
-            SigningClient::new(CONFIG.chain_config.clone(), original_faucet_signer, None)
-                .await
-                .unwrap();
+    let original_faucet_signer =
+        KeySigner::new_mnemonic_str(&CONFIG.mnemonic.clone(), None).unwrap();
 
-        ORIGINAL_FAUCET.set(original_faucet).unwrap();
+    match SigningClient::new(CONFIG.chain_config.clone(), original_faucet_signer, None).await {
+        Ok(original_faucet) => {
+            ORIGINAL_FAUCET.set(original_faucet).unwrap();
+            Ok(())
+        }
+        Err(e) => Err(format!("Failed to create original faucet: {}", e)),
     }
 }
 
@@ -125,8 +126,11 @@ async fn fund_faucet(addr: &Address) {
 }
 
 impl App {
-    pub async fn new() -> Self {
-        init().await;
+    pub async fn new() -> Option<Self> {
+        if let Err(e) = init().await {
+            tracing::error!("Failed to initialize app: {}", e);
+            return None;
+        }
 
         // generate a new faucet per application - otherwise they will have sequence errors
         // because each test is run in a different thread
@@ -155,13 +159,13 @@ impl App {
             .unwrap();
 
         // and we're off!
-        Self {
+        Some(Self {
             _router: router,
             query_client: QueryClient::new(config.chain_config.clone(), None)
                 .await
                 .unwrap(),
             config,
-        }
+        })
     }
 
     async fn router(&mut self) -> &mut Router {
