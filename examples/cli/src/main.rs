@@ -7,7 +7,7 @@ use anyhow::Result;
 use args::{CliArgs, Command, ContractArgs, FaucetArgs, PoolArgs, WalletArgs};
 use clap::Parser;
 use context::AppContext;
-use layer_climb_cli::command::{ContractLog, WalletLog};
+use layer_climb_cli::command::{create_wallet, ContractLog, WalletCommand, WalletLog};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -40,11 +40,18 @@ async fn main() -> Result<()> {
 
     match &ctx.args.command {
         Command::Wallet(WalletArgs { command }) => {
+            // this command doesn't need a full client
+            if matches!(command, WalletCommand::Create) {
+                let (addr, mnemonic) = create_wallet(ctx.chain_config()?, &mut ctx.rng).await?;
+                tracing::info!("Created wallet with address: {}", addr);
+                tracing::info!("Mnemonic: {}", mnemonic);
+                return Ok(());
+            }
+
             command
                 .run(ctx.any_client().await?, &mut ctx.rng, |line| match line {
-                    WalletLog::Create { addr, mnemonic } => {
-                        tracing::info!("Created wallet with address: {}", addr);
-                        tracing::info!("Mnemonic: {}", mnemonic);
+                    WalletLog::Create { .. } => {
+                        unreachable!("already handled");
                     }
                     WalletLog::Show { addr, balances } => {
                         tracing::info!("Wallet address: {}", addr);

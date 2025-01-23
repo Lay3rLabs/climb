@@ -48,19 +48,9 @@ impl WalletCommand {
         let client = client.into();
         match self {
             WalletCommand::Create => {
-                let entropy: [u8; 32] = rng.gen();
-                let mnemonic = Mnemonic::from_entropy(&entropy)?;
-
-                let signer = KeySigner::new_mnemonic_iter(mnemonic.words(), None)?;
-                let addr = client
-                    .as_querier()
-                    .chain_config
-                    .address_from_pub_key(&signer.public_key().await?)?;
-
-                log(WalletLog::Create {
-                    addr: addr.clone(),
-                    mnemonic: mnemonic.clone(),
-                });
+                let (addr, mnemonic) =
+                    create_wallet(client.as_querier().chain_config.clone(), rng).await?;
+                log(WalletLog::Create { addr, mnemonic });
             }
             WalletCommand::Show => {
                 let balances = client
@@ -142,4 +132,17 @@ pub enum WalletLog {
         denom: String,
         tx_resp: Box<TxResponse>,
     },
+}
+
+pub async fn create_wallet(
+    chain_config: ChainConfig,
+    rng: &mut impl Rng,
+) -> Result<(Address, Mnemonic)> {
+    let entropy: [u8; 32] = rng.gen();
+    let mnemonic = Mnemonic::from_entropy(&entropy)?;
+
+    let signer = KeySigner::new_mnemonic_iter(mnemonic.words(), None)?;
+    let addr = chain_config.address_from_pub_key(&signer.public_key().await?)?;
+
+    Ok((addr, mnemonic))
 }
