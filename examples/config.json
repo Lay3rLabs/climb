@@ -19,14 +19,14 @@
     },
     "local": {
         "chain": {
-            "chain_id": "local-osmosis",
+            "chain_id": "local-wasmd",
             "rpc_endpoint": "http://localhost:26657",
             "rest_endpoint": "http://localhost:1317",
             "gas_price": 0.025,
-            "gas_denom": "uosmo",
+            "gas_denom": "ulayer",
             "address_kind": {
                 "cosmos": {
-                    "prefix": "osmo"
+                    "prefix": "wasm"
                 }
             }
         },
