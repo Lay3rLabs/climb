@@ -72,7 +72,7 @@ impl CosmosInstance {
             "--env",
             &format!("CHAIN_ID={}", self.chain_config.chain_id),
             "--env",
-            &format!("FEE={}", self.chain_config.gas_denom),
+            &format!("FEE_TOKEN={}", self.chain_config.gas_denom),
             "cosmwasm/wasmd:latest",
             "/opt/setup_wasmd.sh",
         ]
