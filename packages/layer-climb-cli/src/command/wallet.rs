@@ -138,7 +138,7 @@ pub async fn create_wallet(
     chain_config: ChainConfig,
     rng: &mut impl Rng,
 ) -> Result<(Address, Mnemonic)> {
-    let entropy: [u8; 32] = rng.gen();
+    let entropy: [u8; 32] = rng.random();
     let mnemonic = Mnemonic::from_entropy(&entropy)?;
 
     let signer = KeySigner::new_mnemonic_iter(mnemonic.words(), None)?;

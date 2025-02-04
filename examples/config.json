@@ -17,7 +17,7 @@
             "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
         }
     },
-    "local": {
+    "local-wasmd": {
         "chain": {
             "chain_id": "local-wasmd",
             "rpc_endpoint": "http://localhost:26657",
@@ -27,6 +27,23 @@
             "address_kind": {
                 "cosmos": {
                     "prefix": "wasm"
+                }
+            }
+        },
+        "faucet": {
+            "mnemonic": "opinion knife other balcony surge more bamboo canoe romance ask argue teach anxiety adjust spike mystery wolf alone torch tail six decide wash alley"
+        }
+    },
+    "local": {
+        "chain": {
+            "chain_id": "local-osmosis",
+            "rpc_endpoint": "http://localhost:26657",
+            "rest_endpoint": "http://localhost:1317",
+            "gas_price": 0.025,
+            "gas_denom": "uosmo",
+            "address_kind": {
+                "cosmos": {
+                    "prefix": "osmo"
                 }
             }
         },
