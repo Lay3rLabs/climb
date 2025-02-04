@@ -1,5 +1,6 @@
 [package]
 name = "layer-climb"
+description = "Climb - A Rust Cosmos Client Library"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
