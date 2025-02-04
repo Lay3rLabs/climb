@@ -10,11 +10,11 @@ repository = "https://github.com/Lay3rLabs/climb"
 
 [workspace.dependencies]
 # Local
-layer-climb = { path = "packages/layer-climb" }
-layer-climb-address = { path = "packages/layer-climb-address" }
-layer-climb-cli = { path = "packages/layer-climb-cli" }
-layer-climb-config = { path = "packages/layer-climb-config" }
-layer-climb-core = { path = "packages/layer-climb-core" }
+layer-climb = { path = "packages/layer-climb", version = "0.3.6" }
+layer-climb-address = { path = "packages/layer-climb-address", version = "0.3.6" }
+layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.3.6" }
+layer-climb-config = { path = "packages/layer-climb-config", version = "0.3.6" }
+layer-climb-core = { path = "packages/layer-climb-core", version = "0.3.6" }
 
 # General
 cfg-if = "1.0.0"
