@@ -2,6 +2,11 @@
 members = ["packages/*", "examples/*", "faucet", "integration-test"]
 resolver = "2"
 
+[workspace.package]
+version = "0.3.6"
+edition = "2021"
+license = "Apache-2.0"
+
 [workspace.dependencies]
 # Local
 layer-climb = { path = "packages/layer-climb" }
@@ -15,7 +20,7 @@ cfg-if = "1.0.0"
 async-trait = "0.1.82"
 
 # Error handling
-thiserror = "1.0.61"
+thiserror = "2.0.11"
 anyhow = "1.0.86"
 
 # Binary encoding
@@ -45,20 +50,19 @@ url = "2.5.2"
 
 # Async
 futures = "0.3"
-# TODO: waiting for https://github.com/smol-rs/async-broadcast/pull/61 to land
-async-broadcast = { git = "https://github.com/smol-rs/async-broadcast.git", rev="de420a3b6e72939d96250573c7c242d0ff195424"}
+async-broadcast = "0.7.2" 
 
 # Randomness
-rand = "0.8.5"
+rand = "0.9.0"
 
 # Cosmos
 cosmwasm-std = "2.0.3"
-tendermint = {version = "0.39.1", features = ["secp256k1"]}
-tendermint-rpc = {version = "0.39.1", default-features = false}
+tendermint = {version = "0.40.1", features = ["secp256k1"]}
+tendermint-rpc = {version = "0.40.1", default-features = false}
 
 # Proto
-cosmos-sdk-proto = {version = "0.25.0", default-features = false, features = ["std", "cosmwasm", "grpc"]} 
-tendermint-proto = {version = "0.39.1", default-features = false} 
+cosmos-sdk-proto = {version = "0.26.1", default-features = false, features = ["std", "cosmwasm", "grpc"]} 
+tendermint-proto = {version = "0.40.1", default-features = false} 
 
 # Wasm
 tonic-web-wasm-client = "0.6.0"
@@ -71,7 +75,7 @@ js-sys = "0.3.70"
 clap = { version = "4.5.7", features = ["derive"] }
 dotenvy = {version = "0.15.7", features = ["cli"]}
 tokio = { version = "1", features = ["full"] }
-axum = {version = "0.7.7", features = ["macros"]}
+axum = {version = "0.8.1", features = ["macros"]}
 tower-http = {version = "0.6.1", features = ["cors", "trace"] }
 tower = { version = "0.5.1", features = ["util"] }
 http-body-util = "0.1.2"

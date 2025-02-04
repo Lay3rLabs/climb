@@ -105,7 +105,7 @@ impl RpcClient {
     pub async fn block(
         &self,
         height: Option<u64>,
-    ) -> Result<tendermint_rpc::endpoint::block::Response> {
+    ) -> Result<tendermint_rpc::endpoint::block::v0_38::DialectResponse> {
         self.send(tendermint_rpc::endpoint::block::Request {
             height: height.map(|h| h.try_into()).transpose()?,
         })

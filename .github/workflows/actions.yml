@@ -64,6 +64,8 @@ jobs:
       - name: Build frontend
         run: trunk build --no-default-features --features dev --release --public-url=https://lay3rlabs.github.io/climb/
         working-directory: ./examples/frontend
+        env:
+          RUSTFLAGS: "--cfg getrandom_backend=\"wasm_js\""
       
       - name: Copy for 404 redirect
         run: cp ./examples/frontend/dist/index.html ./examples/frontend/dist/404.html

@@ -20,7 +20,7 @@ use layer_climb_faucet::{
         status::{StatusCoin, StatusResponse},
     },
 };
-use rand::{prelude::*, rngs::OsRng};
+use rand::{rngs::OsRng, TryRngCore};
 use serde::de::DeserializeOwned;
 use tower::Service;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -205,8 +205,8 @@ impl App {
 }
 
 fn generate_mnemonic() -> Mnemonic {
-    let mut rng = OsRng;
-    let entropy: [u8; 32] = rng.gen();
+    let mut entropy = [0u8; 32];
+    OsRng.try_fill_bytes(&mut entropy).unwrap();
     Mnemonic::from_entropy(&entropy).unwrap()
 }
 
