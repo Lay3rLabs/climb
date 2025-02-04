@@ -32,7 +32,7 @@ use layer_climb::prelude::*;
 
 ## SigningClient
 
-[source code](./src/signing.rs#L20)
+[source code](packages/layer-climb-core/src/signing)
 
 A SigningClient needs only two things, a ChainConfig and a TxSigner:
 
@@ -46,13 +46,13 @@ The `SigningClient` is cheap to clone and also fairly cheap to create.
 
 #### ChainConfig
 
-[source code](./src/config.rs#L8)
+[source code](packages/layer-climb-config/src)
 
-This is a serde-friendly data struct and is typically loaded from disk. See the [example in climb-cli](../../tools/climb-cli/config.json)
+This is a serde-friendly data struct and is typically loaded from disk. See the [example in climb-cli](examples/config.json)
 
 #### TxSigner
 
-[source code](./src/transaction.rs#L79)
+[source code](packages/layer-climb-core/src/transaction.rs)
 
 This is a trait with only two required functions:
 
@@ -62,7 +62,7 @@ fn public_key(&self) -> PublicKey;
 ```
 
 
-For convenience, it can be created from a mnemonic with the provided [KeySigner](./src/signing/key.rs#L16) like:
+For convenience, it can be created from a mnemonic with the provided [KeySigner](packages/layer-climb-address/src/key.rs) like:
 
 ```rust
 use layer_climb::prelude::*;
@@ -85,11 +85,11 @@ let mnemonic = Mnemonic::from_entropy(&entropy)?;
 let signer = KeySigner::new_mnemonic_iter(mnemonic.word_iter(), None)?;
 ```
 
-In fact, that's exactly how the `generate-wallet` command in [climb-cli](../../tools/climb-cli/) works!
+In fact, that's exactly how the `generate-wallet` command in [climb-cli](packages/layer-climb-cli/src/command/wallet.rs) works!
 
 ## QueryClient
 
-[source code](./src/querier.rs#L38) 
+[source code](packages/layer-climb-core/src/querier.rs) 
 
 If you have a SigningClient, then a QueryClient is created for you automatically as `signing_client.querier` and you have the wallet address in `signing_client.addr`
 
@@ -107,7 +107,7 @@ The QueryClient struct is slightly different for web targets, but this is all de
 
 ## Addresses
 
-[source code](./src/address.rs#L28)
+[source code](packages/layer-climb-address/src/address.rs)
 
 One difference compared to other clients is that we require knowing the address type. This paves the way for supporting Ethereum-style address strings throughout the client. You can construct an address manually via methods like `new_cosmos()`, but it's more convenient to create it via a method on `ChainConfig`:
 
@@ -141,7 +141,7 @@ signing_client.transfer(amount, recipient_addr, "uusdc", None).await?;
 
 The last `None` is typical for all transaction methods. It takes a `TxBuilder` which allows configuring per-transaction settings like the gas fee, simulation multiplier, and many more.
 
-[source code](./src/transaction.rs#L29)
+[source code](packages/layer-climb-core/src/transaction.rs)
 
 Technically, you don't even need a `SigningClient` for transactions, a `TxSigner` + `TxBuilder` + `QueryClient` is enough, but this is unwieldy. When you want to change transaction defaults, it's more convenient to get a `TxBuilder` from the `SigningClient`, and pass that as a parameter to the method (it will automatically pass the `TxSigner` along):
 
@@ -160,11 +160,11 @@ let tx_resp = signing_client.transfer(amount, recipient_addr, None, Some(tx_buil
 
 Internally, Query methods turn the arguments into a struct which implements a QueryRequest trait.
 
-[source code](./src/querier.rs#L52)
+[source code](packages/layer-climb-core/src/querier.rs)
 
 The exact implementation here is likely to change, but it's a way to support generic middleware over all requests so we can do things like retry requests on failure, write out logs, etc. More details on this below.
 
-As an example, calling the [contract_code_info](./src/querier/contract.rs#L29) method on `QueryClient` creates an internal [ContractCodeInfoReq](./src/querier/contract.rs#L114) struct and the actual query is implemented on that struct's [request](./src/querier/contract.rs#L117) method.
+As an example, calling the [contract_code_info](packages/layer-climb-core/src/querier/contract.rs) method on `QueryClient` creates an internal [ContractCodeInfoReq](packages/layer-climb-core/src/querier/contract.rs) struct and the actual query is implemented on that struct's [request](packages/layer-climb-core/src/querier/contract.rs) method.
 
 This is the pattern for all queries.
 
@@ -174,13 +174,13 @@ Transactions work in a similar way, however instead of creating an internal Requ
 
 This allows for calling those message-creating methods separately, and brodcasting them together in one transaction.
 
-The [TxBuilder broadcast method](./src/transaction.rs#L203) takes an iterator of these messages, which must be converted into a protobuf `Any`.
+The [TxBuilder broadcast method](packages/layer-climb-core/src/transaction.rs) takes an iterator of these messages, which must be converted into a protobuf `Any`.
 
 ## Events
 
 As a convenience helper to filter and search events, consider using `CosmosTxEvents`. It has `From` impls for various event sources like `TxResponse`, `Vec<Event>`, etc.
 
-[source code](./src/events.rs#L182)
+[source code](packages/layer-climb-core/src/events.rs)
 
 It's a nearly zero-cost abstraction (just dynamic dispatch). Internally, it has variants with references, and so if you pass a reference source there are no allocations.
 
@@ -318,15 +318,15 @@ As of right now, errors are merely emitted as `anyhow` strings. While convenient
 
 There are convenient methods for client, connection, and channel handshakes
 
-[source code](./src/signing/ibc/handshake.rs)
+[source code](packages/layer-climb-core/src/signing/ibc/handshake.rs)
 
 With the handshake completed, we can create a fully-functioning IBC relayer:
 
-[source code](./src/signing/ibc/relayer.rs)
+[source code](packages/layer-climb-core/src/signing/ibc/relayer.rs)
 
 The `IbcRelayer` type is constructed from a `IbcRelayerBuilder`. This allows for having a cache that can be re-used across instances, while also mutating the cache when starting up so that expired clients can be recreated.
 
-[source code](./src/signing/ibc/relayer/builder.rs)
+[source code](packages/layer-climb-core/src/signing/ibc/relayer/builder.rs)
 
 The ergonomics of this relayer are intended to support the use-case of relaying over preconfigured ports, not necessarily assuming that the ibc clients are maintained by the ecosystem such as ICS-20 on a popular mainnet.
 
@@ -336,8 +336,8 @@ _note: the relayer has been tested to complete packets from one chain to another
 
 Interacting with contracts is straightforward. Transactions (like instantiate, execute, etc.) are on SigningClient, and queries (like "smart queries" and "contract info") are on QueryClient
 
-* [transactions source code](./src/signing/contract/tx.rs)
-* [queries source code](./src/querier/contract.rs)
+* [transactions source code](packages/layer-climb-core/src/signing/contract/tx.rs)
+* [queries source code](packages/layer-climb-core/src/querier/contract.rs)
 
 Let's look at some examples. For the sake of brevity, let's assume we already have a `SigningClient` called `client`, and let's assume our contract has the following types:
 
@@ -370,7 +370,7 @@ pub struct MessagesResp {
 ```
 
 ### Contract Upload
-[source code](./src/signing/contract/tx.rs#L13)
+[source code](packages/layer-climb-core/src/signing/contract/tx.rs)
 
 ```rust
 use layer_climb::prelude::*;
@@ -382,7 +382,7 @@ let (code_id, tx_resp) = client.contract_upload_file(wasm_byte_code, None).await
 The `code_id` in that response is a `u64`, and the `tx_resp` is the protobuf `TxResponse` mentioned above in [Transactions](#transactions)
 
 ### Contract Instantiation 
-[source code](./src/signing/contract/tx.rs#L33)
+[source code](packages/layer-climb-core/src/signing/contract/tx.rs)
 
 Now that we have a `code_id`, let's instantiate a contract:
 
@@ -403,7 +403,7 @@ let (addr, tx_resp) = client
 
 ### Contract Execution 
 
-[source code](./src/signing/contract/tx.rs#L73)
+[source code](packages/layer-climb-core/src/signing/contract/tx.rs)
 
 Now that we have a contract `addr`, let's execute a message:
 
@@ -421,7 +421,7 @@ let tx_resp = client.contract_execute(
 ).await?;
 ```
 
-Sending funds is made easier with the [new_coin()](./src/prelude.rs#L27) helper, and if you have multiple coins, use [new_coins()](./src/prelude.rs#L43):
+Sending funds is made easier with the [new_coin()](packages/layer-climb-core/src/prelude.rs) helper, and if you have multiple coins, use [new_coins()](packages/layer-climb-core/src/prelude.rs):
 
 ```rust
 use layer_climb::prelude::*;
@@ -438,7 +438,7 @@ let tx_resp = client.contract_execute(
 
 ### Contract Query
 
-[source code](./src/querier/contract.rs#L5)
+[source code](packages/layer-climb-core/src/querier/contract.rs)
 
 Now that we've executed something on the contract, let's query it. Notice that this is a method on the `QueryClient`, meaning we don't actually need a `SigningClient` - but we'll just use the one we have: 
 
@@ -456,7 +456,7 @@ let query_resp:MessagesResp = client.querier.contract_smart(
 
 The response is typechecked at runtime via `serde_json` (well, actually the cosmwasm_std implementation, to make sure it's 100% compatible with smart contracts), and from then on we get perfect guarantees that the response is what we expect.
 
-What if we wanted to get it as a raw string instead? Just call the [.contract_smart_raw_response()](./src/querier/contract.rs#L17) method:
+What if we wanted to get it as a raw string instead? Just call the [.contract_smart_raw_response()](packages/layer-climb-core/src/querier/contract.rs) method:
 
 
 ```rust
@@ -477,7 +477,7 @@ let raw_string = std::str::from_utf8(&raw_bytes)?;
 
 ## Generic Messages
 
-[source code](./src/contract_helpers.rs#14)
+[source code](packages/layer-climb-core/src/contract_helpers.rs#14)
 
 Sometimes, especially with tooling that isn't project-specific, we want to send contract messages without knowing the type at all.
 

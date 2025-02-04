@@ -3,15 +3,16 @@ name = "layer-climb-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [lib]
 crate-type = ["lib"]
 
 [dependencies]
 ######## Local dependencies ########
-layer-climb-proto = { path = "../layer-climb-proto"}
-layer-climb-address = { path = "../layer-climb-address"}
-layer-climb-config = { path = "../layer-climb-config"}
+layer-climb-proto = { path = "../layer-climb-proto", version = "0.3.6"}
+layer-climb-address = { path = "../layer-climb-address", version = "0.3.6"}
+layer-climb-config = { path = "../layer-climb-config", version = "0.3.6"}
 
 ######## Workspace dependencies ########
 # General
