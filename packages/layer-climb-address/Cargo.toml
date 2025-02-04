@@ -22,8 +22,8 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(wasm_bindgen_unstable_test
 
 [dependencies]
 ######## Local dependencies ########
-layer-climb-proto = { path = "../layer-climb-proto"}
-layer-climb-config = { path = "../layer-climb-config"}
+layer-climb-proto = { path = "../layer-climb-proto", version = "0.3.6"}
+layer-climb-config = { path = "../layer-climb-config", version = "0.3.6"}
 ######## Workspace dependencies ########
 cfg-if = {workspace = true} 
 serde = {workspace = true} 
