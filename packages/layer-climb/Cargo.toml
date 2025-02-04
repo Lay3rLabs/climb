@@ -13,7 +13,7 @@ web = ["layer-climb-address/web"]
 
 # General dependencies
 [dependencies]
-layer-climb-core = { path = "../layer-climb-core"}
-layer-climb-proto = { path = "../layer-climb-proto"}
-layer-climb-address = { path = "../layer-climb-address"}
-layer-climb-config = { path = "../layer-climb-config"}
+layer-climb-core = { path = "../layer-climb-core", version = "0.3.6"}
+layer-climb-proto = { path = "../layer-climb-proto", version = "0.3.6"}
+layer-climb-address = { path = "../layer-climb-address", version = "0.3.6"}
+layer-climb-config = { path = "../layer-climb-config", version = "0.3.6"}
