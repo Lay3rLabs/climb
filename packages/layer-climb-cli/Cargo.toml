@@ -1,5 +1,6 @@
 [package]
 name = "layer-climb-cli"
+description = "Cli helpers for Climb"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

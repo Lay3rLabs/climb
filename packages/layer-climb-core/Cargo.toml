@@ -1,5 +1,6 @@
 [package]
 name = "layer-climb-core"
+description = "Core sub-crate for Climb"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
