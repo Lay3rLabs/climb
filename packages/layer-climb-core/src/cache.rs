@@ -86,7 +86,7 @@ cfg_if::cfg_if! {
         }
     } else if #[cfg(target_arch = "wasm32")] {
         impl ClimbCache {
-            pub async fn get_grpc(&self, chain_config: &ChainConfig) -> Result<Option<crate::network::grpc_wasi::Client>> {
+            pub async fn get_wasi_grpc(&self, chain_config: &ChainConfig) -> Result<Option<crate::network::grpc_wasi::Client>> {
                 unimplemented!();
             }
         }

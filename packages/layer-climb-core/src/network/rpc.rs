@@ -12,18 +12,52 @@ cfg_if::cfg_if! {
             async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String>;
         }
 
-        #[async_trait(?Send)]
-        impl RpcTransport for reqwest::Client {
-            async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
-                self.post(url)
-                    .header("Content-Type", "application/json")
-                    .body(body)
-                    .send()
-                    .await
-                    .map_err(|e| anyhow!("{}", e))?
-                    .text()
-                    .await
-                    .map_err(|e| anyhow!("{}", e))
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "unknown")] {
+                #[async_trait(?Send)]
+                impl RpcTransport for reqwest::Client {
+                    async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
+                        self.post(url)
+                            .header("Content-Type", "application/json")
+                            .body(body)
+                            .send()
+                            .await
+                            .map_err(|e| anyhow!("{}", e))?
+                            .text()
+                            .await
+                            .map_err(|e| anyhow!("{}", e))
+                    }
+                }
+            } else {
+                use wstd::{
+                    http::{Client, IntoBody, Request, StatusCode},
+                    io::{empty, AsyncRead},
+                    runtime::block_on,
+                };
+
+                pub struct WasiRpcTransport {}
+
+                // prior art, cloudflare does this trick too: https://github.com/cloudflare/workers-rs/blob/38af58acc4e54b29c73336c1720188f3c3e86cc4/worker/src/send.rs#L32
+                unsafe impl Sync for WasiRpcTransport {}
+                unsafe impl Send for WasiRpcTransport {}
+
+                #[async_trait(?Send)]
+                impl RpcTransport for WasiRpcTransport {
+                    async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
+                        let request = Request::post(url).header("content-type", "application/json").body(body.into_body())?;
+                        let mut res = Client::new().send(request).await?;
+
+                        match res.status() {
+                            StatusCode::OK => {
+                                let body = res.body_mut();
+                                let mut body_buf = Vec::new();
+                                body.read_to_end(&mut body_buf).await?;
+                                String::from_utf8(body_buf).map_err(|err| anyhow::anyhow!(err))
+                            },
+                            status => Err(anyhow!("unexpected status code: {status}")),
+                        }
+                    }
+                }
             }
         }
     } else {
