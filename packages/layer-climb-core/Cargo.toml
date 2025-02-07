@@ -11,9 +11,9 @@ crate-type = ["lib"]
 
 [dependencies]
 ######## Local dependencies ########
-layer-climb-proto = { path = "../layer-climb-proto", version = "0.3.6"}
-layer-climb-address = { path = "../layer-climb-address", version = "0.3.6"}
-layer-climb-config = { path = "../layer-climb-config", version = "0.3.6"}
+layer-climb-proto = { workspace = true } 
+layer-climb-address = { workspace = true } 
+layer-climb-config = { workspace = true } 
 
 ######## Workspace dependencies ########
 # General
@@ -58,15 +58,30 @@ tendermint-rpc = {workspace = true}
 deadpool = {workspace = true, optional = true}
 
 ######## Target-specific dependencies ########
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-tonic-web-wasm-client = {workspace = true}
-getrandom = {version = "0.3", features = ["wasm_js"]}
-futures-timer = {version = "3.0.3", default-features = false, features = ["wasm-bindgen"]}
-tonic = {version = "0.12", default-features = false}
 
+# Native (non-wasm32)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-getrandom = "0.3"
-futures-timer = {version = "3.0.3", default-features = false}
-tonic = {version = "0.12", default-features = false, features = ["transport", "tls-native-roots", "tls-webpki-roots"]}
-deadpool = {workspace = true}
-tokio = { version = "1", features = ["sync"] } # do not use from workspace which pulls in "full"
+getrandom      = "0.3"
+futures-timer  = { version = "3.0.3", default-features = false }
+tonic          = { version = "0.12", default-features = false, features = ["transport", "tls-native-roots", "tls-webpki-roots"] }
+deadpool       = { workspace = true }
+tokio          = { version = "1", features = ["sync"] }  # do not use from workspace which pulls in "full"
+
+# Browser-based wasm32 (e.g. wasm32-unknown-unknown)
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+tonic-web-wasm-client = { workspace = true }
+getrandom             = { version = "0.3", features = ["wasm_js"] }
+futures-timer         = { version = "3.0.3", default-features = false, features = ["wasm-bindgen"] }
+tonic                 = { version = "0.12", default-features = false }
+
+# Other wasm32 (e.g. WASI)
+[target.'cfg(all(target_arch = "wasm32", not(target_os = "unknown")))'.dependencies]
+getrandom      = "0.3"
+futures-timer  = { version = "3.0.3", default-features = false }
+tonic          = { version = "0.12", default-features = false }
+deadpool       = { workspace = true }
+http = "1"
+http-body = "1"
+http-body-util = "0.1"
+httparse = "1"
+tower-service = "0.3"

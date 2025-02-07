@@ -3,8 +3,10 @@ pub mod rpc;
 use crate::prelude::*;
 
 cfg_if::cfg_if! {
-    if #[cfg(target_arch = "wasm32")] {
+    if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
         pub mod grpc_web;
+    } else if #[cfg(target_arch = "wasm32")] {
+        pub mod grpc_wasi;
     } else {
         pub mod grpc_native;
     }
