@@ -1,7 +1,6 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(warnings)]
 mod bindings;
-mod query;
 
 use anyhow::{Context, Result};
 use layer_climb::prelude::*;
@@ -37,7 +36,7 @@ async fn get_client(config: Config) -> Result<QueryClient> {
         .chain
         .clone();
 
-    query::new_cosmos_query_client(chain_config).await
+    QueryClient::new(chain_config.clone(), None).await
 }
 
 #[derive(Debug, Deserialize, Serialize)]

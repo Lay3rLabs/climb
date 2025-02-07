@@ -132,9 +132,7 @@ impl QueryClient {
                 self._connection_mode.store(mode.into(), Ordering::SeqCst);
             }
             None => {
-                let modes = vec![ConnectionMode::Grpc, ConnectionMode::Rpc];
-
-                for mode in modes {
+                for mode in ConnectionMode::modes_to_try() {
                     self._connection_mode.store(mode.into(), Ordering::SeqCst);
 
                     let block_height = BlockHeightReq {}.request(self.clone()).await;
@@ -226,7 +224,7 @@ impl QueryClient {
 
                 let _self = Self {
                     // if None, this will be overriden, just set _something_
-                    _connection_mode: Arc::new(AtomicU8::new(connection.preferred_mode.unwrap_or(ConnectionMode::Grpc) as u8)),
+                    _connection_mode: Arc::new(AtomicU8::new(connection.preferred_mode.unwrap_or(ConnectionMode::Rpc) as u8)),
                     chain_config,
                     cache,
                     middleware_map_req: Arc::new(QueryMiddlewareMapReq::default_list()),
@@ -317,11 +315,25 @@ pub struct Connection {
     pub preferred_mode: Option<ConnectionMode>,
 }
 
-impl Default for Connection {
-    fn default() -> Self {
-        Self {
-            rpc: Arc::new(reqwest::Client::new()),
-            preferred_mode: None,
+cfg_if::cfg_if! {
+    // WASI
+    if #[cfg(all(target_arch = "wasm32", not(target_os = "unknown")))] {
+        impl Default for Connection {
+            fn default() -> Self {
+                Self {
+                    rpc: Arc::new(crate::network::rpc::WasiRpcTransport{}),
+                    preferred_mode: Some(ConnectionMode::Rpc),
+                }
+            }
+        }
+    } else {
+        impl Default for Connection {
+            fn default() -> Self {
+                Self {
+                    rpc: Arc::new(reqwest::Client::new()),
+                    preferred_mode: None,
+                }
+            }
         }
     }
 }
@@ -332,6 +344,23 @@ impl Default for Connection {
 pub enum ConnectionMode {
     Grpc,
     Rpc,
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(all(target_arch = "wasm32", not(target_os = "unknown")))] {
+        impl ConnectionMode {
+            pub fn modes_to_try() -> Vec<Self> {
+                // WASI only supports RPC for now, don't even try anything else
+                vec![Self::Rpc]
+            }
+        }
+    } else {
+        impl ConnectionMode {
+            pub fn modes_to_try() -> Vec<Self> {
+                vec![Self::Grpc, Self::Rpc]
+            }
+        }
+    }
 }
 
 impl From<ConnectionMode> for u8 {
