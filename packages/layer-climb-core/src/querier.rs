@@ -28,7 +28,7 @@ use crate::{
 };
 
 cfg_if::cfg_if! {
-    if #[cfg(target_arch = "wasm32")] {
+    if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
         #[derive(Clone)]
         pub struct QueryClient {
             pub chain_config: ChainConfig,
@@ -50,6 +50,26 @@ cfg_if::cfg_if! {
                     Some(channel) => Ok(channel),
                     None => Err(anyhow!("grpc_channel isn't set")),
                 }
+            }
+        }
+    } else if #[cfg(target_arch = "wasm32")] {
+        #[derive(Clone)]
+        pub struct QueryClient {
+            pub chain_config: ChainConfig,
+            pub cache: ClimbCache,
+            pub middleware_map_req: Arc<Vec<QueryMiddlewareMapReq>>,
+            pub middleware_map_resp: Arc<Vec<QueryMiddlewareMapResp>>,
+            pub middleware_run: Arc<Vec<QueryMiddlewareRun>>,
+            pub balances_pagination_limit: u64,
+            pub wait_blocks_poll_sleep_duration: Duration,
+            pub connection: Connection,
+            _rpc_client: Option<RpcClient>,
+            _connection_mode: Arc<AtomicU8>,
+        }
+
+        impl QueryClient {
+            pub fn clone_grpc_channel(&self) -> Result<crate::network::grpc_wasi::Client> {
+                Err(anyhow!("todo!"))
             }
         }
     } else {
@@ -143,7 +163,7 @@ impl QueryClient {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(target_arch = "wasm32")] {
+        if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
             pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, connection: Option<Connection>) -> Result<Self> {
                 let _grpc_channel = cache.get_web_grpc(&chain_config).await?;
                 let _rpc_client = cache.get_rpc_client(&chain_config);
@@ -161,6 +181,32 @@ impl QueryClient {
                     balances_pagination_limit: DEFAULT_BALANCES_PAGINATION_LIMIT,
                     wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
                     _grpc_channel,
+                    _rpc_client,
+                    connection,
+                };
+
+                if _self.connection.preferred_mode.is_none() {
+                    _self.set_connection_mode(None).await?;
+                }
+
+                Ok(_self)
+            }
+        } else if #[cfg(target_arch = "wasm32")] {
+            pub async fn new_with_cache(chain_config: ChainConfig, cache: ClimbCache, connection: Option<Connection>) -> Result<Self> {
+                let _rpc_client = cache.get_rpc_client(&chain_config);
+
+                let connection = connection.unwrap_or_default();
+
+                let _self = Self {
+                    // if None, this will be overriden, just set _something_
+                    _connection_mode: Arc::new(AtomicU8::new(connection.preferred_mode.unwrap_or(ConnectionMode::Rpc) as u8)),
+                    chain_config,
+                    cache,
+                    middleware_map_req: Arc::new(QueryMiddlewareMapReq::default_list()),
+                    middleware_map_resp: Arc::new(QueryMiddlewareMapResp::default_list()),
+                    middleware_run: Arc::new(QueryMiddlewareRun::default_list()),
+                    balances_pagination_limit: DEFAULT_BALANCES_PAGINATION_LIMIT,
+                    wait_blocks_poll_sleep_duration: DEFAULT_WAIT_BLOCKS_POLL_SLEEP_DURATION,
                     _rpc_client,
                     connection,
                 };

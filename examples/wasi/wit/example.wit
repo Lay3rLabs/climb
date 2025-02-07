@@ -1,0 +1,5 @@
+package example:host;
+
+world example-world {
+  export run: func() -> result<string, string>;
+}

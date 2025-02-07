@@ -15,8 +15,10 @@ use crate::network::rpc::{RpcClient, RpcTransport};
 /// so a cache is _not_ needed if you're just cloning clients around
 #[derive(Clone)]
 pub struct ClimbCache {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
     grpc: Arc<Mutex<HashMap<String, tonic_web_wasm_client::Client>>>,
+    #[cfg(all(target_arch = "wasm32", not(target_os = "unknown")))]
+    grpc: Arc<Mutex<HashMap<String, crate::network::grpc_wasi::Client>>>,
     #[cfg(not(target_arch = "wasm32"))]
     grpc: Arc<Mutex<HashMap<String, tonic::transport::Channel>>>,
     rpc: Arc<Mutex<HashMap<String, RpcClient>>>,
@@ -56,7 +58,7 @@ impl ClimbCache {
     }
 }
 cfg_if::cfg_if! {
-    if #[cfg(target_arch = "wasm32")] {
+    if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
         impl ClimbCache {
             pub async fn get_web_grpc(&self, chain_config: &ChainConfig) -> Result<Option<tonic_web_wasm_client::Client>> {
                 let endpoint = match chain_config.grpc_web_endpoint.as_ref() {
@@ -80,6 +82,12 @@ cfg_if::cfg_if! {
                         grpc
                     }
                 }))
+            }
+        }
+    } else if #[cfg(target_arch = "wasm32")] {
+        impl ClimbCache {
+            pub async fn get_grpc(&self, chain_config: &ChainConfig) -> Result<Option<crate::network::grpc_wasi::Client>> {
+                unimplemented!();
             }
         }
     } else {
