@@ -7,4 +7,15 @@ Due to interdependencies, publishing should be done in roughly this order:
 * layer-climb
 * layer-climb-cli
 
-Remember to bump the version of the dependencies too, not just root Cargo.toml
+Remember to bump the version of the dependencies too, not just workspace version (but they are all set in the root Cargo.toml) 
+
+For convenience, publish all in one command:
+
+```shell
+cd packages/layer-climb-config && cargo publish \
+    && cd ../layer-climb-proto && cargo publish \
+    && cd ../layer-climb-address && cargo publish \
+    && cd ../layer-climb-core && cargo publish \
+    && cd ../layer-climb && cargo publish \
+    && cd ../layer-climb-cli && cargo publish
+```
