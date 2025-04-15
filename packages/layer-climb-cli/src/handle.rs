@@ -137,7 +137,7 @@ impl CosmosInstance {
         if let Some(rpc_endpoint) = &self.chain_config.rpc_endpoint {
             let rpc_port = rpc_endpoint
                 .split(':')
-                .last()
+                .next_back()
                 .expect("could not get rpc port");
             ports.push((rpc_port, "26657"));
         }
@@ -145,7 +145,7 @@ impl CosmosInstance {
         if let Some(grpc_endpoint) = &self.chain_config.grpc_endpoint {
             let grpc_port = grpc_endpoint
                 .split(':')
-                .last()
+                .next_back()
                 .expect("could not get grpc port");
             ports.push((grpc_port, "9090"));
         }

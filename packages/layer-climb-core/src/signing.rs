@@ -111,11 +111,11 @@ impl SigningClient {
             .set_account_number(self.account_number)
             .set_sequence_strategy(self.sequence_strategy.clone());
 
-        if self.middleware_map_body.len() > 0 {
+        if !self.middleware_map_body.is_empty() {
             tx_builder.set_middleware_map_body(self.middleware_map_body.clone());
         }
 
-        if self.middleware_map_resp.len() > 0 {
+        if !self.middleware_map_resp.is_empty() {
             tx_builder.set_middleware_map_resp(self.middleware_map_resp.clone());
         }
 
