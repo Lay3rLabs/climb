@@ -190,7 +190,7 @@ impl<'a> TxBuilder<'a> {
         self,
         messages: impl IntoIterator<Item = layer_climb_proto::Any>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
-        let messages = messages.into_iter().map(Into::into).collect();
+        let messages = messages.into_iter().collect();
         let resp = self.broadcast_raw(messages).await?;
 
         match resp {
