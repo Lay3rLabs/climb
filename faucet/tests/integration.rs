@@ -5,6 +5,9 @@ use layer_climb_faucet::handlers::credit::CreditRequest;
 
 #[tokio::test]
 async fn status_ok() {
+    // https://github.com/rustls/rustls/issues/1938#issuecomment-2567934864
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     let mut app = match App::new().await {
         Some(app) => app,
         None => return,
@@ -36,6 +39,9 @@ async fn status_ok() {
 
 #[tokio::test]
 async fn credit_works() {
+    // https://github.com/rustls/rustls/issues/1938#issuecomment-2567934864
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     let mut app = match App::new().await {
         Some(app) => app,
         None => return,
@@ -74,6 +80,9 @@ async fn credit_works() {
 
 #[tokio::test]
 async fn credit_works_multi_distribution_serial() {
+    // https://github.com/rustls/rustls/issues/1938#issuecomment-2567934864
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     let mut app = match App::new().await {
         Some(app) => app,
         None => return,
@@ -140,6 +149,9 @@ async fn credit_works_multi_distribution_serial() {
 
 #[tokio::test]
 async fn credit_works_multi_distribution_concurrent() {
+    // https://github.com/rustls/rustls/issues/1938#issuecomment-2567934864
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     let mut app = match App::new().await {
         Some(app) => app,
         None => return,
@@ -224,6 +236,9 @@ async fn credit_works_multi_distribution_concurrent() {
 
 #[tokio::test]
 async fn send_to_self_works() {
+    // https://github.com/rustls/rustls/issues/1938#issuecomment-2567934864
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     async fn run_test(mut app: App, dest_addr: Address) {
         let balance_before = app
             .query_client

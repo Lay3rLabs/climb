@@ -48,6 +48,7 @@ bip32 = { version = "0.5.3", default-features = false, features = [
 signature = "2.2.0"
 k256 = "0.13.4"
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
+rustls = {version = "0.23.26", features = ["ring"]}
 
 # Networking
 reqwest = { version = "0.12.15", features = ["json"] }
