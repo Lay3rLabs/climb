@@ -1,57 +1,72 @@
-# Climb CLI
+# Climb Web Demo
 
-This is an example CLI
+## Prerequisites
 
-It merely provides a thin layer around the reusable [layer-climb-cli](../../packages/layer-climb-cli) crate.
+* Trunk: https://trunkrs.dev/
 
-Real-world usage such as [avs-toolkit](https://github.com/Lay3rLabs/avs-toolkit/tree/main/tools/cli) takes this as a starting point and builds from there.
+* For local dev, start local chains (in examples dir): `starship start --config ./starship.yaml` (to stop it: `starship stop --config ./starship.yaml`)
 
-## Running a local node
+## Run in browser
 
-For all the below commands, you need to make sure you have a localnode running.
-Instructions are in the [localnode directory](https://github.com/Lay3rLabs/layer-sdk/tree/main/localnode),
-but the shortcut is:
+All these commands assume you're in the `examples/frontend` directory.
 
-```bash
-# From workspace root
-./scripts/build_docker.sh
-./localnode/reset_volumes.sh
-./localnode/run.sh
-
-# do whatever below. when you want to stop it
-
-./localnode/stop.sh
+```
+trunk serve --port 8000 --watch . --watch ../../packages
 ```
 
-If you hit any errors, please check the full README
+For quicker development, you can autoconnect a wallet with a mnemonic from `.env` (set in `LOCAL_MNEMONIC`)
 
-## Setup
+```
+trunk serve --features=autoconnect --port 8000 --watch . --watch ../../packages
+```
 
-To start, you need to get a unique mnemonic and store it. The easiest way is:
+## WASI
+
+All these commands assume you're in the `examples/wasi` directory.
+
+### Build
+
+There isn't a local example of running, since you need wasmtime etc... but if it builds it should work :)
+
+```
+cargo component build 
+```
+
+Note that WASI only supports rpc, not grpc
+
+## CLI
+
+All these commands assume you're in the `examples/cli` directory.
+
+### Setup
+
+To start, you need to get a unique mnemonic and store it. The easiest way is to copy the `example.env` into the `cli` directory.
+
+You can also create a new wallet:
 
 ```bash
-cargo run generate-wallet
+cargo run wallet create
 ```
 
 In this directory, create a file called `.env` with `LOCAL_MNEMONIC="<mnemonic provided above>".
 Now, check you can view it
 
 ```bash
-cargo run wallet-show
+cargo run wallet show
 ```
 
-## Getting tokens
+### Getting tokens
 
 The next step is to "tap the faucet" to get some tokens for your new address,
 so you can use the CLI more:
 
 ```bash
-cargo run tap-faucet
+cargo run faucet tap
 ```
 
 Yeah, you got some tokens now. Let's go do some more stuff...
 
-## Contracts
+### Contracts
 
 Let's assume we have a contract built with the following message types:
 
@@ -91,7 +106,7 @@ cargo run upload-contract --wasm-file "path/to/your/contract.wasm"
 
 Note the `Code ID` in the output. Let's say it's "2"
 
-## Instantiate a contract
+#### Instantiate a contract
 
 The `InstantiateMsg` in our contract is empty. So, all we need is to run:
 
@@ -101,7 +116,7 @@ cargo run instantiate-contract --code-id=2
 
 Note the "Contract Address" in the output. Let's say it's "slay3r1lu0l5xgnjwugk70uujyyqyw9uvapwh6m05es5xkhk0zk4n60a87qsrcue"
 
-## Execute a contract
+#### Execute a contract
 
 Here we have a non-empty ExecuteMsg, so we need to supply it as a JSON-encoded string. For example:
 
@@ -111,7 +126,7 @@ cargo run execute-contract --address="slay3r1lu0l5xgnjwugk70uujyyqyw9uvapwh6m05e
 
 We should get a successful "Tx Hash" in the response
 
-## Query a contract
+#### Query a contract
 
 Here we have a non-empty QueryMsg, so we need to supply it as a JSON-encoded string. Optionals can be left out entirely. For example:
 

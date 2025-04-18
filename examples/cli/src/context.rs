@@ -3,7 +3,7 @@ use layer_climb::prelude::*;
 use rand::rngs::ThreadRng;
 
 use crate::{
-    args::{CliArgs, TargetEnvironment},
+    args::{CliArgs, Command, TargetEnvironment},
     config::Config,
 };
 
@@ -63,17 +63,25 @@ impl AppContext {
             .context(format!("Mnemonic not found at {mnemonic_var}"))
     }
 
-    // if we have a valid mnemonic, then get a signing client
-    // otherwise, get a query client
+    pub async fn client_addr(&self) -> Result<Address> {
+        let mnemonic = self.client_mnemonic()?;
+        let chain_config = self.chain_config()?;
+        let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
+        chain_config.address_from_pub_key(&signer.public_key().await?)
+    }
+
+    // get either a signing or query client
     pub async fn any_client(&self) -> Result<AnyClient> {
-        match self.client_mnemonic() {
-            Ok(mnemonic) => {
+        let is_signing = !matches!(&self.args.command, Command::Wallet(_));
+
+        match (is_signing, self.client_mnemonic()) {
+            (true, Ok(mnemonic)) => {
                 let signer = KeySigner::new_mnemonic_str(&mnemonic, None)?;
                 Ok(AnyClient::Signing(
                     SigningClient::new(self.chain_config()?, signer, None).await?,
                 ))
             }
-            Err(_) => Ok(AnyClient::Query(self.chain_querier().await?)),
+            _ => Ok(AnyClient::Query(self.chain_querier().await?)),
         }
     }
 

@@ -31,8 +31,7 @@ cfg_if::cfg_if! {
             } else {
                 use wstd::{
                     http::{Client, IntoBody, Request, StatusCode},
-                    io::{empty, AsyncRead},
-                    runtime::block_on,
+                    io::AsyncRead,
                 };
 
                 pub struct WasiRpcTransport {}

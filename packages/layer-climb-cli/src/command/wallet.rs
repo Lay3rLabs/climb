@@ -8,8 +8,12 @@ use rand::Rng;
 pub enum WalletCommand {
     /// Creates a wallet with a random mnemonic
     Create,
-    /// Shows the current signing wallet balance and address
-    Show,
+    /// Shows the balance and address for a given mnemonic
+    /// If no mnemonic is provided, the default client mnemonic will be used
+    Show {
+        #[arg(long)]
+        mnemonic: Option<String>,
+    },
     /// Shows the balances for a given address
     Balance {
         #[arg(long)]
@@ -52,20 +56,28 @@ impl WalletCommand {
                     create_wallet(client.as_querier().chain_config.clone(), rng).await?;
                 log(WalletLog::Create { addr, mnemonic });
             }
-            WalletCommand::Show => {
-                let balances = client
-                    .as_querier()
-                    .all_balances(client.as_signing().addr.clone(), None)
-                    .await?;
+            WalletCommand::Show { mnemonic } => {
+                let addr = match mnemonic {
+                    None => client.as_signing().addr.clone(),
+                    Some(mnemonic) => {
+                        let signer = KeySigner::new_mnemonic_str(mnemonic, None)?;
+                        client
+                            .as_querier()
+                            .chain_config
+                            .address_from_pub_key(&signer.public_key().await?)?
+                    }
+                };
+
+                let balances = client.as_querier().all_balances(addr.clone(), None).await?;
 
                 if balances.is_empty() {
                     log(WalletLog::Show {
-                        addr: client.as_signing().addr.clone(),
+                        addr,
                         balances: vec![],
                     });
                 } else {
                     log(WalletLog::Show {
-                        addr: client.as_signing().addr.clone(),
+                        addr,
                         balances: balances.clone(),
                     });
                 }
