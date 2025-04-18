@@ -21,7 +21,7 @@ anyhow = {workspace = true}
 
 ######## Target-specific dependencies ########
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-ibc-proto = {version = "0.51.1", default-features = false, features = ["std", "client"]} 
+ibc-proto = {version = "0.52.0", default-features = false, features = ["std", "client"]} 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-ibc-proto = {version = "0.51.1", default-features = false, features = ["std", "client", "transport"]} 
+ibc-proto = {version = "0.52.0", default-features = false, features = ["std", "client", "transport"]} 

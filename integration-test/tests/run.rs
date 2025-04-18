@@ -4,6 +4,9 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::test]
 async fn run() {
+    // https://github.com/rustls/rustls/issues/1938#issuecomment-2567934864
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     if dotenvy::dotenv().is_err() {
         eprintln!("Warning: no .env file found, did you copy .env.example over?");
     }

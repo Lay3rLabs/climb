@@ -1,22 +1,23 @@
-
-
 # CLIent for Multiple Blockchains
 
 * ### [Live demo](https://lay3rlabs.github.io/climb)
-* ### [Cargo docs](https://lay3rlabs.github.io/climb/doc/layer_climb/prelude/index.html) 
+* ### [Cargo docs](https://docs.rs/layer-climb/latest/layer_climb/) 
 
 ## Universal, pure-Rust client lib for [Layer](https://layer.xyz) and beyond
 
-Although hosted publicly, it's intended solely for Layer and Confio projects at the moment. PRs outside the official roadmap will be rejected, and forks are strongly discouraged until all the dust settles (at which point it will become an official public project and PRs/forks will be more than welcome!)
-
-## Cargo Docs
-
-The easiest way to get a feel for the library is to check the cargo docs.
-As of right now, this isn't published anywhere, so just run `cargo doc --open`
+Although hosted publicly, it's intended solely for Layer and Confio projects at the moment. PRs outside the official roadmap will be rejected.
 
 ## Wasm compatibility
 
 All features besides [pools](#pools) work in browsers over gRPC-web (no need for gateway!) - just enable the `web` feature.
+
+## Wasi compatibility
+
+Should be similar to browser support, but less tested. Only RPC is supported at the moment, no gRPC.
+
+## Examples
+
+The examples are in the [examples](examples) directory. See [examples/README.md](examples/README.md) for more info. 
 
 ## RPC vs. gRPC
 

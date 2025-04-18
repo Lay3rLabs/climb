@@ -18,6 +18,7 @@ pub struct ClimbCache {
     #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
     grpc: Arc<Mutex<HashMap<String, tonic_web_wasm_client::Client>>>,
     #[cfg(all(target_arch = "wasm32", not(target_os = "unknown")))]
+    #[allow(dead_code)]
     grpc: Arc<Mutex<HashMap<String, crate::network::grpc_wasi::Client>>>,
     #[cfg(not(target_arch = "wasm32"))]
     grpc: Arc<Mutex<HashMap<String, tonic::transport::Channel>>>,
@@ -86,7 +87,7 @@ cfg_if::cfg_if! {
         }
     } else if #[cfg(target_arch = "wasm32")] {
         impl ClimbCache {
-            pub async fn get_wasi_grpc(&self, chain_config: &ChainConfig) -> Result<Option<crate::network::grpc_wasi::Client>> {
+            pub async fn get_wasi_grpc(&self, _chain_config: &ChainConfig) -> Result<Option<crate::network::grpc_wasi::Client>> {
                 unimplemented!();
             }
         }

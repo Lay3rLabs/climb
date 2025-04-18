@@ -1,4 +1,4 @@
-#![allow(warning)]
+#![allow(warnings)]
 // PLACEHOLDER FOR WASI IMPL
 
 use http::{header::HeaderName, HeaderMap, HeaderValue};
@@ -10,13 +10,13 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
-use tonic::body::BoxBody;
+use tonic::body::Body as TonicBody;
 use tonic::codegen::Bytes;
 use tower_service::Service;
 
 pub struct Client;
 
-impl Service<Request<BoxBody>> for Client {
+impl Service<Request<TonicBody>> for Client {
     type Response = Response<ResponseBody>;
 
     type Error = Error;
@@ -27,7 +27,7 @@ impl Service<Request<BoxBody>> for Client {
         Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, request: Request<BoxBody>) -> Self::Future {
+    fn call(&mut self, request: Request<TonicBody>) -> Self::Future {
         unimplemented!();
         // Box::pin(async {
         // })
