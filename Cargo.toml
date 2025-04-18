@@ -3,45 +3,45 @@ members = ["packages/*", "examples/*", "faucet", "integration-test"]
 resolver = "2"
 
 [workspace.package]
-version = "0.4.0-alpha.2"
+version = "0.4.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/Lay3rLabs/climb"
 
 [workspace.dependencies]
 # Local
-layer-climb = { path = "packages/layer-climb", version = "0.4.0-alpha.2" }
-layer-climb-address = { path = "packages/layer-climb-address", version = "0.4.0-alpha.2" }
-layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.4.0-alpha.2" }
-layer-climb-config = { path = "packages/layer-climb-config", version = "0.4.0-alpha.2" }
-layer-climb-core = { path = "packages/layer-climb-core", version = "0.4.0-alpha.2" }
-layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.4.0-alpha.2" }
+layer-climb = { path = "packages/layer-climb", version = "0.4.0" }
+layer-climb-address = { path = "packages/layer-climb-address", version = "0.4.0" }
+layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.4.0" }
+layer-climb-config = { path = "packages/layer-climb-config", version = "0.4.0" }
+layer-climb-core = { path = "packages/layer-climb-core", version = "0.4.0" }
+layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.4.0" }
 
 # General
 cfg-if = "1.0.0"
-async-trait = "0.1.82"
+async-trait = "0.1.88"
 
 # Error handling
-thiserror = "2.0.11"
-anyhow = "1.0.86"
+thiserror = "2.0.12"
+anyhow = "1.0.98"
 
 # Binary encoding
 hex = "0.4.3"
-base64 = "0.22.0"
+base64 = "0.22.1"
 
 # Logging
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-log = "0.4.22"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+log = "0.4.27"
 
 # Serdeish
-toml = "0.8.14"
-serde = { version = "1.0.210", features = ["derive"] }
-serde_json = "1.0.128"
+toml = "0.8.20"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 
 # Crypto
 bip39 = "2.1.0" # TODO - can we just use bip39 from bip32?
-bip32 = { version = "0.5.2", default-features = false, features = [
+bip32 = { version = "0.5.3", default-features = false, features = [
     "alloc",
     "secp256k1",
 ] }
@@ -50,47 +50,47 @@ k256 = "0.13.4"
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
 
 # Networking
-reqwest = { version = "0.12.5", features = ["json"] }
-url = "2.5.2"
+reqwest = { version = "0.12.15", features = ["json"] }
+url = "2.5.4"
 
 # Async
 futures = "0.3"
 async-broadcast = "0.7.2"
 
 # Randomness
-rand = "0.9.0"
+rand = "0.9.1"
 
 # Cosmos
-cosmwasm-std = "2.0.3"
-tendermint = { version = "0.40.1", features = ["secp256k1"] }
-tendermint-rpc = { version = "0.40.1", default-features = false }
+cosmwasm-std = "2.2.2"
+tendermint = { version = "0.40.3", features = ["secp256k1"] }
+tendermint-rpc = { version = "0.40.3", default-features = false }
 
 # Proto
-cosmos-sdk-proto = { version = "0.26.1", default-features = false, features = [
+cosmos-sdk-proto = { version = "0.27.0", default-features = false, features = [
     "std",
     "cosmwasm",
     "grpc",
 ] }
-tendermint-proto = { version = "0.40.1", default-features = false }
+tendermint-proto = { version = "0.40.3", default-features = false }
 
 # Wasm
-tonic-web-wasm-client = "0.6.0"
-wasm-bindgen = "0.2.93"
-wasm-bindgen-futures = "0.4.43"
+tonic-web-wasm-client = "0.7.0"
+wasm-bindgen = "0.2.100"
+wasm-bindgen-futures = "0.4.50"
 serde-wasm-bindgen = "0.6.5"
-js-sys = "0.3.70"
+js-sys = "0.3.77"
 
 # Native application (cli/server) stuff
-clap = { version = "4.5.7", features = ["derive"] }
+clap = { version = "4.5.36", features = ["derive"] }
 dotenvy = { version = "0.15.7", features = ["cli"] }
 tokio = { version = "1", features = ["full"] }
-axum = { version = "0.8.1", features = ["macros"] }
-tower-http = { version = "0.6.1", features = ["cors", "trace"] }
-tower = { version = "0.5.1", features = ["util"] }
-http-body-util = "0.1.2"
+axum = { version = "0.8.3", features = ["macros"] }
+tower-http = { version = "0.6.2", features = ["cors", "trace"] }
+tower = { version = "0.5.2", features = ["util"] }
+http-body-util = "0.1.3"
 
 # Pool
-deadpool = "0.12.1"
+deadpool = "0.12.2"
 
 # Alloy
 alloy-primitives = "1.0.0"
@@ -105,4 +105,4 @@ wasm-logger = "0.2.0"
 console_error_panic_hook = "0.1.7"
 
 # WASI 
-wstd = "0.5.0"
+wstd = "0.5.3"

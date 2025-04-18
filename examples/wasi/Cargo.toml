@@ -15,7 +15,6 @@ async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 wstd = { workspace = true }
-wit-bindgen = "0.39.0"
-wit-bindgen-rt = {version = "0.39.0", features = ["bitflags", "async"]}
-wasi = "0.14.0"
-wavs-wasi-chain = "0.3.0-alpha2"
+wit-bindgen = "0.41.0"
+wit-bindgen-rt = {version = "0.41.0", features = ["bitflags", "async"]}
+wasi = "0.14.2"

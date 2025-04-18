@@ -63,7 +63,7 @@ deadpool = {workspace = true, optional = true}
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 getrandom      = "0.3"
 futures-timer  = { version = "3.0.3", default-features = false }
-tonic          = { version = "0.12", default-features = false, features = ["transport", "tls-native-roots", "tls-webpki-roots"] }
+tonic          = { version = "0.13", default-features = false, features = ["transport", "tls-native-roots", "tls-webpki-roots"] }
 deadpool       = { workspace = true }
 tokio          = { version = "1", features = ["sync"] }  # do not use from workspace which pulls in "full"
 
@@ -72,14 +72,14 @@ tokio          = { version = "1", features = ["sync"] }  # do not use from works
 tonic-web-wasm-client = { workspace = true }
 getrandom             = { version = "0.3", features = ["wasm_js"] }
 futures-timer         = { version = "3.0.3", default-features = false, features = ["wasm-bindgen"] }
-tonic                 = { version = "0.12", default-features = false }
+tonic                 = { version = "0.13", default-features = false }
 
 # Other wasm32 (e.g. WASI)
 [target.'cfg(all(target_arch = "wasm32", not(target_os = "unknown")))'.dependencies]
 wstd = { workspace = true }
 getrandom      = "0.3"
 futures-timer  = { version = "3.0.3", default-features = false }
-tonic          = { version = "0.12", default-features = false }
+tonic          = { version = "0.13", default-features = false }
 deadpool       = { workspace = true }
 http = "1"
 http-body = "1"
