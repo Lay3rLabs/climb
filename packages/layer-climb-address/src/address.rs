@@ -109,8 +109,8 @@ impl Address {
     }
 
     pub fn new_evm_string(value: &str) -> Result<Self> {
-        let addr_eth: AddrEvm = value.parse()?;
-        Ok(Self::Evm(addr_eth))
+        let addr_evm: AddrEvm = value.parse()?;
+        Ok(Self::Evm(addr_evm))
     }
 
     /// if you just have a string address, use parse_evm instead
@@ -164,8 +164,8 @@ impl std::fmt::Display for Address {
             Self::Cosmos { bech32_addr, .. } => {
                 write!(f, "{}", bech32_addr)
             }
-            Self::Evm(addr_eth) => {
-                write!(f, "{}", addr_eth)
+            Self::Evm(addr_evm) => {
+                write!(f, "{}", addr_evm)
             }
         }
     }
@@ -239,7 +239,7 @@ impl TryFrom<Address> for AddrEvm {
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
-            Address::Evm(addr_eth) => Ok(addr_eth),
+            Address::Evm(addr_evm) => Ok(addr_evm),
             Address::Cosmos { .. } => bail!("Address must be EVM - use into_evm() instead"),
         }
     }
@@ -271,18 +271,18 @@ mod test {
 
     const TEST_COSMOS_STR: &str = "osmo1h5qke5tzc0fgz93wcxg8da2en3advfect0gh4a";
     const TEST_COSMOS_PREFIX: &str = "osmo";
-    const TEST_ETH_STR: &str = "0xb794f5ea0ba39494ce839613fffba74279579268";
+    const TEST_EVM_STR: &str = "0xb794f5ea0ba39494ce839613fffba74279579268";
 
     #[test]
-    fn test_basic_roundtrip_eth() {
-        let test_string = TEST_ETH_STR;
+    fn test_basic_roundtrip_evm() {
+        let test_string = TEST_EVM_STR;
         let addr_evm: AddrEvm = test_string.parse().unwrap();
         let addr: Address = addr_evm.into();
 
         assert_eq!(addr.to_string(), test_string);
 
-        let addr_eth_2: AddrEvm = addr.try_into().unwrap();
-        assert_eq!(addr_eth_2, addr_evm);
+        let addr_evm_2: AddrEvm = addr.try_into().unwrap();
+        assert_eq!(addr_evm_2, addr_evm);
     }
 
     #[test]
@@ -296,7 +296,7 @@ mod test {
     }
 
     #[test]
-    fn test_convert_eth_to_cosmos() {
+    fn test_convert_evm_to_cosmos() {
         // let test_string = "0xb794f5ea0ba39494ce839613fffba74279579268";
         // let addr_bytes:AddrEvm = test_string.try_into().unwrap();
         // let addr_string:AddrString = (&addr_bytes).into();
@@ -305,11 +305,11 @@ mod test {
     }
 
     #[test]
-    fn test_convert_cosmos_to_eth() {
+    fn test_convert_cosmos_to_evm() {
         // let test_string = "osmo1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsll0sqv";
         // let account_id:AccountId = test_string.parse().unwrap();
         // let addr_string:AddrString = (&account_id).try_into().unwrap();
-        // let addr_string_evm = addr_string.convert_into_eth().unwrap();
+        // let addr_string_evm = addr_string.convert_into_evm().unwrap();
         // assert_eq!(addr_string_evm.to_string(), "0xb794f5ea0ba39494ce839613fffba74279579268");
     }
 }
