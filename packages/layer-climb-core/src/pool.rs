@@ -85,8 +85,8 @@ impl SigningClientPoolManager {
 
                 KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))?
             }
-            layer_climb_config::AddrKind::Eth => {
-                bail!("Eth address kind is not supported (yet)")
+            layer_climb_config::AddrKind::Evm => {
+                bail!("EVM address kind is not supported (yet)")
             }
         };
 
