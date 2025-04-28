@@ -14,7 +14,7 @@ pub enum Address {
         // prefix is the first part of the bech32 address
         prefix_len: usize,
     },
-    Eth(AddrEth),
+    Evm(AddrEvm),
 }
 
 impl Hash for Address {
@@ -23,7 +23,7 @@ impl Hash for Address {
             Address::Cosmos { .. } => {
                 1u32.hash(state);
             }
-            Address::Eth(_) => {
+            Address::Evm(_) => {
                 2u32.hash(state);
             }
         }
@@ -81,7 +81,7 @@ impl Address {
                 let (_, bytes) = bech32::decode(bech32_addr).unwrap();
                 bytes
             }
-            Address::Eth(addr_eth) => addr_eth.as_bytes().to_vec(),
+            Address::Evm(addr_evm) => addr_evm.as_bytes().to_vec(),
         }
     }
 
@@ -104,18 +104,18 @@ impl Address {
                 prefix_len,
                 bech32_addr,
             } => Ok(&bech32_addr[..*prefix_len]),
-            Address::Eth(_) => Err(anyhow!("Address is not cosmos")),
+            Address::Evm(_) => Err(anyhow!("Address is not cosmos")),
         }
     }
 
-    pub fn new_eth_string(value: &str) -> Result<Self> {
-        let addr_eth: AddrEth = value.parse()?;
-        Ok(Self::Eth(addr_eth))
+    pub fn new_evm_string(value: &str) -> Result<Self> {
+        let addr_evm: AddrEvm = value.parse()?;
+        Ok(Self::Evm(addr_evm))
     }
 
-    /// if you just have a string address, use parse_eth instead
-    pub fn new_eth_pub_key(_pub_key: &PublicKey) -> Result<Self> {
-        bail!("TODO - implement eth address from public key");
+    /// if you just have a string address, use parse_evm instead
+    pub fn new_evm_pub_key(_pub_key: &PublicKey) -> Result<Self> {
+        bail!("TODO - implement evm address from public key");
     }
 
     pub fn into_cosmos(&self, new_prefix: &str) -> Result<Self> {
@@ -127,17 +127,17 @@ impl Address {
                     Self::new_cosmos_string(bech32_addr, Some(new_prefix))
                 }
             }
-            Address::Eth(_) => {
-                bail!("TODO - implement eth to cosmos addr");
+            Address::Evm(_) => {
+                bail!("TODO - implement evm to cosmos addr");
             }
         }
     }
 
-    pub fn into_eth(&self) -> Result<Self> {
+    pub fn into_evm(&self) -> Result<Self> {
         match self {
-            Address::Eth(_) => Ok(self.clone()),
+            Address::Evm(_) => Ok(self.clone()),
             Address::Cosmos { .. } => {
-                bail!("TODO - implement cosmos to eth addr");
+                bail!("TODO - implement cosmos to evm addr");
             }
         }
     }
@@ -145,14 +145,14 @@ impl Address {
     pub fn try_from_str(value: &str, addr_kind: &AddrKind) -> Result<Self> {
         match addr_kind {
             AddrKind::Cosmos { prefix } => Self::new_cosmos_string(value, Some(prefix)),
-            AddrKind::Eth => Self::new_eth_string(value),
+            AddrKind::Evm => Self::new_evm_string(value),
         }
     }
 
     pub fn try_from_pub_key(pub_key: &PublicKey, addr_kind: &AddrKind) -> Result<Address> {
         match addr_kind {
             AddrKind::Cosmos { prefix } => Address::new_cosmos_pub_key(pub_key, prefix),
-            AddrKind::Eth => Address::new_eth_pub_key(pub_key),
+            AddrKind::Evm => Address::new_evm_pub_key(pub_key),
         }
     }
 }
@@ -164,8 +164,8 @@ impl std::fmt::Display for Address {
             Self::Cosmos { bech32_addr, .. } => {
                 write!(f, "{}", bech32_addr)
             }
-            Self::Eth(addr_eth) => {
-                write!(f, "{}", addr_eth)
+            Self::Evm(addr_evm) => {
+                write!(f, "{}", addr_evm)
             }
         }
     }
@@ -173,7 +173,7 @@ impl std::fmt::Display for Address {
 
 impl From<alloy_primitives::Address> for Address {
     fn from(addr: alloy_primitives::Address) -> Self {
-        Self::Eth(addr.into())
+        Self::Evm(addr.into())
     }
 }
 
@@ -182,25 +182,25 @@ impl TryFrom<Address> for alloy_primitives::Address {
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
-            Address::Eth(addr_eth) => Ok(addr_eth.into()),
-            Address::Cosmos { .. } => Err(anyhow!("Expected Eth address, got Cosmos")),
+            Address::Evm(addr_evm) => Ok(addr_evm.into()),
+            Address::Cosmos { .. } => Err(anyhow!("Expected EVM address, got Cosmos")),
         }
     }
 }
 
-///// Ethereum address
+///// EVM address
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct AddrEth([u8; 20]);
+pub struct AddrEvm([u8; 20]);
 
-impl AddrEth {
+impl AddrEvm {
     pub fn new(bytes: [u8; 20]) -> Self {
         Self(bytes)
     }
 
     pub fn new_vec(bytes: Vec<u8>) -> Result<Self> {
         if bytes.len() != 20 {
-            bail!("Invalid length for eth address");
+            bail!("Invalid length for EVM address");
         }
         let mut arr = [0u8; 20];
         arr.copy_from_slice(&bytes);
@@ -212,77 +212,77 @@ impl AddrEth {
     }
 }
 
-impl std::fmt::Display for AddrEth {
+impl std::fmt::Display for AddrEvm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
     }
 }
 
-impl FromStr for AddrEth {
+impl FromStr for AddrEvm {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
         let s = s.trim();
         if s.len() != 42 {
-            bail!("Invalid length for eth address");
+            bail!("Invalid length for EVM address");
         }
         if !s.starts_with("0x") {
-            bail!("Invalid prefix for eth address");
+            bail!("Invalid prefix for EVM address");
         }
         let bytes = hex::decode(&s[2..])?;
         Self::new_vec(bytes)
     }
 }
 
-impl TryFrom<Address> for AddrEth {
+impl TryFrom<Address> for AddrEvm {
     type Error = anyhow::Error;
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
-            Address::Eth(addr_eth) => Ok(addr_eth),
-            Address::Cosmos { .. } => bail!("Address must be Eth - use into_eth() instead"),
+            Address::Evm(addr_evm) => Ok(addr_evm),
+            Address::Cosmos { .. } => bail!("Address must be EVM - use into_evm() instead"),
         }
     }
 }
 
-impl From<AddrEth> for Address {
-    fn from(addr: AddrEth) -> Self {
-        Self::Eth(addr)
+impl From<AddrEvm> for Address {
+    fn from(addr: AddrEvm) -> Self {
+        Self::Evm(addr)
     }
 }
 
-impl From<alloy_primitives::Address> for AddrEth {
+impl From<alloy_primitives::Address> for AddrEvm {
     fn from(addr: alloy_primitives::Address) -> Self {
         Self(**addr)
     }
 }
 
-impl From<AddrEth> for alloy_primitives::Address {
-    fn from(addr: AddrEth) -> Self {
+impl From<AddrEvm> for alloy_primitives::Address {
+    fn from(addr: AddrEvm) -> Self {
         alloy_primitives::Address::new(addr.0)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{AddrEth, Address};
+    use super::{AddrEvm, Address};
 
     // TODO get addresses that are actually the same underlying public key
 
     const TEST_COSMOS_STR: &str = "osmo1h5qke5tzc0fgz93wcxg8da2en3advfect0gh4a";
     const TEST_COSMOS_PREFIX: &str = "osmo";
-    const TEST_ETH_STR: &str = "0xb794f5ea0ba39494ce839613fffba74279579268";
+    const TEST_EVM_STR: &str = "0xb794f5ea0ba39494ce839613fffba74279579268";
 
     #[test]
-    fn test_basic_roundtrip_eth() {
-        let test_string = TEST_ETH_STR;
-        let addr_eth: AddrEth = test_string.parse().unwrap();
-        let addr: Address = addr_eth.into();
+    fn test_basic_roundtrip_evm() {
+        let test_string = TEST_EVM_STR;
+        let addr_evm: AddrEvm = test_string.parse().unwrap();
+        let addr: Address = addr_evm.into();
 
         assert_eq!(addr.to_string(), test_string);
 
-        let addr_eth_2: AddrEth = addr.try_into().unwrap();
-        assert_eq!(addr_eth_2, addr_eth);
+        let addr_evm_2: AddrEvm = addr.try_into().unwrap();
+        assert_eq!(addr_evm_2, addr_evm);
     }
 
     #[test]
@@ -296,20 +296,20 @@ mod test {
     }
 
     #[test]
-    fn test_convert_eth_to_cosmos() {
+    fn test_convert_evm_to_cosmos() {
         // let test_string = "0xb794f5ea0ba39494ce839613fffba74279579268";
-        // let addr_bytes:AddrEth = test_string.try_into().unwrap();
+        // let addr_bytes:AddrEvm = test_string.try_into().unwrap();
         // let addr_string:AddrString = (&addr_bytes).into();
         // let addr_string_cosmos = addr_string.convert_into_cosmos("osmo".to_string()).unwrap();
         // assert_eq!(addr_string_cosmos.to_string(), "osmo1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsll0sqv");
     }
 
     #[test]
-    fn test_convert_cosmos_to_eth() {
+    fn test_convert_cosmos_to_evm() {
         // let test_string = "osmo1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsll0sqv";
         // let account_id:AccountId = test_string.parse().unwrap();
         // let addr_string:AddrString = (&account_id).try_into().unwrap();
-        // let addr_string_eth = addr_string.convert_into_eth().unwrap();
-        // assert_eq!(addr_string_eth.to_string(), "0xb794f5ea0ba39494ce839613fffba74279579268");
+        // let addr_string_evm = addr_string.convert_into_evm().unwrap();
+        // assert_eq!(addr_string_evm.to_string(), "0xb794f5ea0ba39494ce839613fffba74279579268");
     }
 }

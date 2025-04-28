@@ -62,7 +62,7 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub enum ConfigChainAddrKindName {
     Cosmos,
-    Eth,
+    Evm,
 }
 
 impl FromStr for ConfigChainAddrKindName {
@@ -71,7 +71,7 @@ impl FromStr for ConfigChainAddrKindName {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "cosmos" => Ok(Self::Cosmos),
-            "eth" => Ok(Self::Eth),
+            "evm" => Ok(Self::Evm),
             _ => Err(format!("Unknown chain address kind: {}", s)),
         }
     }
@@ -204,7 +204,7 @@ impl TryFrom<ConfigInit> for Config {
                             .chain_address_bech32_prefix
                             .context("Missing bech32 prefix")?,
                     },
-                    ConfigChainAddrKindName::Eth => AddrKind::Eth,
+                    ConfigChainAddrKindName::Evm => AddrKind::Evm,
                 },
             },
             minimum_credit_balance_threshhold: config

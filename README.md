@@ -110,7 +110,7 @@ The QueryClient struct is slightly different for web targets, but this is all de
 
 [source code](packages/layer-climb-address/src/address.rs)
 
-One difference compared to other clients is that we require knowing the address type. This paves the way for supporting Ethereum-style address strings throughout the client. You can construct an address manually via methods like `new_cosmos()`, but it's more convenient to create it via a method on `ChainConfig`:
+One difference compared to other clients is that we require knowing the address type. This paves the way for supporting EVM address strings throughout the client. You can construct an address manually via methods like `new_cosmos()`, but it's more convenient to create it via a method on `ChainConfig`:
 
 ```rust
 let addr = chain_config.parse_address("address string")?;

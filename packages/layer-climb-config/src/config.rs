@@ -19,7 +19,7 @@ pub struct ChainConfig {
 #[serde(rename_all = "snake_case")]
 pub enum AddrKind {
     Cosmos { prefix: String },
-    Eth,
+    Evm,
 }
 
 impl std::hash::Hash for AddrKind {
@@ -29,7 +29,7 @@ impl std::hash::Hash for AddrKind {
                 1u32.hash(state);
                 prefix.hash(state);
             }
-            AddrKind::Eth => {
+            AddrKind::Evm => {
                 2u32.hash(state);
             }
         }
