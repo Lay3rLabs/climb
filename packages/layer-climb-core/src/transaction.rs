@@ -1,12 +1,10 @@
 use crate::prelude::*;
 use crate::querier::tx::AnyTxResponse;
 use crate::signing::middleware::{SigningMiddlewareMapBody, SigningMiddlewareMapResp};
-use std::sync::{
-    atomic::{AtomicBool, AtomicU64},
-    Arc,
-};
+use std::sync::{atomic::AtomicU64, Arc};
 
 use layer_climb_address::TxSigner;
+use tokio::sync::OnceCell;
 
 pub struct TxBuilder<'a> {
     pub querier: &'a QueryClient,
@@ -233,7 +231,6 @@ impl<'a> TxBuilder<'a> {
         messages: Vec<layer_climb_proto::Any>,
     ) -> Result<AnyTxResponse> {
         let block_height = self.querier.block_height().await?;
-
         let tx_timeout_blocks = self
             .tx_timeout_blocks
             .unwrap_or(Self::DEFAULT_TX_TIMEOUT_BLOCKS);
@@ -257,6 +254,7 @@ impl<'a> TxBuilder<'a> {
 
         let mut base_account: Option<layer_climb_proto::auth::BaseAccount> = None;
 
+        // Get the sequence number
         let sequence = match &self.sequence_strategy {
             Some(sequence_strategy) => match sequence_strategy.kind {
                 SequenceStrategyKind::Query => {
@@ -264,28 +262,24 @@ impl<'a> TxBuilder<'a> {
                     base_account.as_ref().unwrap().sequence
                 }
                 SequenceStrategyKind::QueryAndIncrement => {
-                    if !sequence_strategy
-                        .has_queried
-                        .load(std::sync::atomic::Ordering::SeqCst)
-                    {
-                        base_account = Some(self.query_base_account().await?);
-                        sequence_strategy
-                            .has_queried
-                            .store(true, std::sync::atomic::Ordering::SeqCst);
-                        sequence_strategy.value.store(
-                            base_account.as_ref().unwrap().sequence,
-                            std::sync::atomic::Ordering::SeqCst,
-                        );
-                        base_account.as_ref().unwrap().sequence
-                    } else {
-                        sequence_strategy
-                            .value
-                            .load(std::sync::atomic::Ordering::SeqCst)
-                    }
+                    let seq = sequence_strategy
+                        .once
+                        .get_or_try_init(|| async {
+                            let acct = self.query_base_account().await?;
+                            Ok::<_, anyhow::Error>(acct.sequence)
+                        })
+                        .await?;
+
+                    sequence_strategy
+                        .value
+                        .store(*seq, std::sync::atomic::Ordering::SeqCst);
+                    sequence_strategy
+                        .value
+                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
                 }
                 SequenceStrategyKind::SetAndIncrement(_) => sequence_strategy
                     .value
-                    .load(std::sync::atomic::Ordering::SeqCst),
+                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst),
                 SequenceStrategyKind::Constant(n) => n,
             },
             None => {
@@ -294,125 +288,165 @@ impl<'a> TxBuilder<'a> {
             }
         };
 
-        let account_number = match self.account_number {
-            Some(account_number) => account_number,
-            None => match base_account {
-                Some(base_account) => base_account.account_number,
-                None => self.query_base_account().await?.account_number,
-            },
-        };
+        // Create a result variable to track our success/failure
+        let result = async {
+            // Get account number
+            let account_number = match self.account_number {
+                Some(account_number) => account_number,
+                None => match base_account {
+                    Some(ref base_account) => base_account.account_number,
+                    None => self.query_base_account().await?.account_number,
+                },
+            };
 
-        let gas_units = match self.gas_units_or_simulate {
-            Some(gas_units) => gas_units,
-            None => {
-                let gas_multiplier = self
-                    .gas_simulate_multiplier
-                    .unwrap_or(Self::DEFAULT_GAS_MULTIPLIER);
+            // Calculate gas units
+            let gas_units = match self.gas_units_or_simulate {
+                Some(gas_units) => gas_units,
+                None => {
+                    let gas_multiplier = self
+                        .gas_simulate_multiplier
+                        .unwrap_or(Self::DEFAULT_GAS_MULTIPLIER);
 
-                let signer_info = self
-                    .signer
-                    .signer_info(sequence, layer_climb_proto::tx::SignMode::Unspecified)
-                    .await?;
+                    let signer_info = self
+                        .signer
+                        .signer_info(sequence, layer_climb_proto::tx::SignMode::Unspecified)
+                        .await?;
 
-                let gas_info = self
-                    .simulate_gas(signer_info, account_number, &body)
-                    .await?;
+                    let gas_info = self
+                        .simulate_gas(signer_info, account_number, &body)
+                        .await?;
 
-                (gas_info.gas_used as f32 * gas_multiplier).ceil() as u64
-            }
-        };
-
-        let fee = match self.gas_coin.clone() {
-            Some(gas_coin) => FeeCalculation::RealCoin {
-                gas_coin,
-                gas_units,
-            }
-            .calculate()?,
-            None => FeeCalculation::RealNetwork {
-                chain_config: &self.querier.chain_config,
-                gas_units,
-            }
-            .calculate()?,
-        };
-
-        let signer_info = self
-            .signer
-            .signer_info(sequence, layer_climb_proto::tx::SignMode::Direct)
-            .await?;
-
-        let tx_bytes = self
-            .sign_tx(signer_info, account_number, &body, fee, false)
-            .await?;
-        let broadcast_mode = self.broadcast_mode.unwrap_or(Self::DEFAULT_BROADCAST_MODE);
-
-        let tx_response = self
-            .querier
-            .broadcast_tx_bytes(tx_bytes, broadcast_mode)
-            .await?;
-
-        // TODO not sure about this... only increase on success? how does this interact with simulations?
-        if let Some(sequence) = self.sequence_strategy {
-            match sequence.kind {
-                SequenceStrategyKind::QueryAndIncrement => {
-                    sequence
-                        .value
-                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    (gas_info.gas_used as f32 * gas_multiplier).ceil() as u64
                 }
-                SequenceStrategyKind::SetAndIncrement(_) => {
-                    sequence
-                        .value
-                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            };
+
+            // Calculate fee
+            let fee = match self.gas_coin.clone() {
+                Some(gas_coin) => FeeCalculation::RealCoin {
+                    gas_coin,
+                    gas_units,
                 }
-                _ => {}
+                .calculate()?,
+                None => FeeCalculation::RealNetwork {
+                    chain_config: &self.querier.chain_config,
+                    gas_units,
+                }
+                .calculate()?,
+            };
+
+            // Get signer info
+            let signer_info = self
+                .signer
+                .signer_info(sequence, layer_climb_proto::tx::SignMode::Direct)
+                .await?;
+
+            // Sign and get tx bytes
+            let tx_bytes = self
+                .sign_tx(signer_info, account_number, &body, fee, false)
+                .await?;
+
+            let broadcast_mode = self.broadcast_mode.unwrap_or(Self::DEFAULT_BROADCAST_MODE);
+
+            // Broadcast the transaction
+            let tx_response = self
+                .querier
+                .broadcast_tx_bytes(tx_bytes, broadcast_mode)
+                .await?;
+
+            // Poll if needed
+            let mut tx_response = if self.broadcast_poll {
+                let sleep_duration = self
+                    .broadcast_poll_sleep_duration
+                    .unwrap_or(Self::DEFAULT_BROADCAST_POLL_SLEEP_DURATION);
+                let timeout_duration = self
+                    .broadcast_poll_timeout_duration
+                    .unwrap_or(Self::DEFAULT_BROADCAST_POLL_TIMEOUT_DURATION);
+
+                AnyTxResponse::Abci(
+                    self.querier
+                        .poll_until_tx_ready(
+                            tx_response.tx_hash(),
+                            sleep_duration,
+                            timeout_duration,
+                        )
+                        .await?
+                        .tx_response,
+                )
+            } else {
+                tx_response
+            };
+
+            // Check if the transaction succeeded
+            if tx_response.code() != 0 {
+                bail!(
+                    "tx failed with code: {}, codespace: {}, raw_log: {}",
+                    tx_response.code(),
+                    tx_response.codespace(),
+                    tx_response.raw_log()
+                );
             }
-        }
 
-        if tx_response.code() != 0 {
-            bail!(
-                "tx failed with code: {}, codespace: {}, raw_log: {}",
-                tx_response.code(),
-                tx_response.codespace(),
-                tx_response.raw_log()
-            );
-        }
-
-        let mut tx_response = if self.broadcast_poll {
-            let sleep_duration = self
-                .broadcast_poll_sleep_duration
-                .unwrap_or(Self::DEFAULT_BROADCAST_POLL_SLEEP_DURATION);
-            let timeout_duration = self
-                .broadcast_poll_timeout_duration
-                .unwrap_or(Self::DEFAULT_BROADCAST_POLL_TIMEOUT_DURATION);
-
-            AnyTxResponse::Abci(
-                self.querier
-                    .poll_until_tx_ready(tx_response.tx_hash(), sleep_duration, timeout_duration)
-                    .await?
-                    .tx_response,
-            )
-        } else {
-            tx_response
-        };
-
-        if tx_response.code() != 0 {
-            bail!(
-                "tx failed with code: {}, codespace: {}, raw_log: {}",
-                tx_response.code(),
-                tx_response.codespace(),
-                tx_response.raw_log()
-            );
-        }
-
-        if let Some(middleware) = self.middleware_map_resp.as_ref() {
-            for middleware in middleware.iter() {
-                tx_response = match middleware.map_resp(tx_response).await {
-                    Ok(req) => req,
-                    Err(e) => return Err(e),
+            // Apply middleware to response if needed
+            if let Some(middleware) = self.middleware_map_resp.as_ref() {
+                for middleware in middleware.iter() {
+                    tx_response = match middleware.map_resp(tx_response).await {
+                        Ok(req) => req,
+                        Err(e) => return Err(e),
+                    }
                 }
             }
+
+            Ok(tx_response)
+        }
+        .await;
+
+        // If the transaction failed and we incremented the sequence, roll it back
+        if result.is_err() {
+            if let Some(strategy) = self.sequence_strategy {
+                match strategy.kind {
+                    SequenceStrategyKind::QueryAndIncrement
+                    | SequenceStrategyKind::SetAndIncrement(_) => {
+                        let mut current = strategy.value.load(std::sync::atomic::Ordering::SeqCst);
+
+                        loop {
+                            if current == 0 {
+                                tracing::warn!(
+                                    "Attempted to roll back sequence but current value is 0; skipping rollback"
+                                );
+                                break;
+                            }
+
+                            match strategy.value.compare_exchange(
+                                current,
+                                current - 1,
+                                std::sync::atomic::Ordering::SeqCst,
+                                std::sync::atomic::Ordering::SeqCst,
+                            ) {
+                                Ok(_) => {
+                                    tracing::warn!(
+                                        "Sequence rollback successful: {} -> {}",
+                                        current,
+                                        current - 1
+                                    );
+                                    break;
+                                }
+                                Err(actual) => {
+                                    tracing::warn!(
+                                        "Sequence rollback CAS failed: expected {}, found {}; retrying",
+                                        current,
+                                        actual
+                                    );
+                                    current = actual;
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
         }
 
-        Ok(tx_response)
+        result
     }
 
     async fn sign_tx(
@@ -456,7 +490,7 @@ impl<'a> TxBuilder<'a> {
 pub struct SequenceStrategy {
     pub kind: SequenceStrategyKind,
     pub value: Arc<AtomicU64>,
-    pub has_queried: Arc<AtomicBool>,
+    pub once: OnceCell<u64>,
 }
 
 impl SequenceStrategy {
@@ -469,7 +503,7 @@ impl SequenceStrategy {
                 SequenceStrategyKind::Constant(n) => n,
             })),
             kind,
-            has_queried: Arc::new(AtomicBool::new(false)),
+            once: OnceCell::new(),
         }
     }
 }
