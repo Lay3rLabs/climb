@@ -54,25 +54,6 @@ impl SigningClient {
             signer,
             ClimbCache::new(connection.rpc.clone()),
             Some(connection),
-            None,
-        )
-        .await
-    }
-
-    pub async fn new_with_strategy(
-        chain_config: ChainConfig,
-        signer: impl TxSigner + 'static,
-        connection: Option<Connection>,
-        sequence_strategy_kind: SequenceStrategyKind,
-    ) -> Result<Self> {
-        let connection = connection.unwrap_or_default();
-
-        Self::new_with_cache(
-            chain_config,
-            signer,
-            ClimbCache::new(connection.rpc.clone()),
-            Some(connection),
-            Some(sequence_strategy_kind),
         )
         .await
     }
@@ -82,7 +63,6 @@ impl SigningClient {
         signer: impl TxSigner + 'static,
         cache: ClimbCache,
         connection: Option<Connection>,
-        sequence_strategy_kind: Option<SequenceStrategyKind>,
     ) -> Result<Self> {
         let addr = chain_config.address_from_pub_key(&signer.public_key().await?)?;
 
@@ -97,7 +77,7 @@ impl SigningClient {
             account_number: base_account.account_number,
             middleware_map_body: Arc::new(middleware::SigningMiddlewareMapBody::default_list()),
             middleware_map_resp: Arc::new(middleware::SigningMiddlewareMapResp::default_list()),
-            sequence_strategy: SequenceStrategy::new(sequence_strategy_kind.unwrap_or_default()),
+            sequence_strategy: SequenceStrategy::new(SequenceStrategyKind::Query),
         })
     }
 

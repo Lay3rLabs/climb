@@ -95,7 +95,6 @@ impl SigningClientPoolManager {
             signer,
             self.cache.clone(),
             Some(self.connection.clone()),
-            None,
         )
         .await
     }

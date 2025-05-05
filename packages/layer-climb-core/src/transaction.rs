@@ -474,10 +474,9 @@ impl SequenceStrategy {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub enum SequenceStrategyKind {
     /// Always query
-    #[default]
     Query,
     /// Query the first time, and then increment each successful tx
     QueryAndIncrement,
