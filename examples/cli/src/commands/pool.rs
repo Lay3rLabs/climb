@@ -101,11 +101,12 @@ impl PoolCommand {
                 )
                 .await?;
 
-                let client_pool: Pool<SigningClientPoolManager> =
+                let client_pool = SigningClientPool::new(
                     Pool::builder(client_pool_manager)
                         .max_size(max_concurrent_accounts)
                         .build()
-                        .context("Failed to create client pool")?;
+                        .context("Failed to create client pool")?,
+                );
 
                 let sends = match sends {
                     None => max_concurrent_accounts * 2,
