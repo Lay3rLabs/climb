@@ -164,7 +164,16 @@ impl Manager for SigningClientPoolManager {
     type Error = anyhow::Error;
 
     async fn create(&self) -> Result<SigningClient> {
+        // it's possible that the client hasn't ever been funded
+        // which would cause an error when trying to create it (specifically in base account)
+        // so if we're configured to use a funder, let's get the raw address
+        // before we create the client
         let signer = self.create_signer()?;
+        let addr = self
+            .chain_config
+            .address_from_pub_key(&signer.public_key().await?)?;
+
+        self.maybe_top_up(addr).await?;
         let client = self.create_client(Some(signer)).await?;
 
         tracing::debug!("POOL CREATED CLIENT {}", client.addr);
