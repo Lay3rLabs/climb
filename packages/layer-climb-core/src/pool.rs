@@ -197,8 +197,7 @@ pub struct SigningClientPool {
 }
 
 impl SigningClientPool {
-    pub fn new(manager: SigningClientPoolManager) -> Self {
-        let pool = deadpool::managed::Pool::builder(manager).build().unwrap();
+    pub fn new(pool: deadpool::managed::Pool<SigningClientPoolManager>) -> Self {
         Self { pool }
     }
 
