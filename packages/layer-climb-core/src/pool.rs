@@ -5,8 +5,8 @@ use crate::{
     querier::{Connection, QueryClient},
     signing::SigningClient,
 };
-use anyhow::{bail, Result};
-use deadpool::managed::{Manager, Metrics, RecycleResult};
+use anyhow::{bail, Error, Result};
+use deadpool::managed::{Manager, Metrics, Object, PoolError, RecycleResult};
 use layer_climb_address::*;
 use layer_climb_config::ChainConfig;
 use tokio::sync::Mutex;
@@ -187,8 +187,27 @@ impl Manager for SigningClientPoolManager {
         _: &Metrics,
     ) -> RecycleResult<anyhow::Error> {
         tracing::debug!("POOL RECYCLING CLIENT {}", client.addr);
-        self.maybe_top_up(client.addr.clone()).await?;
 
         Ok(())
+    }
+}
+
+pub struct SigningClientPool {
+    pool: deadpool::managed::Pool<SigningClientPoolManager>,
+}
+
+impl SigningClientPool {
+    pub fn new(manager: SigningClientPoolManager) -> Self {
+        let pool = deadpool::managed::Pool::builder(manager).build().unwrap();
+        Self { pool }
+    }
+
+    pub async fn get(&self) -> Result<Object<SigningClientPoolManager>, PoolError<Error>> {
+        let client = self.pool.get().await?;
+        self.pool
+            .manager()
+            .maybe_top_up(client.addr.clone())
+            .await?;
+        Ok(client)
     }
 }
