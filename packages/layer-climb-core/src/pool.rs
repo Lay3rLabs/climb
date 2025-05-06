@@ -1,6 +1,10 @@
 use std::sync::atomic::AtomicU32;
 
-use crate::{cache::ClimbCache, querier::Connection, signing::SigningClient};
+use crate::{
+    cache::ClimbCache,
+    querier::{Connection, QueryClient},
+    signing::SigningClient,
+};
 use anyhow::{bail, Result};
 use deadpool::managed::{Manager, Metrics, RecycleResult};
 use layer_climb_address::*;
@@ -57,15 +61,22 @@ impl SigningClientPoolManager {
         funder: Option<SigningClient>,
         denom: Option<String>,
     ) -> Result<Self> {
+        // keep a separate query client so we can get balances
+        // without locking the funder client
+        let query_client =
+            QueryClient::new(self.chain_config.clone(), Some(self.connection.clone())).await?;
+
         let balance_maintainer = match funder {
             Some(funder) => BalanceMaintainer {
                 client: Mutex::new(funder),
+                query_client,
                 threshhold,
                 amount,
                 denom,
             },
             None => BalanceMaintainer {
-                client: Mutex::new(self.create_client().await?),
+                client: Mutex::new(self.create_client(None).await?),
+                query_client,
                 threshhold,
                 amount,
                 denom,
@@ -76,18 +87,25 @@ impl SigningClientPoolManager {
         Ok(self)
     }
 
-    async fn create_client(&self) -> Result<SigningClient> {
-        let signer: KeySigner = match &self.chain_config.address_kind {
+    fn create_signer(&self) -> Result<KeySigner> {
+        match &self.chain_config.address_kind {
             layer_climb_config::AddrKind::Cosmos { .. } => {
                 let index = self
                     .derivation_index
                     .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
-                KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))?
+                KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))
             }
             layer_climb_config::AddrKind::Evm => {
                 bail!("EVM address kind is not supported (yet)")
             }
+        }
+    }
+
+    async fn create_client(&self, signer: Option<KeySigner>) -> Result<SigningClient> {
+        let signer: KeySigner = match signer {
+            Some(signer) => signer,
+            None => self.create_signer()?,
         };
 
         SigningClient::new_with_cache(
@@ -99,11 +117,11 @@ impl SigningClientPoolManager {
         .await
     }
 
-    async fn maybe_top_up(&self, client: &SigningClient) -> Result<()> {
+    async fn maybe_top_up(&self, addr: Address) -> Result<()> {
         if let Some(balance_maintainer) = &self.balance_maintainer {
-            let current_balance = client
-                .querier
-                .balance(client.addr.clone(), balance_maintainer.denom.clone())
+            let current_balance = balance_maintainer
+                .query_client
+                .balance(addr.clone(), balance_maintainer.denom.clone())
                 .await?
                 .unwrap_or_default();
             if current_balance < balance_maintainer.threshhold {
@@ -114,7 +132,7 @@ impl SigningClientPoolManager {
 
                     tracing::debug!(
                         "Balance on {} is {}, below {}, sending {} to top-up from {}",
-                        client.addr,
+                        addr,
                         current_balance,
                         balance_maintainer.threshhold,
                         amount,
@@ -122,12 +140,7 @@ impl SigningClientPoolManager {
                     );
 
                     funder
-                        .transfer(
-                            amount,
-                            &client.addr,
-                            balance_maintainer.denom.as_deref(),
-                            None,
-                        )
+                        .transfer(amount, &addr, balance_maintainer.denom.as_deref(), None)
                         .await?;
                 }
             }
@@ -139,7 +152,8 @@ impl SigningClientPoolManager {
 
 // just a helper struct to keep track of the balance maintainer
 pub struct BalanceMaintainer {
-    client: Mutex<SigningClient>,
+    pub client: Mutex<SigningClient>,
+    query_client: QueryClient,
     threshhold: u128,
     amount: u128,
     denom: Option<String>,
@@ -150,9 +164,19 @@ impl Manager for SigningClientPoolManager {
     type Error = anyhow::Error;
 
     async fn create(&self) -> Result<SigningClient> {
-        let client = self.create_client().await?;
+        // it's possible that the client hasn't ever been funded
+        // which would cause an error when trying to create it (specifically in base account)
+        // so if we're configured to use a funder, let's get the raw address
+        // before we create the client
+        let signer = self.create_signer()?;
+        let addr = self
+            .chain_config
+            .address_from_pub_key(&signer.public_key().await?)?;
+
+        self.maybe_top_up(addr).await?;
+        let client = self.create_client(Some(signer)).await?;
+
         tracing::debug!("POOL CREATED CLIENT {}", client.addr);
-        self.maybe_top_up(&client).await?;
 
         Ok(client)
     }
@@ -163,7 +187,7 @@ impl Manager for SigningClientPoolManager {
         _: &Metrics,
     ) -> RecycleResult<anyhow::Error> {
         tracing::debug!("POOL RECYCLING CLIENT {}", client.addr);
-        self.maybe_top_up(client).await?;
+        self.maybe_top_up(client.addr.clone()).await?;
 
         Ok(())
     }
