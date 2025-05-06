@@ -11,7 +11,7 @@ use layer_climb::{pool::SigningClientPoolManager, prelude::*};
 #[derive(Clone)]
 pub struct AppState {
     pub config: Arc<Config>,
-    pub client_pool: Pool<SigningClientPoolManager>,
+    pub client_pool: SigningClientPool,
     pub query_client: QueryClient,
     pub distributor_addrs: Arc<Mutex<HashMap<u32, Address>>>,
 }
@@ -33,9 +33,11 @@ impl AppState {
         )
         .await?;
 
-        let client_pool: Pool<SigningClientPoolManager> = Pool::builder(client_pool_manager)
-            .max_size(config.concurrency)
-            .build()?;
+        let client_pool = SigningClientPool::new(
+            Pool::builder(client_pool_manager)
+                .max_size(config.concurrency)
+                .build()?,
+        );
 
         let query_client = QueryClient::new(config.chain_config.clone(), None).await?;
 
