@@ -4,10 +4,11 @@ use layer_climb_config::AddrKind;
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, str::FromStr};
 use subtle_encoding::bech32;
+use utoipa::ToSchema;
 
 /// The canonical type used everywhere for addresses
 /// Display is implemented as plain string
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum Address {
     Cosmos {
         bech32_addr: String,
@@ -189,7 +190,7 @@ impl TryFrom<Address> for alloy_primitives::Address {
 }
 
 ///// EVM address
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(transparent)]
 pub struct AddrEvm([u8; 20]);
 

@@ -20,6 +20,7 @@ layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.4.2" }
 # General
 cfg-if = "1.0.0"
 async-trait = "0.1.88"
+utoipa = { version = "5.3.1" }
 
 # Error handling
 thiserror = "2.0.12"
