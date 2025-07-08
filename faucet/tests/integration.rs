@@ -262,10 +262,7 @@ async fn send_to_self_works() {
 
         assert!(
             balance_after != balance_before,
-            "Expected for {} balance_after ({}) to be different than balance_before ({}).",
-            dest_addr,
-            balance_after,
-            balance_before
+            "Expected for {dest_addr} balance_after ({balance_after}) to be different than balance_before ({balance_before})."
         );
     }
 

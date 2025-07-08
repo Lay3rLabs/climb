@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
 
     let router = make_router(config).await?;
 
-    let listener = tokio::net::TcpListener::bind(&format!("0.0.0.0:{}", port)).await?;
+    let listener = tokio::net::TcpListener::bind(&format!("0.0.0.0:{port}")).await?;
 
     tracing::info!("Listening on: {}", listener.local_addr()?);
 

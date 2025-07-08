@@ -370,7 +370,7 @@ impl QueryRequest for BlockReq {
                         }),
                 }
                 .with_context(move || match height {
-                    Some(height) => format!("no block found at height {}", height),
+                    Some(height) => format!("no block found at height {height}"),
                     None => "no latest block found".to_string(),
                 })
             }

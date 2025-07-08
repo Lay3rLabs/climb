@@ -18,13 +18,13 @@ impl QueryLoggerMiddlewareMapReq {
 }
 impl Default for QueryLoggerMiddlewareMapReq {
     fn default() -> Self {
-        Self::new(|msg| eprintln!("{}", msg))
+        Self::new(|msg| eprintln!("{msg}"))
     }
 }
 
 impl QueryLoggerMiddlewareMapReq {
     pub async fn map_req<REQ: QueryRequest>(&self, req: REQ) -> Result<REQ> {
-        (self.logger_fn)(format!("{:?}", req));
+        (self.logger_fn)(format!("{req:?}"));
         Ok(req)
     }
 }
@@ -44,13 +44,13 @@ impl QueryLoggerMiddlewareMapResp {
 }
 impl Default for QueryLoggerMiddlewareMapResp {
     fn default() -> Self {
-        Self::new(|msg| eprintln!("{}", msg))
+        Self::new(|msg| eprintln!("{msg}"))
     }
 }
 
 impl QueryLoggerMiddlewareMapResp {
     pub async fn map_resp<RESP: std::fmt::Debug + Send>(&self, resp: RESP) -> Result<RESP> {
-        (self.logger_fn)(format!("{:?}", resp));
+        (self.logger_fn)(format!("{resp:?}"));
         Ok(resp)
     }
 }

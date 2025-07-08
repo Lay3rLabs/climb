@@ -5,7 +5,6 @@ use tracing::instrument;
 impl QueryClient {
     #[instrument]
     pub async fn contract_smart<
-        'a,
         D: DeserializeOwned + Send + std::fmt::Debug + Sync,
         S: Serialize + std::fmt::Debug,
     >(
@@ -21,7 +20,7 @@ impl QueryClient {
         .await
     }
     #[instrument]
-    pub async fn contract_smart_raw<'a, S: Serialize + std::fmt::Debug>(
+    pub async fn contract_smart_raw<S: Serialize + std::fmt::Debug>(
         &self,
         address: &Address,
         msg: &S,
@@ -82,7 +81,8 @@ impl<D: DeserializeOwned + Send + std::fmt::Debug + Sync> QueryRequest for Contr
         .request(client)
         .await?;
 
-        let res = cosmwasm_std::from_json(res).context("couldn't deserialize response")?;
+        let res = cosmwasm_std::from_json(res)
+            .map_err(|e| anyhow::anyhow!("couldn't deserialize response {}", e))?;
 
         Ok(res)
     }

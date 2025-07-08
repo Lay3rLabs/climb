@@ -72,7 +72,7 @@ impl FromStr for ConfigChainAddrKindName {
         match s {
             "cosmos" => Ok(Self::Cosmos),
             "evm" => Ok(Self::Evm),
-            _ => Err(format!("Unknown chain address kind: {}", s)),
+            _ => Err(format!("Unknown chain address kind: {s}")),
         }
     }
 }

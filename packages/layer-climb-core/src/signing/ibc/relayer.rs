@@ -121,14 +121,13 @@ impl IbcRelayer {
                         Ok(()) => {}
                         Err(e) => {
                             self.log_err(format!(
-                                "Error processing events for chain {}: {:?}",
-                                chain_id, e
+                                "Error processing events for chain {chain_id}: {e:?}"
                             ));
                         }
                     }
                 }
                 Err(e) => {
-                    self.log_err(format!("Error querying chain {}: {:?}", chain_id, e));
+                    self.log_err(format!("Error querying chain {chain_id}: {e:?}"));
                 }
             }
         }
@@ -145,7 +144,7 @@ impl IbcRelayer {
             match self.consume_task(task).await {
                 Ok(()) => {}
                 Err(e) => {
-                    self.log_err(format!("Error handling task: {:?}", e));
+                    self.log_err(format!("Error handling task: {e:?}"));
                 }
             }
         }
@@ -200,9 +199,10 @@ impl IbcRelayer {
                 Ok(packet) => {
                     write_out!("[IBC EVENT] {:?}", packet.kind);
                     task_sender.unbounded_send(Task::RelayPacket {
-                        client_packet: self
-                            .get_client_packet(chain_id, packet)?
-                            .context("couldn't find client info for packet")?,
+                        client_packet: Box::new(
+                            self.get_client_packet(chain_id, packet)?
+                                .context("couldn't find client info for packet")?,
+                        ),
                     })?;
                 }
                 Err(_) => {
@@ -229,7 +229,7 @@ impl IbcRelayer {
                     client_info,
                     side,
                     packet,
-                } = client_packet;
+                } = *client_packet;
 
                 match packet.kind {
                     IbcPacketKind::Send | IbcPacketKind::WriteAck => {
@@ -433,7 +433,7 @@ enum Task {
         side: Side,
     },
     RelayPacket {
-        client_packet: ClientPacket,
+        client_packet: Box<ClientPacket>,
     },
 }
 

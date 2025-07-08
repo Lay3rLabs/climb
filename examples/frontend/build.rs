@@ -7,11 +7,11 @@ fn main() {
             match item {
                 Ok((key, value)) => {
                     // Set the environment variable for the compiler
-                    println!("cargo:rustc-env={}={}", key, value);
+                    println!("cargo:rustc-env={key}={value}");
                 }
                 Err(err) => {
                     // Handle parsing errors (e.g., invalid lines in .env)
-                    eprintln!("Warning: Failed to parse .env entry: {}", err);
+                    eprintln!("Warning: Failed to parse .env entry: {err}");
                 }
             }
         }

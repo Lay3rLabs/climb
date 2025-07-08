@@ -90,7 +90,7 @@ async fn init() -> Result<(), String> {
             ORIGINAL_FAUCET.set(original_faucet).unwrap();
             Ok(())
         }
-        Err(e) => Err(format!("Failed to create original faucet: {}", e)),
+        Err(e) => Err(format!("Failed to create original faucet: {e}")),
     }
 }
 

@@ -99,17 +99,17 @@ impl std::fmt::Debug for Event<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
             match self {
-                Event::String(e) => write!(f, "{:#?}", e),
-                Event::Tendermint(e) => write!(f, "{:#?}", e),
-                Event::Tendermint2(e) => write!(f, "{:#?}", e),
-                Event::CosmWasm(e) => write!(f, "{:#?}", e),
+                Event::String(e) => write!(f, "{e:#?}"),
+                Event::Tendermint(e) => write!(f, "{e:#?}"),
+                Event::Tendermint2(e) => write!(f, "{e:#?}"),
+                Event::CosmWasm(e) => write!(f, "{e:#?}"),
             }
         } else {
             match self {
-                Event::String(e) => write!(f, "{:?}", e),
-                Event::Tendermint(e) => write!(f, "{:?}", e),
-                Event::Tendermint2(e) => write!(f, "{:?}", e),
-                Event::CosmWasm(e) => write!(f, "{:?}", e),
+                Event::String(e) => write!(f, "{e:?}"),
+                Event::Tendermint(e) => write!(f, "{e:?}"),
+                Event::Tendermint2(e) => write!(f, "{e:?}"),
+                Event::CosmWasm(e) => write!(f, "{e:?}"),
             }
         }
     }
@@ -158,7 +158,7 @@ impl<'a> Event<'a> {
         if self_ty == ty {
             true
         } else {
-            self_ty == format!("wasm-{}", ty)
+            self_ty == format!("wasm-{ty}")
         }
     }
 }

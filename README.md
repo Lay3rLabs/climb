@@ -463,8 +463,6 @@ What if we wanted to get it as a raw string instead? Just call the [.contract_sm
 ```rust
 use layer_climb::prelude::*;
 
-use layer_climb::prelude::*;
-
 let raw_bytes = client.querier.contract_smart_raw(
     &addr, 
     &QueryMsg::GetMessages {
