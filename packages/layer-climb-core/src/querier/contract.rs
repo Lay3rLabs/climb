@@ -82,7 +82,8 @@ impl<D: DeserializeOwned + Send + std::fmt::Debug + Sync> QueryRequest for Contr
         .request(client)
         .await?;
 
-        let res = cosmwasm_std::from_json(res).map_err(|e| anyhow::anyhow!("couldn't deserialize response {}", e))?;
+        let res = cosmwasm_std::from_json(res)
+            .map_err(|e| anyhow::anyhow!("couldn't deserialize response {}", e))?;
 
         Ok(res)
     }

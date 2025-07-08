@@ -20,7 +20,7 @@ pub struct CosmosInstance {
     // the block time to use in the chain, default is "200ms"
     pub block_time: String,
     // the image to use for the container, default is "cosmwasm/wasmd:latest"
-    pub image: String
+    pub image: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
