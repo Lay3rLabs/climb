@@ -19,6 +19,8 @@ pub struct CosmosInstance {
     pub stderr: StdioKind,
     // the block time to use in the chain, default is "200ms"
     pub block_time: String,
+    // the image to use for the container, default is "cosmwasm/wasmd:latest"
+    pub image: String
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,6 +49,7 @@ impl CosmosInstance {
             stdout: StdioKind::Null,
             stderr: StdioKind::Null,
             block_time: "200ms".to_string(),
+            image: "cosmwasm/wasmd:latest".to_string(),
         }
     }
 
@@ -73,7 +76,7 @@ impl CosmosInstance {
             &format!("CHAIN_ID={}", self.chain_config.chain_id),
             "--env",
             &format!("FEE_TOKEN={}", self.chain_config.gas_denom),
-            "cosmwasm/wasmd:latest",
+            self.image.as_str(),
             "/opt/setup_wasmd.sh",
         ]
         .into_iter()
@@ -106,7 +109,7 @@ impl CosmosInstance {
                 &self.name,
                 "--mount",
                 &format!("type=volume,source={}_data,target=/root", self.name),
-                "cosmwasm/wasmd:latest",
+                self.image.as_str(),
                 "sed",
                 "-E",
                 "-i",
@@ -164,7 +167,7 @@ impl CosmosInstance {
             [
                 "--mount",
                 &format!("type=volume,source={}_data,target=/root", &self.name),
-                "cosmwasm/wasmd:latest",
+                self.image.as_str(),
                 "/opt/run_wasmd.sh",
             ]
             .into_iter()
