@@ -7,7 +7,7 @@ pub fn set_port_in_url(input_url: &str, new_port: u16) -> Result<String> {
     let url_with_scheme = if has_scheme {
         input_url.to_string()
     } else {
-        format!("http://{}", input_url)
+        format!("http://{input_url}")
     };
 
     // Parse the URL

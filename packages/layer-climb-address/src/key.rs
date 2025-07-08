@@ -13,8 +13,7 @@ pub static COSMOS_HUB_PATH: LazyLock<DerivationPath> =
     LazyLock::new(|| DerivationPath::from_str("m/44'/118'/0'/0/0").unwrap());
 
 pub fn cosmos_hub_derivation(index: u32) -> Result<DerivationPath> {
-    DerivationPath::from_str(&format!("m/44'/118'/0'/0/{}", index))
-        .map_err(|err| anyhow!("{}", err))
+    DerivationPath::from_str(&format!("m/44'/118'/0'/0/{index}")).map_err(|err| anyhow!("{}", err))
 }
 
 pub struct KeySigner {

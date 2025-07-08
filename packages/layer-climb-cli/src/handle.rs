@@ -95,10 +95,7 @@ impl CosmosInstance {
             .wait()?;
 
         if !res.success() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to setup chain",
-            ));
+            return Err(std::io::Error::other("Failed to setup chain"));
         }
 
         let res = Command::new("docker")
@@ -125,10 +122,7 @@ impl CosmosInstance {
             .wait()?;
 
         if !res.success() {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to setup chain",
-            ))
+            Err(std::io::Error::other("Failed to setup chain"))
         } else {
             Ok(())
         }
@@ -160,7 +154,7 @@ impl CosmosInstance {
 
         for (host_port, container_port) in ports {
             args.push("-p".to_string());
-            args.push(format!("{}:{}", host_port, container_port));
+            args.push(format!("{host_port}:{container_port}"));
         }
 
         args.extend_from_slice(
@@ -179,10 +173,7 @@ impl CosmosInstance {
         let res = Command::new("docker").args(args).spawn()?.wait()?;
 
         if !res.success() {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to setup chain",
-            ))
+            Err(std::io::Error::other("Failed to setup chain"))
         } else {
             Ok(())
         }

@@ -63,7 +63,7 @@ impl Address {
         } else {
             bech32::decode(value)
         }
-        .context(format!("invalid bech32: '{}'", value))?;
+        .context(format!("invalid bech32: '{value}'"))?;
 
         if matches!(prefix, Some(prefix) if prefix != decoded_prefix) {
             bail!(
@@ -163,10 +163,10 @@ impl std::fmt::Display for Address {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Cosmos { bech32_addr, .. } => {
-                write!(f, "{}", bech32_addr)
+                write!(f, "{bech32_addr}")
             }
             Self::Evm(addr_evm) => {
-                write!(f, "{}", addr_evm)
+                write!(f, "{addr_evm}")
             }
         }
     }

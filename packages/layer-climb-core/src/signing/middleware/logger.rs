@@ -18,7 +18,7 @@ impl SigningLoggerMiddlewareMapBody {
 }
 impl Default for SigningLoggerMiddlewareMapBody {
     fn default() -> Self {
-        Self::new(|body| eprintln!("{:?}", body))
+        Self::new(|body| eprintln!("{body:?}"))
     }
 }
 
@@ -47,7 +47,7 @@ impl SigningLoggerMiddlewareMapResp {
 }
 impl Default for SigningLoggerMiddlewareMapResp {
     fn default() -> Self {
-        Self::new(|resp| eprintln!("{:?}", resp))
+        Self::new(|resp| eprintln!("{resp:?}"))
     }
 }
 
