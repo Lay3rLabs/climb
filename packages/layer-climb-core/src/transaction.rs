@@ -205,7 +205,8 @@ impl<'a> TxBuilder<'a> {
         &self,
         signer_info: layer_climb_proto::tx::SignerInfo,
         account_number: u64,
-        tx_body: &layer_climb_proto::tx::TxBody,
+        // mutable so we can set the timeout_height here
+        tx_body: &mut layer_climb_proto::tx::TxBody,
     ) -> Result<layer_climb_proto::abci::GasInfo> {
         let fee = FeeCalculation::Simulation {
             chain_config: &self.querier.chain_config,
@@ -232,29 +233,6 @@ impl<'a> TxBuilder<'a> {
         self,
         messages: Vec<layer_climb_proto::Any>,
     ) -> Result<AnyTxResponse> {
-        let block_height = self.querier.block_height().await?;
-
-        let tx_timeout_blocks = self
-            .tx_timeout_blocks
-            .unwrap_or(Self::DEFAULT_TX_TIMEOUT_BLOCKS);
-
-        let mut body = layer_climb_proto::tx::TxBody {
-            messages,
-            memo: self.memo.as_deref().unwrap_or("").to_string(),
-            timeout_height: block_height + tx_timeout_blocks,
-            extension_options: Default::default(),
-            non_critical_extension_options: Default::default(),
-        };
-
-        if let Some(middleware) = self.middleware_map_body.as_ref() {
-            for middleware in middleware.iter() {
-                body = match middleware.map_body(body).await {
-                    Ok(req) => req,
-                    Err(e) => return Err(e),
-                }
-            }
-        }
-
         let mut base_account: Option<layer_climb_proto::auth::BaseAccount> = None;
 
         let sequence = match &self.sequence_strategy {
@@ -302,6 +280,23 @@ impl<'a> TxBuilder<'a> {
             },
         };
 
+        let mut body = layer_climb_proto::tx::TxBody {
+            messages,
+            memo: self.memo.as_deref().unwrap_or("").to_string(),
+            timeout_height: 0, // will be set later so we don't get delayed by other async calls before we send
+            extension_options: Default::default(),
+            non_critical_extension_options: Default::default(),
+        };
+
+        if let Some(middleware) = self.middleware_map_body.as_ref() {
+            for middleware in middleware.iter() {
+                body = match middleware.map_body(body).await {
+                    Ok(req) => req,
+                    Err(e) => return Err(e),
+                }
+            }
+        }
+
         let gas_units = match self.gas_units_or_simulate {
             Some(gas_units) => gas_units,
             None => {
@@ -315,7 +310,7 @@ impl<'a> TxBuilder<'a> {
                     .await?;
 
                 let gas_info = self
-                    .simulate_gas(signer_info, account_number, &body)
+                    .simulate_gas(signer_info, account_number, &mut body)
                     .await?;
 
                 (gas_info.gas_used as f32 * gas_multiplier).ceil() as u64
@@ -341,7 +336,7 @@ impl<'a> TxBuilder<'a> {
             .await?;
 
         let tx_bytes = self
-            .sign_tx(signer_info, account_number, &body, fee, false)
+            .sign_tx(signer_info, account_number, &mut body, fee, false)
             .await?;
         let broadcast_mode = self.broadcast_mode.unwrap_or(Self::DEFAULT_BROADCAST_MODE);
 
@@ -419,7 +414,8 @@ impl<'a> TxBuilder<'a> {
         &self,
         signer_info: layer_climb_proto::tx::SignerInfo,
         account_number: u64,
-        body: &layer_climb_proto::tx::TxBody,
+        // mutable so we can set the timeout_height here
+        body: &mut layer_climb_proto::tx::TxBody,
         fee: layer_climb_proto::tx::Fee,
         simulate_only: bool,
     ) -> Result<Vec<u8>> {
@@ -429,6 +425,15 @@ impl<'a> TxBuilder<'a> {
             fee: Some(fee),
             tip: None,
         };
+
+        let block_height = self.querier.block_height().await?;
+
+        let tx_timeout_blocks = self
+            .tx_timeout_blocks
+            .unwrap_or(Self::DEFAULT_TX_TIMEOUT_BLOCKS);
+
+        // latest possible time we can grab the current block height
+        body.timeout_height = block_height + tx_timeout_blocks;
 
         let sign_doc = layer_climb_proto::tx::SignDoc {
             body_bytes: proto_into_bytes(body)?,

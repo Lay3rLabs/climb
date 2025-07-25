@@ -2520,7 +2520,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -2530,7 +2530,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-address"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "alloy-primitives",
  "anyhow",
@@ -2559,7 +2559,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-cli"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "bip39",
@@ -2578,7 +2578,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-config"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "serde",
@@ -2587,7 +2587,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-core"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2652,7 +2652,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-proto"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto",
