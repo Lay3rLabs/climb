@@ -1,14 +1,15 @@
 use crate::PublicKey;
 use anyhow::{anyhow, bail, Context, Result};
+use cosmwasm_schema::{cw_schema, cw_serde};
 use layer_climb_config::AddrKind;
-use serde::{Deserialize, Serialize};
-use std::{hash::Hash, str::FromStr};
+use std::{borrow::Cow, hash::Hash, str::FromStr};
 use subtle_encoding::bech32;
 use utoipa::ToSchema;
 
 /// The canonical type used everywhere for addresses
 /// Display is implemented as plain string
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[derive(ToSchema, Eq)]
+#[cw_serde]
 pub enum Address {
     Cosmos {
         bech32_addr: String,
@@ -189,10 +190,44 @@ impl TryFrom<Address> for alloy_primitives::Address {
     }
 }
 
-///// EVM address
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
-#[serde(transparent)]
+/// EVM address
+// we implement our own Serialize/Deserialize to ensure it is serialized as a hex string
+// so we need to manually implement the cw_serde derives from https://github.com/CosmWasm/cosmwasm/blob/fa5439a9e4e6884abe1e76f04443a95961eaa73f/packages/schema-derive/src/cw_serde.rs#L47C5-L61C7
+#[derive(ToSchema, Clone, Debug, PartialEq, Eq)]
 pub struct AddrEvm([u8; 20]);
+
+impl cw_schema::Schemaifier for AddrEvm {
+    #[inline]
+    fn visit_schema(visitor: &mut cw_schema::SchemaVisitor) -> cw_schema::DefinitionReference {
+        let node = cw_schema::Node {
+            name: Cow::Borrowed(std::any::type_name::<Self>()),
+            description: None,
+            value: cw_schema::NodeType::String,
+        };
+
+        visitor.insert(Self::id(), node)
+    }
+}
+
+impl cosmwasm_schema::schemars::JsonSchema for AddrEvm {
+    fn schema_name() -> String {
+        "AddrEvm".into()
+    }
+
+    fn json_schema(
+        _generator: &mut cosmwasm_schema::schemars::r#gen::SchemaGenerator,
+    ) -> cosmwasm_schema::schemars::schema::Schema {
+        cosmwasm_schema::schemars::schema::Schema::Object(
+            cosmwasm_schema::schemars::schema::SchemaObject {
+                instance_type: Some(cosmwasm_schema::schemars::schema::SingleOrVec::Single(
+                    Box::new(cosmwasm_schema::schemars::schema::InstanceType::String),
+                )),
+                format: Some("hex".into()),
+                ..Default::default()
+            },
+        )
+    }
+}
 
 impl AddrEvm {
     pub fn new(bytes: [u8; 20]) -> Self {
@@ -264,6 +299,25 @@ impl From<AddrEvm> for alloy_primitives::Address {
     }
 }
 
+impl serde::Serialize for AddrEvm {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for AddrEvm {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::{AddrEvm, Address};
@@ -278,12 +332,22 @@ mod test {
     fn test_basic_roundtrip_evm() {
         let test_string = TEST_EVM_STR;
         let addr_evm: AddrEvm = test_string.parse().unwrap();
-        let addr: Address = addr_evm.into();
+        let addr: Address = addr_evm.clone().into();
 
         assert_eq!(addr.to_string(), test_string);
 
-        let addr_evm_2: AddrEvm = addr.try_into().unwrap();
+        let addr_evm_2: AddrEvm = addr.clone().try_into().unwrap();
         assert_eq!(addr_evm_2, addr_evm);
+
+        // serde should be as hex string
+        assert_eq!(
+            serde_json::to_string(&addr_evm).unwrap(),
+            format!("\"{test_string}\"")
+        );
+        assert_eq!(
+            serde_json::from_str::<AddrEvm>(&format!("\"{test_string}\"")).unwrap(),
+            addr_evm
+        );
     }
 
     #[test]
