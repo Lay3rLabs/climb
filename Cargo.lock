@@ -1020,6 +1020,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmwasm-schema"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e476f2415bf6c582d3a6743de056d6a217933b753aa4994cdb9c6a89d09a97c"
+dependencies = [
+ "cosmwasm-schema-derive",
+ "cw-schema",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "cosmwasm-schema-derive"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e652d98c68f04e4f7e97b16009a94ccf550341b091213c15bbe3eb2d14139709"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "cosmwasm-std"
 version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2520,7 +2545,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -2530,7 +2555,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-address"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "anyhow",
@@ -2539,6 +2564,7 @@ dependencies = [
  "bip32",
  "bip39",
  "cfg-if",
+ "cosmwasm-schema",
  "hex",
  "js-sys",
  "k256",
@@ -2547,6 +2573,7 @@ dependencies = [
  "log",
  "serde",
  "serde-wasm-bindgen",
+ "serde_json",
  "signature",
  "subtle-encoding",
  "tendermint",
@@ -2559,7 +2586,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-cli"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "bip39",
@@ -2578,7 +2605,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-config"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -2587,7 +2614,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-core"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2652,7 +2679,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-proto"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto",

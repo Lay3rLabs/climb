@@ -44,6 +44,7 @@ thiserror = { workspace = true }
 log = { workspace = true }
 alloy-primitives = { workspace = true }
 utoipa = { workspace = true }
+cosmwasm-schema = { workspace = true }
 
 ######## Target-specific dependencies ########
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -52,3 +53,7 @@ wasm-bindgen-futures = { workspace = true, optional = true }
 serde-wasm-bindgen = { workspace = true, optional = true }
 js-sys = { workspace = true, optional = true }
 web-sys = { version = "0.3.77", features = ["console"], optional = true }
+
+######## Dev dependencies ########
+[dev-dependencies]
+serde_json = { workspace = true }

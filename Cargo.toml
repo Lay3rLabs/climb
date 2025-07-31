@@ -3,19 +3,19 @@ members = ["packages/*", "examples/*", "faucet", "integration-test"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.2"
+version = "0.6.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/Lay3rLabs/climb"
 
 [workspace.dependencies]
 # Local
-layer-climb = { path = "packages/layer-climb", version = "0.5.2" }
-layer-climb-address = { path = "packages/layer-climb-address", version = "0.5.2" }
-layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.5.2" }
-layer-climb-config = { path = "packages/layer-climb-config", version = "0.5.2" }
-layer-climb-core = { path = "packages/layer-climb-core", version = "0.5.2" }
-layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.5.2" }
+layer-climb = { path = "packages/layer-climb", version = "0.6.0" }
+layer-climb-address = { path = "packages/layer-climb-address", version = "0.6.0" }
+layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.6.0" }
+layer-climb-config = { path = "packages/layer-climb-config", version = "0.6.0" }
+layer-climb-core = { path = "packages/layer-climb-core", version = "0.6.0" }
+layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.6.0" }
 
 # General
 cfg-if = "1.0.1"
@@ -64,6 +64,7 @@ rand = "0.9.1"
 
 # Cosmos
 cosmwasm-std = "3.0.1"
+cosmwasm-schema = "3.0.1"
 tendermint = { version = "0.40.4", features = ["secp256k1"] }
 tendermint-rpc = { version = "0.40.4", default-features = false }
 
