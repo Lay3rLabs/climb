@@ -1,0 +1,60 @@
+[package]
+name = "layer-climb-signer"
+description = "Signer sub-crate for Climb"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["lib"]
+
+[features]
+web = [
+    "dep:wasm-bindgen",
+    "dep:wasm-bindgen-futures",
+    "dep:serde-wasm-bindgen",
+    "dep:js-sys",
+    "dep:web-sys",
+]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(wasm_bindgen_unstable_test_coverage)',
+] }
+
+[dependencies]
+######## Local dependencies ########
+layer-climb-proto = { workspace = true }
+layer-climb-config = { workspace = true }
+layer-climb-address = { workspace = true }
+######## Workspace dependencies ########
+cfg-if = { workspace = true }
+serde = { workspace = true }
+anyhow = { workspace = true }
+const-hex = { workspace = true }
+async-trait = { workspace = true }
+bip39 = { workspace = true }
+bip32 = { workspace = true }
+k256 = { workspace = true }
+subtle-encoding = { workspace = true }
+signature = { workspace = true }
+base64 = { workspace = true }
+tendermint = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+alloy-primitives = { workspace = true }
+utoipa = { workspace = true }
+cosmwasm-schema = { workspace = true }
+
+######## Target-specific dependencies ########
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { workspace = true, optional = true }
+wasm-bindgen-futures = { workspace = true, optional = true }
+serde-wasm-bindgen = { workspace = true, optional = true }
+js-sys = { workspace = true, optional = true }
+web-sys = { version = "0.3.77", features = ["console"], optional = true }
+
+######## Dev dependencies ########
+[dev-dependencies]
+serde_json = { workspace = true }

@@ -6,7 +6,7 @@ use std::sync::{
     Arc,
 };
 
-use layer_climb_address::TxSigner;
+use layer_climb_signer::TxSigner;
 
 pub struct TxBuilder<'a> {
     pub querier: &'a QueryClient,

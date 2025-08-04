@@ -2545,48 +2545,33 @@ dependencies = [
 
 [[package]]
 name = "layer-climb"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
  "layer-climb-core",
  "layer-climb-proto",
+ "layer-climb-signer",
 ]
 
 [[package]]
 name = "layer-climb-address"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "alloy-primitives",
  "anyhow",
- "async-trait",
- "base64 0.22.1",
- "bip32",
- "bip39",
- "cfg-if",
+ "const-hex",
  "cosmwasm-schema",
- "hex",
- "js-sys",
- "k256",
- "layer-climb-config",
- "layer-climb-proto",
- "log",
  "serde",
- "serde-wasm-bindgen",
  "serde_json",
- "signature",
  "subtle-encoding",
  "tendermint",
- "thiserror 2.0.12",
  "utoipa",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
 name = "layer-climb-cli"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "bip39",
@@ -2605,28 +2590,30 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-config"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
+ "layer-climb-address",
  "serde",
+ "tendermint",
  "url",
 ]
 
 [[package]]
 name = "layer-climb-core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.22.1",
  "bip39",
  "cfg-if",
+ "const-hex",
  "cosmwasm-std",
  "deadpool",
  "futures",
  "futures-timer",
  "getrandom 0.3.3",
- "hex",
  "http",
  "http-body",
  "http-body-util",
@@ -2634,6 +2621,7 @@ dependencies = [
  "layer-climb-address",
  "layer-climb-config",
  "layer-climb-proto",
+ "layer-climb-signer",
  "log",
  "rand 0.9.1",
  "reqwest",
@@ -2679,13 +2667,45 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-proto"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto",
  "ibc-proto",
  "tendermint-proto",
  "thiserror 2.0.12",
+]
+
+[[package]]
+name = "layer-climb-signer"
+version = "0.7.0"
+dependencies = [
+ "alloy-primitives",
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "bip32",
+ "bip39",
+ "cfg-if",
+ "const-hex",
+ "cosmwasm-schema",
+ "js-sys",
+ "k256",
+ "layer-climb-address",
+ "layer-climb-config",
+ "layer-climb-proto",
+ "log",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "signature",
+ "subtle-encoding",
+ "tendermint",
+ "thiserror 2.0.12",
+ "utoipa",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

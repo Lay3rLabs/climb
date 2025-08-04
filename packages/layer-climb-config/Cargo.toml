@@ -10,7 +10,10 @@ repository.workspace = true
 crate-type = ["lib"]
 
 [dependencies]
+######## Local dependencies ########
+layer-climb-address = {workspace = true}
 ######## Workspace dependencies ########
 serde = {workspace = true} 
 anyhow = {workspace = true} 
 url = {workspace = true}
+tendermint = {workspace = true}

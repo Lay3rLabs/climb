@@ -9,7 +9,7 @@ use crate::{
     querier::Connection,
     transaction::{SequenceStrategy, SequenceStrategyKind},
 };
-use layer_climb_address::TxSigner;
+use layer_climb_signer::TxSigner;
 use middleware::{SigningMiddlewareMapBody, SigningMiddlewareMapResp};
 use std::sync::Arc;
 use tracing::instrument;

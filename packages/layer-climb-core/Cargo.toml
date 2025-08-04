@@ -14,6 +14,7 @@ crate-type = ["lib"]
 layer-climb-proto = { workspace = true } 
 layer-climb-address = { workspace = true } 
 layer-climb-config = { workspace = true } 
+layer-climb-signer = { workspace = true } 
 
 ######## Workspace dependencies ########
 # General
@@ -25,7 +26,7 @@ thiserror = {workspace = true}
 anyhow = {workspace = true} 
 
 # Binary encoding
-hex = {workspace = true} 
+const-hex = {workspace = true} 
 base64 = {workspace = true} 
 
 # Logging

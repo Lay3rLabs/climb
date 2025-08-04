@@ -4,7 +4,6 @@
 use crate::context::AppContext;
 use anyhow::Result;
 use clap::Subcommand;
-use layer_climb::prelude::*;
 
 #[derive(Clone, Subcommand)]
 pub enum FaucetCommand {
