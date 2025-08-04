@@ -10,7 +10,9 @@ repository.workspace = true
 crate-type = ["lib", "cdylib"]
 
 [features]
+default = []
 openapi = [ "dep:utoipa" ]
+cw-storage = [ "dep:cw-storage-plus", "dep:cosmwasm-std" ]
 
 [dependencies]
 tendermint = { workspace = true }
@@ -21,6 +23,8 @@ alloy-primitives = { workspace = true }
 const-hex = { workspace = true }
 serde = { workspace = true }
 utoipa = {workspace = true, optional = true}
+cw-storage-plus = {workspace = true, optional = true}
+cosmwasm-std = {workspace = true, optional = true}
 
 [dev-dependencies]
 serde_json = { workspace = true }

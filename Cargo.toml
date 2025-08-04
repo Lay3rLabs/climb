@@ -66,6 +66,7 @@ rand = "0.9.1"
 # Cosmos
 cosmwasm-std = "3.0.1"
 cosmwasm-schema = "3.0.1"
+cw-storage-plus = {version = "3.0.0", features = ["macro"] }
 tendermint = { version = "0.40.4", features = ["secp256k1"] }
 tendermint-rpc = { version = "0.40.4", default-features = false }
 
