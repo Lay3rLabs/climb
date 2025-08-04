@@ -196,6 +196,7 @@ impl TryFrom<Address> for alloy_primitives::Address {
 // so we need to manually implement the cw_serde derives from https://github.com/CosmWasm/cosmwasm/blob/fa5439a9e4e6884abe1e76f04443a95961eaa73f/packages/schema-derive/src/cw_serde.rs#L47C5-L61C7
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "cw-storage", derive(cw_storage_plus::NewTypeKey))]
 pub struct AddrEvm([u8; 20]);
 
 impl cw_schema::Schemaifier for AddrEvm {

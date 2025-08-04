@@ -1201,6 +1201,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-storage-macro"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b853a2f7d85f286d099ae5b28ae4025c475d31145bf426cc6d86ec92afd215c8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "cw-storage-plus"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ffe14a1c713486ec9f07059afcce49a9cd68657aaf2e2a736cd3bbf487de8e2"
+dependencies = [
+ "cosmwasm-std",
+ "cw-storage-macro",
+ "schemars 0.8.22",
+ "serde",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2545,7 +2568,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "layer-climb-address",
  "layer-climb-config",
@@ -2556,12 +2579,14 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-address"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "alloy-primitives",
  "anyhow",
  "const-hex",
  "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
  "serde",
  "serde_json",
  "subtle-encoding",
@@ -2571,7 +2596,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-cli"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "bip39",
@@ -2590,7 +2615,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-config"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "layer-climb-address",
@@ -2601,7 +2626,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-core"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2667,7 +2692,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-proto"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "cosmos-sdk-proto",
@@ -2678,7 +2703,7 @@ dependencies = [
 
 [[package]]
 name = "layer-climb-signer"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "alloy-primitives",
  "anyhow",
