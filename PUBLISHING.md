@@ -13,7 +13,7 @@ For convenience, publish all in one command:
 
 ```shell
 cd packages/layer-climb-address && cargo publish \
-    && cd packages/layer-climb-config && cargo publish \
+    && cd ../layer-climb-config && cargo publish \
     && cd ../layer-climb-proto && cargo publish \
     && cd ../layer-climb-signer && cargo publish \
     && cd ../layer-climb-core && cargo publish \
