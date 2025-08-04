@@ -9,6 +9,7 @@ use anyhow::{bail, Error, Result};
 use deadpool::managed::{Manager, Metrics, Object, PoolError, RecycleResult};
 use layer_climb_address::*;
 use layer_climb_config::ChainConfig;
+use layer_climb_signer::{cosmos_hub_derivation, KeySigner, TxSigner};
 use tokio::sync::Mutex;
 
 /// Currently this only works with mnemonic phrases
@@ -89,14 +90,14 @@ impl SigningClientPoolManager {
 
     fn create_signer(&self) -> Result<KeySigner> {
         match &self.chain_config.address_kind {
-            layer_climb_config::AddrKind::Cosmos { .. } => {
+            layer_climb_address::AddrKind::Cosmos { .. } => {
                 let index = self
                     .derivation_index
                     .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
                 KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))
             }
-            layer_climb_config::AddrKind::Evm => {
+            layer_climb_address::AddrKind::Evm => {
                 bail!("EVM address kind is not supported (yet)")
             }
         }

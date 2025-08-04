@@ -1,14 +1,12 @@
-use crate::PublicKey;
 use anyhow::{anyhow, bail, Context, Result};
 use cosmwasm_schema::{cw_schema, cw_serde};
-use layer_climb_config::AddrKind;
 use std::{borrow::Cow, hash::Hash, str::FromStr};
 use subtle_encoding::bech32;
-use utoipa::ToSchema;
 
 /// The canonical type used everywhere for addresses
 /// Display is implemented as plain string
-#[derive(ToSchema, Eq)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[derive(Eq)]
 #[cw_serde]
 pub enum Address {
     Cosmos {
@@ -88,9 +86,9 @@ impl Address {
     }
 
     /// if you just have a string address, use new_cosmos_string instead
-    pub fn new_cosmos_pub_key(pub_key: &PublicKey, prefix: &str) -> Result<Self> {
+    pub fn new_cosmos_pub_key(pub_key: &tendermint::PublicKey, prefix: &str) -> Result<Self> {
         match pub_key {
-            PublicKey::Secp256k1(encoded_point) => {
+            tendermint::PublicKey::Secp256k1(encoded_point) => {
                 let id = tendermint::account::Id::from(*encoded_point);
                 Self::new_cosmos(id.as_bytes().to_vec(), prefix)
             }
@@ -116,7 +114,7 @@ impl Address {
     }
 
     /// if you just have a string address, use parse_evm instead
-    pub fn new_evm_pub_key(_pub_key: &PublicKey) -> Result<Self> {
+    pub fn new_evm_pub_key(_pub_key: &tendermint::PublicKey) -> Result<Self> {
         bail!("TODO - implement evm address from public key");
     }
 
@@ -151,7 +149,10 @@ impl Address {
         }
     }
 
-    pub fn try_from_pub_key(pub_key: &PublicKey, addr_kind: &AddrKind) -> Result<Address> {
+    pub fn try_from_pub_key(
+        pub_key: &tendermint::PublicKey,
+        addr_kind: &AddrKind,
+    ) -> Result<Address> {
         match addr_kind {
             AddrKind::Cosmos { prefix } => Address::new_cosmos_pub_key(pub_key, prefix),
             AddrKind::Evm => Address::new_evm_pub_key(pub_key),
@@ -193,7 +194,8 @@ impl TryFrom<Address> for alloy_primitives::Address {
 /// EVM address
 // we implement our own Serialize/Deserialize to ensure it is serialized as a hex string
 // so we need to manually implement the cw_serde derives from https://github.com/CosmWasm/cosmwasm/blob/fa5439a9e4e6884abe1e76f04443a95961eaa73f/packages/schema-derive/src/cw_serde.rs#L47C5-L61C7
-#[derive(ToSchema, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 pub struct AddrEvm([u8; 20]);
 
 impl cw_schema::Schemaifier for AddrEvm {
@@ -250,7 +252,7 @@ impl AddrEvm {
 
 impl std::fmt::Display for AddrEvm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "0x{}", hex::encode(self.0))
+        write!(f, "0x{}", const_hex::encode(self.0))
     }
 }
 
@@ -265,7 +267,7 @@ impl FromStr for AddrEvm {
         if !s.starts_with("0x") {
             bail!("Invalid prefix for EVM address");
         }
-        let bytes = hex::decode(&s[2..])?;
+        let bytes = const_hex::decode(&s[2..])?;
         Self::new_vec(bytes)
     }
 }
@@ -315,6 +317,23 @@ impl<'de> serde::Deserialize<'de> for AddrEvm {
     {
         let s = String::deserialize(deserializer)?;
         s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+#[cw_serde]
+#[derive(Eq, Hash)]
+pub enum AddrKind {
+    Cosmos { prefix: String },
+    Evm,
+}
+
+impl AddrKind {
+    pub fn parse_address(&self, value: &str) -> Result<Address> {
+        Address::try_from_str(value, self)
+    }
+
+    pub fn address_from_pub_key(&self, pub_key: &tendermint::PublicKey) -> Result<Address> {
+        Address::try_from_pub_key(pub_key, self)
     }
 }
 

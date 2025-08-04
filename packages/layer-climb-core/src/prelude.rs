@@ -2,7 +2,7 @@
 // some of these may be exported in the main prelude
 pub(crate) use crate::network::apply_grpc_height;
 pub(crate) use anyhow::{anyhow, bail, Context, Result};
-pub(crate) use layer_climb_address::{Address, ConfigAddressExt};
+pub(crate) use layer_climb_address::Address;
 pub(crate) use layer_climb_config::*;
 pub(crate) use layer_climb_proto::{proto_into_any, proto_into_bytes, Message};
 

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use layer_climb_address::{AddrKind, Address};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
 
@@ -15,27 +16,6 @@ pub struct ChainConfig {
     pub address_kind: AddrKind,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum AddrKind {
-    Cosmos { prefix: String },
-    Evm,
-}
-
-impl std::hash::Hash for AddrKind {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            AddrKind::Cosmos { prefix } => {
-                1u32.hash(state);
-                prefix.hash(state);
-            }
-            AddrKind::Evm => {
-                2u32.hash(state);
-            }
-        }
-    }
-}
-
 impl ChainConfig {
     pub fn ibc_client_revision(&self) -> Result<u64> {
         // > Tendermint chains wishing to use revisions to maintain persistent IBC connections even across height-resetting upgrades
@@ -48,6 +28,14 @@ impl ChainConfig {
             .last()
             .and_then(|s| s.parse::<u64>().ok())
             .unwrap_or_default())
+    }
+
+    pub fn parse_address(&self, value: &str) -> Result<Address> {
+        self.address_kind.parse_address(value)
+    }
+
+    pub fn address_from_pub_key(&self, pub_key: &tendermint::PublicKey) -> Result<Address> {
+        self.address_kind.address_from_pub_key(pub_key)
     }
 }
 

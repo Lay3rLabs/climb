@@ -3,19 +3,20 @@ members = ["packages/*", "examples/*", "faucet", "integration-test"]
 resolver = "2"
 
 [workspace.package]
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/Lay3rLabs/climb"
 
 [workspace.dependencies]
 # Local
-layer-climb = { path = "packages/layer-climb", version = "0.6.0" }
-layer-climb-address = { path = "packages/layer-climb-address", version = "0.6.0" }
-layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.6.0" }
-layer-climb-config = { path = "packages/layer-climb-config", version = "0.6.0" }
-layer-climb-core = { path = "packages/layer-climb-core", version = "0.6.0" }
-layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.6.0" }
+layer-climb = { path = "packages/layer-climb", version = "0.7.0" }
+layer-climb-address = { path = "packages/layer-climb-address", version = "0.7.0" }
+layer-climb-cli = { path = "packages/layer-climb-cli", version = "0.7.0" }
+layer-climb-config = { path = "packages/layer-climb-config", version = "0.7.0" }
+layer-climb-core = { path = "packages/layer-climb-core", version = "0.7.0" }
+layer-climb-proto = { path = "packages/layer-climb-proto", version = "0.7.0" }
+layer-climb-signer = { path = "packages/layer-climb-signer", version = "0.7.0" }
 
 # General
 cfg-if = "1.0.1"
@@ -27,7 +28,7 @@ thiserror = "2.0.12"
 anyhow = "1.0.98"
 
 # Binary encoding
-hex = "0.4.3"
+const-hex = "1.14.1"
 base64 = "0.22.1"
 
 # Logging

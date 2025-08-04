@@ -43,10 +43,10 @@ impl std::fmt::Debug for IbcPacket {
         writeln!(f, "timeout_height: {:?}", self.timeout_height)?;
         writeln!(f, "timeout_timestamp: {}", self.timeout_timestamp)?;
         if let Some(data) = &self.data {
-            writeln!(f, "data: {}", hex::encode(data))?;
+            writeln!(f, "data: {}", const_hex::encode(data))?;
         }
         if let Some(ack) = &self.ack {
-            writeln!(f, "ack: {}", hex::encode(ack))?;
+            writeln!(f, "ack: {}", const_hex::encode(ack))?;
         }
         writeln!(f, "kind: {:?}", self.kind)
     }
@@ -165,11 +165,11 @@ impl<'a> TryFrom<&Event<'a>> for IbcPacket {
             }
 
             if attribute.key() == EVENT_ATTR_IBC_PACKET_DATA_HEX {
-                let data = hex::decode(attribute.value())?;
+                let data = const_hex::decode(attribute.value())?;
                 builder.data = Some(data);
             }
             if attribute.key() == EVENT_ATTR_IBC_PACKET_ACK_HEX {
-                let ack = hex::decode(attribute.value())?;
+                let ack = const_hex::decode(attribute.value())?;
                 builder.ack = Some(ack);
             }
         }

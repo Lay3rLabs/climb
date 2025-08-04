@@ -1,4 +1,5 @@
-use layer_climb_config::{util::set_port_in_url, AddrKind, ChainConfig, ChainId};
+use layer_climb_address::AddrKind;
+use layer_climb_config::{util::set_port_in_url, ChainConfig, ChainId};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
