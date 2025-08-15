@@ -12,7 +12,7 @@ crate-type = ["lib", "cdylib"]
 [features]
 default = []
 openapi = [ "dep:utoipa" ]
-cw-storage = [ "dep:cw-storage-plus", "dep:cosmwasm-std" ]
+cw-storage = [ "dep:cw-storage-plus"]
 
 [dependencies]
 tendermint = { workspace = true }
@@ -22,9 +22,9 @@ subtle-encoding = { workspace = true }
 alloy-primitives = { workspace = true }
 const-hex = { workspace = true }
 serde = { workspace = true }
+cosmwasm-std = {workspace = true}
 utoipa = {workspace = true, optional = true}
 cw-storage-plus = {workspace = true, optional = true}
-cosmwasm-std = {workspace = true, optional = true}
 
 [dev-dependencies]
 serde_json = { workspace = true }

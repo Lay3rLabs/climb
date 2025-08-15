@@ -16,6 +16,10 @@ cfg_if::cfg_if! {
             async fn signer_info(&self, sequence: u64, sign_mode: layer_climb_proto::tx::SignMode) -> Result<layer_climb_proto::tx::SignerInfo> {
                 Ok(signer_info(self.public_key_as_proto().await?, sequence, sign_mode))
             }
+            async fn address(&self, chain_config: &layer_climb_config::ChainConfig) -> Result<layer_climb_address::Address> {
+                let public_key = self.public_key().await?;
+                chain_config.address_from_pub_key(&public_key)
+            }
         }
     } else {
         #[async_trait]
@@ -27,6 +31,10 @@ cfg_if::cfg_if! {
             }
             async fn signer_info(&self, sequence: u64, sign_mode: layer_climb_proto::tx::SignMode) -> Result<layer_climb_proto::tx::SignerInfo> {
                 Ok(signer_info(self.public_key_as_proto().await?, sequence, sign_mode))
+            }
+            async fn address(&self, chain_config: &layer_climb_config::ChainConfig) -> Result<layer_climb_address::Address> {
+                let public_key = self.public_key().await?;
+                chain_config.address_from_pub_key(&public_key)
             }
         }
     }

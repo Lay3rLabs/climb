@@ -226,35 +226,26 @@ impl<'a> TxBuilder<'a> {
             .context("unable to get gas from simulation")
     }
 
-    /// Typically do _not_ want to do this directly, use `broadcast` instead
-    /// however, in a case where you do not want to wait for the tx to be committed, you can use this
-    /// (and if the original tx response is AnyTxResponse::Rpc, it will stay that way)
-    pub async fn broadcast_raw(
-        self,
-        messages: Vec<layer_climb_proto::Any>,
-    ) -> Result<AnyTxResponse> {
-        let mut base_account: Option<layer_climb_proto::auth::BaseAccount> = None;
-
+    pub async fn current_sequence(&self) -> Result<u64> {
         let sequence = match &self.sequence_strategy {
             Some(sequence_strategy) => match sequence_strategy.kind {
                 SequenceStrategyKind::Query => {
-                    base_account = Some(self.query_base_account().await?);
-                    base_account.as_ref().unwrap().sequence
+                    let base_account = self.query_base_account().await?;
+                    base_account.sequence
                 }
                 SequenceStrategyKind::QueryAndIncrement => {
                     if !sequence_strategy
                         .has_queried
                         .load(std::sync::atomic::Ordering::SeqCst)
                     {
-                        base_account = Some(self.query_base_account().await?);
+                        let base_account = self.query_base_account().await?;
                         sequence_strategy
                             .has_queried
                             .store(true, std::sync::atomic::Ordering::SeqCst);
-                        sequence_strategy.value.store(
-                            base_account.as_ref().unwrap().sequence,
-                            std::sync::atomic::Ordering::SeqCst,
-                        );
-                        base_account.as_ref().unwrap().sequence
+                        sequence_strategy
+                            .value
+                            .store(base_account.sequence, std::sync::atomic::Ordering::SeqCst);
+                        base_account.sequence
                     } else {
                         sequence_strategy
                             .value
@@ -267,17 +258,30 @@ impl<'a> TxBuilder<'a> {
                 SequenceStrategyKind::Constant(n) => n,
             },
             None => {
-                base_account = Some(self.query_base_account().await?);
-                base_account.as_ref().unwrap().sequence
+                let base_account = self.query_base_account().await?;
+                base_account.sequence
             }
         };
 
+        tracing::debug!(
+            "{} is Using sequence: {}",
+            self.signer.address(&self.querier.chain_config).await?,
+            sequence
+        );
+
+        Ok(sequence)
+    }
+
+    /// Typically do _not_ want to do this directly, use `broadcast` instead
+    /// however, in a case where you do not want to wait for the tx to be committed, you can use this
+    /// (and if the original tx response is AnyTxResponse::Rpc, it will stay that way)
+    pub async fn broadcast_raw(
+        self,
+        messages: Vec<layer_climb_proto::Any>,
+    ) -> Result<AnyTxResponse> {
         let account_number = match self.account_number {
             Some(account_number) => account_number,
-            None => match base_account {
-                Some(base_account) => base_account.account_number,
-                None => self.query_base_account().await?.account_number,
-            },
+            None => self.query_base_account().await?.account_number,
         };
 
         let mut body = layer_climb_proto::tx::TxBody {
@@ -306,7 +310,10 @@ impl<'a> TxBuilder<'a> {
 
                 let signer_info = self
                     .signer
-                    .signer_info(sequence, layer_climb_proto::tx::SignMode::Unspecified)
+                    .signer_info(
+                        self.current_sequence().await?,
+                        layer_climb_proto::tx::SignMode::Unspecified,
+                    )
                     .await?;
 
                 let gas_info = self
@@ -332,7 +339,10 @@ impl<'a> TxBuilder<'a> {
 
         let signer_info = self
             .signer
-            .signer_info(sequence, layer_climb_proto::tx::SignMode::Direct)
+            .signer_info(
+                self.current_sequence().await?,
+                layer_climb_proto::tx::SignMode::Direct,
+            )
             .await?;
 
         let tx_bytes = self
@@ -344,23 +354,6 @@ impl<'a> TxBuilder<'a> {
             .querier
             .broadcast_tx_bytes(tx_bytes, broadcast_mode)
             .await?;
-
-        // TODO not sure about this... only increase on success? how does this interact with simulations?
-        if let Some(sequence) = self.sequence_strategy {
-            match sequence.kind {
-                SequenceStrategyKind::QueryAndIncrement => {
-                    sequence
-                        .value
-                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                }
-                SequenceStrategyKind::SetAndIncrement(_) => {
-                    sequence
-                        .value
-                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                }
-                _ => {}
-            }
-        }
 
         if tx_response.code() != 0 {
             bail!(
@@ -396,6 +389,23 @@ impl<'a> TxBuilder<'a> {
                 tx_response.codespace(),
                 tx_response.raw_log()
             );
+        }
+
+        // TODO not sure about this... should increase even if failed?
+        if let Some(sequence) = self.sequence_strategy {
+            match sequence.kind {
+                SequenceStrategyKind::QueryAndIncrement => {
+                    sequence
+                        .value
+                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                }
+                SequenceStrategyKind::SetAndIncrement(_) => {
+                    sequence
+                        .value
+                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                }
+                _ => {}
+            }
         }
 
         if let Some(middleware) = self.middleware_map_resp.as_ref() {

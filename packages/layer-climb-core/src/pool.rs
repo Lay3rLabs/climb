@@ -132,7 +132,7 @@ impl SigningClientPoolManager {
                     let funder = balance_maintainer.client.lock().await;
 
                     tracing::debug!(
-                        "Balance on {} is {}, below {}, sending {} to top-up from {}",
+                        "[top-up] Balance on {} is {}, below {}, sending {} from {}",
                         addr,
                         current_balance,
                         balance_maintainer.threshhold,
