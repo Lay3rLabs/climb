@@ -64,12 +64,14 @@ impl Address {
         }
         .context(format!("invalid bech32: '{value}'"))?;
 
-        if matches!(prefix, Some(prefix) if prefix != decoded_prefix) {
-            bail!(
-                "Address prefix \"{}\" does not match expected prefix \"{}\"",
-                decoded_prefix,
-                prefix.unwrap()
-            );
+        if let Some(prefix) = prefix {
+            if decoded_prefix != prefix {
+                bail!(
+                    "Address prefix \"{}\" does not match expected prefix \"{}\"",
+                    decoded_prefix,
+                    prefix
+                );
+            }
         }
 
         Self::new_cosmos(decoded_bytes, &decoded_prefix)
@@ -188,6 +190,44 @@ impl TryFrom<Address> for alloy_primitives::Address {
             Address::Evm(addr_evm) => Ok(addr_evm.into()),
             Address::Cosmos { .. } => Err(anyhow!("Expected EVM address, got Cosmos")),
         }
+    }
+}
+
+impl TryFrom<&Address> for cosmwasm_std::Addr {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: &Address) -> Result<Self> {
+        match addr {
+            Address::Cosmos { bech32_addr, .. } => {
+                // We can safely ignore the prefix_len here since cosmwasm_std::Addr does not use it
+                Ok(cosmwasm_std::Addr::unchecked(bech32_addr))
+            }
+            Address::Evm(_) => Err(anyhow!("Expected Cosmos address, got EVM")),
+        }
+    }
+}
+
+impl TryFrom<Address> for cosmwasm_std::Addr {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: Address) -> Result<Self> {
+        cosmwasm_std::Addr::try_from(&addr)
+    }
+}
+
+impl TryFrom<&cosmwasm_std::Addr> for Address {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: &cosmwasm_std::Addr) -> Result<Self> {
+        Self::new_cosmos_string(addr.as_str(), None)
+    }
+}
+
+impl TryFrom<cosmwasm_std::Addr> for Address {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: cosmwasm_std::Addr) -> Result<Self> {
+        Address::try_from(&addr)
     }
 }
 

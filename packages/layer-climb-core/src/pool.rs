@@ -40,6 +40,17 @@ impl SigningClientPoolManager {
         }
     }
 
+    pub async fn address(&self, index: u32) -> Result<Address, PoolError<Error>> {
+        let signer =
+            KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))?;
+
+        let addr = self
+            .chain_config
+            .address_from_pub_key(&signer.public_key().await?)?;
+
+        Ok(addr)
+    }
+
     // Setting this has a few implications:
     // 1. on each client hand-out, it will query for the balance (no locking at all, just another query)
     // 2. if the balance is below the threshhold set here, then it will lock the funding client for the transfer
@@ -68,20 +79,30 @@ impl SigningClientPoolManager {
             QueryClient::new(self.chain_config.clone(), Some(self.connection.clone())).await?;
 
         let balance_maintainer = match funder {
-            Some(funder) => BalanceMaintainer {
-                client: Mutex::new(funder),
-                query_client,
-                threshhold,
-                amount,
-                denom,
-            },
-            None => BalanceMaintainer {
-                client: Mutex::new(self.create_client(None).await?),
-                query_client,
-                threshhold,
-                amount,
-                denom,
-            },
+            Some(funder) => {
+                let addr = funder.addr.clone();
+                BalanceMaintainer {
+                    client: Mutex::new(funder),
+                    addr,
+                    query_client,
+                    threshhold,
+                    amount,
+                    denom,
+                }
+            }
+            None => {
+                let funder = self.create_client(None).await?;
+                let addr = funder.addr.clone();
+
+                BalanceMaintainer {
+                    client: Mutex::new(funder),
+                    addr,
+                    query_client,
+                    threshhold,
+                    amount,
+                    denom,
+                }
+            }
         };
 
         self.balance_maintainer = Some(balance_maintainer);
@@ -132,7 +153,7 @@ impl SigningClientPoolManager {
                     let funder = balance_maintainer.client.lock().await;
 
                     tracing::debug!(
-                        "Balance on {} is {}, below {}, sending {} to top-up from {}",
+                        "[top-up] Balance on {} is {}, below {}, sending {} from {}",
                         addr,
                         current_balance,
                         balance_maintainer.threshhold,
@@ -154,6 +175,7 @@ impl SigningClientPoolManager {
 // just a helper struct to keep track of the balance maintainer
 pub struct BalanceMaintainer {
     pub client: Mutex<SigningClient>,
+    pub addr: Address,
     query_client: QueryClient,
     threshhold: u128,
     amount: u128,
@@ -195,12 +217,20 @@ impl Manager for SigningClientPoolManager {
 
 #[derive(Clone)]
 pub struct SigningClientPool {
-    pub pool: deadpool::managed::Pool<SigningClientPoolManager>,
+    pool: deadpool::managed::Pool<SigningClientPoolManager>,
 }
 
 impl SigningClientPool {
     pub fn new(pool: deadpool::managed::Pool<SigningClientPoolManager>) -> Self {
         Self { pool }
+    }
+
+    pub fn inner(&self) -> &deadpool::managed::Pool<SigningClientPoolManager> {
+        &self.pool
+    }
+
+    pub fn manager(&self) -> &SigningClientPoolManager {
+        self.pool.manager()
     }
 
     pub async fn get(&self) -> Result<Object<SigningClientPoolManager>, PoolError<Error>> {

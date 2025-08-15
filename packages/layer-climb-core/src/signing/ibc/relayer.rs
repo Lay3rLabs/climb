@@ -479,7 +479,7 @@ impl ClientInfo {
         &self,
         side: Side,
         simulation_gas_multipliers: &IbcRelayerGasSimulationMultipliers,
-    ) -> TxBuilder {
+    ) -> TxBuilder<'_> {
         let mut tx_builder = self.signing_client(side).tx_builder();
         match side {
             Side::One => {
