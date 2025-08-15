@@ -44,7 +44,6 @@ impl StatusHandler {
     pub async fn new(state: AppState) -> Result<Self> {
         let max_derivation_index = state
             .client_pool
-            .pool
             .manager()
             .derivation_index
             .load(Ordering::SeqCst);
