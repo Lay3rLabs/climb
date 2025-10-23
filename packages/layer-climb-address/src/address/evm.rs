@@ -30,7 +30,7 @@ impl EvmAddr {
     }
 
     pub fn new_string(s: &str) -> Result<Self> {
-        Self::new_vec(const_hex::decode(&s.trim())?)
+        Self::new_vec(const_hex::decode(s.trim())?)
     }
 
     pub fn as_bytes(&self) -> [u8; 20] {
