@@ -1,12 +1,12 @@
-pub mod cosmos;
-pub mod evm;
+mod cosmos;
+mod evm;
 
 use anyhow::{bail, Result};
 use cosmwasm_schema::cw_serde;
 use std::hash::Hash;
 
-use cosmos::CosmosAddr;
-use evm::EvmAddr;
+pub use cosmos::CosmosAddr;
+pub use evm::EvmAddr;
 
 /// The canonical type used everywhere for addresses
 /// Display is implemented as plain string
@@ -154,9 +154,7 @@ impl AddrKind {
 
 #[cfg(test)]
 mod test {
-    use crate::cosmos::CosmosAddr;
-
-    use super::{Address, EvmAddr};
+    use super::{Address, CosmosAddr, EvmAddr};
 
     // TODO get addresses that are actually the same underlying public key
 
