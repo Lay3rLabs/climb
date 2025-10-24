@@ -30,9 +30,9 @@ impl Address {
     pub fn try_from_str(value: &str, addr_kind: &AddrKind) -> Result<Self> {
         match addr_kind {
             AddrKind::Cosmos { prefix } => {
-                CosmosAddr::new_string(value, Some(prefix)).map(Self::Cosmos)
+                CosmosAddr::new_str(value, Some(prefix)).map(Self::Cosmos)
             }
-            AddrKind::Evm => EvmAddr::new_string(value).map(Self::Evm),
+            AddrKind::Evm => EvmAddr::new_str(value).map(Self::Evm),
         }
     }
 
@@ -135,6 +135,14 @@ impl TryFrom<cosmwasm_std::Addr> for Address {
     }
 }
 
+impl TryFrom<&cosmwasm_std::Addr> for Address {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: &cosmwasm_std::Addr) -> Result<Self> {
+        Ok(Self::Cosmos(addr.try_into()?))
+    }
+}
+
 #[cw_serde]
 #[derive(Eq, Hash)]
 pub enum AddrKind {
@@ -186,7 +194,7 @@ mod test {
 
     #[test]
     fn test_basic_roundtrip_cosmos() {
-        let cosmos_addr = CosmosAddr::new_string(TEST_COSMOS_STR, None).unwrap();
+        let cosmos_addr = CosmosAddr::new_str(TEST_COSMOS_STR, None).unwrap();
         let addr: Address = cosmos_addr.clone().into();
 
         assert_eq!(addr.to_string(), TEST_COSMOS_STR);

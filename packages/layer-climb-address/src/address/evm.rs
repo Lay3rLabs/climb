@@ -29,7 +29,7 @@ impl EvmAddr {
         Err(anyhow!("TODO - support EVM pub key"))
     }
 
-    pub fn new_string(s: &str) -> Result<Self> {
+    pub fn new_str(s: &str) -> Result<Self> {
         Self::new_vec(const_hex::decode(s.trim())?)
     }
 
@@ -80,7 +80,7 @@ impl FromStr for EvmAddr {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        Self::new_string(s)
+        Self::new_str(s)
     }
 }
 
