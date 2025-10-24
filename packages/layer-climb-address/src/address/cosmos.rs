@@ -61,7 +61,7 @@ impl CosmosAddr {
 
     // if the prefix is supplied, this will attempt to validate the address against the prefix to ensure they match
     // if you just have a public key, use new_cosmos_pub_key instead
-    pub fn new_string(value: &str, prefix: Option<&str>) -> Result<Self> {
+    pub fn new_str(value: &str, prefix: Option<&str>) -> Result<Self> {
         let (decoded_prefix, decoded_bytes) = if value.starts_with(|c: char| c.is_uppercase()) {
             bech32::decode_upper(value)
         } else {
@@ -95,7 +95,7 @@ impl CosmosAddr {
         if self.prefix() == new_prefix {
             Ok(self.clone())
         } else {
-            Self::new_string(&self.bech32_addr, Some(new_prefix))
+            Self::new_str(&self.bech32_addr, Some(new_prefix))
         }
     }
 }
@@ -111,7 +111,7 @@ impl FromStr for CosmosAddr {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        Self::new_string(s, None)
+        Self::new_str(s, None)
     }
 }
 
@@ -172,12 +172,20 @@ impl TryFrom<cosmwasm_std::Addr> for CosmosAddr {
     type Error = anyhow::Error;
 
     fn try_from(addr: cosmwasm_std::Addr) -> Result<Self> {
-        Self::new_string(addr.as_str(), None)
+        Self::new_str(addr.as_str(), None)
     }
 }
 
 impl From<CosmosAddr> for cosmwasm_std::Addr {
     fn from(addr: CosmosAddr) -> Self {
         cosmwasm_std::Addr::unchecked(addr.to_string())
+    }
+}
+
+impl TryFrom<&cosmwasm_std::Addr> for CosmosAddr {
+    type Error = anyhow::Error;
+
+    fn try_from(addr: &cosmwasm_std::Addr) -> Result<Self> {
+        Self::new_str(addr.as_str(), None)
     }
 }
