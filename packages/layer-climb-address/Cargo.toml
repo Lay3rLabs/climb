@@ -23,6 +23,7 @@ alloy-primitives = { workspace = true }
 const-hex = { workspace = true }
 serde = { workspace = true }
 cosmwasm-std = {workspace = true}
+bincode = {workspace = true}
 utoipa = {workspace = true, optional = true}
 cw-storage-plus = {workspace = true, optional = true}
 

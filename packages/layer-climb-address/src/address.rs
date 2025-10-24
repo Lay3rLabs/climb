@@ -12,7 +12,7 @@ pub use evm::EvmAddr;
 /// Display is implemented as plain string
 // cw_serde implements Serialize/Deserialize, Clone, Debug
 #[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
-#[derive(Eq, PartialOrd, Ord, Hash)]
+#[derive(Eq, PartialOrd, Ord, Hash, bincode::Encode, bincode::Decode)]
 #[cw_serde]
 pub enum Address {
     Cosmos(CosmosAddr),
