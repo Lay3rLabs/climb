@@ -7,7 +7,7 @@ use subtle_encoding::bech32;
 /// Cosmos address
 // we implement our own Serialize/Deserialize to ensure it is serialized as a hex string
 // so we need to manually implement the cw_serde derives from https://github.com/CosmWasm/cosmwasm/blob/fa5439a9e4e6884abe1e76f04443a95961eaa73f/packages/schema-derive/src/cw_serde.rs#L47C5-L61C7
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, bincode::Encode, bincode::Decode)]
 #[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 pub struct CosmosAddr {
     bech32_addr: String,
