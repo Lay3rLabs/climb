@@ -6,12 +6,14 @@ use crate::prelude::*;
 impl SigningClient {
     pub fn authz_grant_any_msg(
         &self,
-        granter: Address,
+        granter: Option<Address>,
         grantee: Address,
         grant: Option<Grant>,
     ) -> Result<layer_climb_proto::authz::MsgGrant> {
         Ok(layer_climb_proto::authz::MsgGrant {
-            granter: granter.to_string(),
+            granter: granter
+                .map(|a| a.to_string())
+                .unwrap_or_else(|| self.addr.to_string()),
             grantee: grantee.to_string(),
             grant,
         })
@@ -19,7 +21,7 @@ impl SigningClient {
 
     pub fn authz_grant_send_msg(
         &self,
-        granter: Address,
+        granter: Option<Address>,
         grantee: Address,
         spend_limit: Vec<layer_climb_proto::Coin>,
         allow_list: Vec<Address>,
