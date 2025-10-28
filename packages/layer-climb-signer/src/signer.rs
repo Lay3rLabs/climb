@@ -13,7 +13,7 @@ cfg_if::cfg_if! {
             async fn public_key_as_proto(&self) -> Result<layer_climb_proto::Any> {
                 public_key_to_proto(&self.public_key().await?)
             }
-            async fn signer_info(&self, sequence: u64, sign_mode: layer_climb_proto::tx::SignMode) -> Result<layer_climb_proto::tx::SignerInfo> {
+            async fn signer_info(&self, sequence: u64, sign_mode: layer_climb_proto::tx::signing::SignMode) -> Result<layer_climb_proto::tx::SignerInfo> {
                 Ok(signer_info(self.public_key_as_proto().await?, sequence, sign_mode))
             }
             async fn address(&self, chain_config: &layer_climb_config::ChainConfig) -> Result<layer_climb_address::Address> {
