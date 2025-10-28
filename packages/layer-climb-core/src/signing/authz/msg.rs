@@ -16,4 +16,24 @@ impl SigningClient {
             grant,
         })
     }
+
+    pub fn authz_grant_send_msg(
+        &self,
+        granter: Address,
+        grantee: Address,
+        spend_limit: Vec<layer_climb_proto::Coin>,
+        allow_list: Vec<Address>,
+    ) -> Result<layer_climb_proto::authz::MsgGrant> {
+        let grant = Grant {
+            authorization: Some(proto_into_any(
+                &layer_climb_proto::bank::SendAuthorization {
+                    spend_limit,
+                    allow_list: allow_list.into_iter().map(|a| a.to_string()).collect(),
+                },
+            )?),
+            expiration: None,
+        };
+
+        self.authz_grant_any_msg(granter, grantee, Some(grant))
+    }
 }

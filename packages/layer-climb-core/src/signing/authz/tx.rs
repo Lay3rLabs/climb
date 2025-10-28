@@ -28,17 +28,16 @@ impl SigningClient {
         allow_list: Vec<Address>,
         tx_builder: Option<TxBuilder<'_>>,
     ) -> Result<layer_climb_proto::abci::TxResponse> {
-        let grant = Grant {
-            authorization: Some(proto_into_any(
-                &layer_climb_proto::bank::SendAuthorization {
-                    spend_limit,
-                    allow_list: allow_list.into_iter().map(|a| a.to_string()).collect(),
-                },
-            )?),
-            expiration: None,
-        };
+        let resp = tx_builder
+            .unwrap_or_else(|| self.tx_builder())
+            .broadcast([proto_into_any(&self.authz_grant_send_msg(
+                granter,
+                grantee,
+                spend_limit,
+                allow_list,
+            )?)?])
+            .await?;
 
-        self.authz_grant_any(granter, grantee, Some(grant), tx_builder)
-            .await
+        Ok(resp)
     }
 }
