@@ -2,6 +2,7 @@
 // some of these may be exported in the main prelude
 pub(crate) use crate::network::apply_grpc_height;
 pub(crate) use anyhow::{anyhow, bail, Context, Result};
+use cosmwasm_std::Uint256;
 pub(crate) use layer_climb_address::Address;
 pub(crate) use layer_climb_config::*;
 pub(crate) use layer_climb_proto::{proto_into_any, proto_into_bytes, Message};
@@ -49,6 +50,35 @@ pub fn new_coins(
         .into_iter()
         .map(|(amount, denom)| new_coin(amount, denom))
         .collect()
+}
+
+pub trait ProtoCoinExt {
+    fn try_to_cosmwasm_coin(&self) -> Result<cosmwasm_std::Coin>;
+}
+
+impl ProtoCoinExt for layer_climb_proto::Coin {
+    fn try_to_cosmwasm_coin(&self) -> Result<cosmwasm_std::Coin> {
+        Ok(cosmwasm_std::Coin {
+            denom: self.denom.clone(),
+            amount: self
+                .amount
+                .parse::<Uint256>()
+                .map_err(|e| anyhow!("{e:?}"))?,
+        })
+    }
+}
+
+pub trait CosmwasmCoinExt {
+    fn to_proto_coin(&self) -> layer_climb_proto::Coin;
+}
+
+impl CosmwasmCoinExt for cosmwasm_std::Coin {
+    fn to_proto_coin(&self) -> layer_climb_proto::Coin {
+        layer_climb_proto::Coin {
+            denom: self.denom.clone(),
+            amount: self.amount.to_string(),
+        }
+    }
 }
 
 /// A useful abstraction when we have either a Signing or Query client

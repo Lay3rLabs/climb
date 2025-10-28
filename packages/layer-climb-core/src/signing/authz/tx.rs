@@ -5,7 +5,7 @@ use crate::prelude::*;
 impl SigningClient {
     pub async fn authz_grant_any(
         &self,
-        granter: Address,
+        granter: Option<Address>,
         grantee: Address,
         grant: Option<Grant>,
         tx_builder: Option<TxBuilder<'_>>,
@@ -22,7 +22,7 @@ impl SigningClient {
 
     pub async fn authz_grant_send(
         &self,
-        granter: Address,
+        granter: Option<Address>,
         grantee: Address,
         spend_limit: Vec<layer_climb_proto::Coin>,
         allow_list: Vec<Address>,
