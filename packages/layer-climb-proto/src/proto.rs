@@ -20,14 +20,6 @@ pub mod block {
     };
 }
 
-pub mod auth {
-    pub use cosmos_sdk_proto::cosmos::auth::v1beta1::*;
-}
-
-pub mod bank {
-    pub use cosmos_sdk_proto::cosmos::bank::v1beta1::*;
-}
-
 pub mod tendermint {
     pub use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::*;
     pub use cosmos_sdk_proto::tendermint::{
@@ -35,27 +27,6 @@ pub mod tendermint {
         types::{BlockId, SignedHeader, Validator, ValidatorSet},
     };
     pub use tendermint_proto::crypto;
-}
-
-pub mod abci {
-    pub use cosmos_sdk_proto::cosmos::base::abci::v1beta1::*;
-}
-
-pub mod query {
-    pub use cosmos_sdk_proto::cosmos::base::query::v1beta1::*;
-}
-
-pub mod crypto {
-    pub use cosmos_sdk_proto::cosmos::crypto::*;
-}
-
-pub mod staking {
-    pub use cosmos_sdk_proto::cosmos::staking::v1beta1::*;
-}
-
-pub mod tx {
-    pub use cosmos_sdk_proto::cosmos::tx::signing::v1beta1::*;
-    pub use cosmos_sdk_proto::cosmos::tx::v1beta1::*;
 }
 
 pub mod wasm {
@@ -68,4 +39,141 @@ pub mod ibc {
     pub use ibc_proto::ibc::core::connection::v1 as connection;
     pub use ibc_proto::ibc::lightclients::tendermint::v1 as light_client;
     pub use ibc_proto::ics23;
+}
+
+///////////////
+
+/// Authentication of accounts and transactions.
+pub mod auth {
+    pub use cosmos_sdk_proto::cosmos::auth::v1beta1::*;
+}
+
+/// Granting of arbitrary privileges from one account to another.
+pub mod authz {
+    pub use cosmos_sdk_proto::cosmos::authz::v1beta1::*;
+}
+
+/// Balances.
+pub mod bank {
+    pub use cosmos_sdk_proto::cosmos::bank::v1beta1::*;
+}
+
+/// Application BlockChain Interface (ABCI).
+///
+/// Interface that defines the boundary between the replication engine
+/// (the blockchain), and the state machine (the application).
+pub mod abci {
+    pub use cosmos_sdk_proto::cosmos::base::abci::v1beta1::*;
+}
+
+/// Node requests.
+pub mod node {
+    pub use cosmos_sdk_proto::cosmos::base::node::v1beta1::*;
+}
+
+/// Query support.
+pub mod query {
+    pub use cosmos_sdk_proto::cosmos::base::query::v1beta1::*;
+}
+
+/// Reflection support.
+pub mod reflection {
+    pub mod v1 {
+        pub use cosmos_sdk_proto::cosmos::base::reflection::v1beta1::*;
+    }
+
+    pub mod v2 {
+        pub use cosmos_sdk_proto::cosmos::base::reflection::v2alpha1::*;
+    }
+}
+
+/// Crisis handling
+pub mod crisis {
+    pub use cosmos_sdk_proto::cosmos::crisis::v1beta1::*;
+}
+
+/// Cryptographic primitives.
+pub mod crypto {
+    /// Multi-signature support.
+    pub mod multisig {
+        pub use cosmos_sdk_proto::cosmos::crypto::multisig::v1beta1::*;
+    }
+    pub mod ed25519 {
+        pub use cosmos_sdk_proto::cosmos::crypto::ed25519::*;
+    }
+    pub mod secp256k1 {
+        pub use cosmos_sdk_proto::cosmos::crypto::secp256k1::*;
+    }
+    pub mod secp256r1 {
+        pub use cosmos_sdk_proto::cosmos::crypto::secp256r1::*;
+    }
+}
+
+/// Messages and services handling token distribution
+pub mod distribution {
+    pub use cosmos_sdk_proto::cosmos::distribution::v1beta1::*;
+}
+
+/// Messages and services handling evidence
+pub mod evidence {
+    pub use cosmos_sdk_proto::cosmos::evidence::v1beta1::*;
+}
+
+/// Allows accounts to grant fee allowances and to use fees from their accounts.
+pub mod feegrant {
+    pub use cosmos_sdk_proto::cosmos::feegrant::v1beta1::*;
+}
+
+/// Messages and services handling gentx's
+pub mod genutil {
+    pub use cosmos_sdk_proto::cosmos::genutil::v1beta1::*;
+}
+
+/// Messages and services handling governance
+pub mod gov {
+    pub mod v1 {
+        pub use cosmos_sdk_proto::cosmos::gov::v1::*;
+    }
+    pub mod v1beta1 {
+        pub use cosmos_sdk_proto::cosmos::gov::v1beta1::*;
+    }
+}
+
+/// Messages and services handling minting
+pub mod mint {
+    pub use cosmos_sdk_proto::cosmos::mint::v1beta1::*;
+}
+
+/// Messages and services handling chain parameters
+pub mod params {
+    pub use cosmos_sdk_proto::cosmos::params::v1beta1::*;
+}
+
+/// Handling slashing parameters and unjailing
+pub mod slashing {
+    pub use cosmos_sdk_proto::cosmos::slashing::v1beta1::*;
+}
+
+/// Proof-of-Stake layer for public blockchains.
+pub mod staking {
+    pub use cosmos_sdk_proto::cosmos::staking::v1beta1::*;
+}
+
+/// Transactions.
+pub mod tx {
+    pub use cosmos_sdk_proto::cosmos::tx::v1beta1::*;
+    /// Transaction signing support.
+    pub mod signing {
+        pub use cosmos_sdk_proto::cosmos::tx::signing::v1beta1::*;
+    }
+}
+
+/// Services for the upgrade module.
+pub mod upgrade {
+    pub use cosmos_sdk_proto::cosmos::upgrade::v1beta1::*;
+}
+
+/// Services and tx's for the vesting module.
+pub mod vesting {
+    pub use cosmos_sdk_proto::cosmos::vesting::v1beta1::*;
 }

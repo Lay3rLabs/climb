@@ -312,7 +312,7 @@ impl<'a> TxBuilder<'a> {
                     .signer
                     .signer_info(
                         self.current_sequence().await?,
-                        layer_climb_proto::tx::SignMode::Unspecified,
+                        layer_climb_proto::tx::signing::SignMode::Unspecified,
                     )
                     .await?;
 
@@ -341,7 +341,7 @@ impl<'a> TxBuilder<'a> {
             .signer
             .signer_info(
                 self.current_sequence().await?,
-                layer_climb_proto::tx::SignMode::Direct,
+                layer_climb_proto::tx::signing::SignMode::Direct,
             )
             .await?;
 

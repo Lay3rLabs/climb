@@ -1,3 +1,4 @@
+pub mod authz;
 pub mod contract;
 pub mod ibc;
 pub mod middleware;
