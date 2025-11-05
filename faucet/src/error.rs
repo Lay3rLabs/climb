@@ -1,9 +1,7 @@
-// Big picture, handlers can return `Result`
-// and this allows us to use `?` in handlers
-// specific errors can return `AppError`
 use axum::body::Body;
 use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
+use layer_climb::error::ClimbError;
 
 pub type Result<T> = std::result::Result<T, AnyError>;
 
@@ -13,15 +11,14 @@ pub enum AppError {
     NotFound,
 }
 
-// Make our own error that wraps `anyhow::Error`.
-pub struct AnyError(anyhow::Error);
+pub struct AnyError(ClimbError);
 
 impl IntoResponse for AnyError {
     fn into_response(self) -> Response<Body> {
-        match self.0.downcast::<AppError>() {
-            Ok(app_error) => app_error.into_response(),
-            Err(e) => {
-                let e = e.to_string();
+        match self.0.downcast_ref::<AppError>() {
+            Ok(app_error) => app_error.clone().into_response(),
+            Err(_) => {
+                let e = self.0.to_string();
                 tracing::error!("{}", e);
 
                 Response::builder()
@@ -48,13 +45,28 @@ impl IntoResponse for AppError {
     }
 }
 
-// This enables using `?` on functions that return `Result<_, anyhow::Error>` to turn them into
-// `Result<_, AppError>`. That way you don't need to do that manually.
-impl<E> From<E> for AnyError
-where
-    E: Into<anyhow::Error>,
-{
-    fn from(err: E) -> Self {
-        Self(err.into())
+impl Clone for AppError {
+    fn clone(&self) -> Self {
+        match self {
+            Self::NotFound => Self::NotFound,
+        }
+    }
+}
+
+impl From<ClimbError> for AnyError {
+    fn from(err: ClimbError) -> Self {
+        Self(err)
+    }
+}
+
+impl From<anyhow::Error> for AnyError {
+    fn from(err: anyhow::Error) -> Self {
+        Self(ClimbError::Other(err))
+    }
+}
+
+impl From<AppError> for AnyError {
+    fn from(err: AppError) -> Self {
+        Self(ClimbError::Other(err.into()))
     }
 }

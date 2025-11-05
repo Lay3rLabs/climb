@@ -1,4 +1,3 @@
-use anyhow::Context;
 use layer_climb::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, str::FromStr};
@@ -139,7 +138,7 @@ impl ConfigInit {
         }
 
         if let Ok(gas_price) = std::env::var("FAUCET_CHAIN_GAS_PRICE") {
-            config.chain_gas_price = gas_price.parse().context("Failed to parse gas price")?;
+            config.chain_gas_price = gas_price.parse()?;
         }
 
         if let Ok(gas_denom) = std::env::var("FAUCET_CHAIN_GAS_DENOM") {
@@ -149,7 +148,7 @@ impl ConfigInit {
         if let Ok(chain_address_kind) = std::env::var("FAUCET_CHAIN_ADDRESS_KIND") {
             config.chain_address_kind = chain_address_kind
                 .parse()
-                .map_err(|_| anyhow::anyhow!("Failed to parse chain address kind"))?;
+                .map_err(|_| ConfigError::invalid_address_kind(chain_address_kind))?;
         }
 
         if let Ok(chain_address_bech32_prefix) = std::env::var("FAUCET_CHAIN_ADDRESS_BECH32_PREFIX")
@@ -174,9 +173,9 @@ impl ConfigInit {
 }
 
 impl TryFrom<ConfigInit> for Config {
-    type Error = anyhow::Error;
+    type Error = ClimbError;
 
-    fn try_from(config: ConfigInit) -> anyhow::Result<Self> {
+    fn try_from(config: ConfigInit) -> Result<Self, ClimbError> {
         let credit_denom = config
             .credit_denom
             .unwrap_or(config.chain_gas_denom.clone());
@@ -190,7 +189,7 @@ impl TryFrom<ConfigInit> for Config {
             memo: config.memo,
             credit,
             mnemonic: std::env::var(&config.mnemonic_env_var)
-                .context(format!("Missing mnemonic in {}", config.mnemonic_env_var))?,
+                .map_err(|_| ConfigError::missing_env(&config.mnemonic_env_var))?,
             chain_config: ChainConfig {
                 chain_id: config.chain_id,
                 rpc_endpoint: config.chain_rpc_endpoint,
@@ -202,7 +201,7 @@ impl TryFrom<ConfigInit> for Config {
                     ConfigChainAddrKindName::Cosmos => AddrKind::Cosmos {
                         prefix: config
                             .chain_address_bech32_prefix
-                            .context("Missing bech32 prefix")?,
+                            .ok_or(ConfigError::MissingBech32Prefix)?,
                     },
                     ConfigChainAddrKindName::Evm => AddrKind::Evm,
                 },
@@ -210,11 +209,11 @@ impl TryFrom<ConfigInit> for Config {
             minimum_credit_balance_threshhold: config
                 .minimum_credit_balance_threshhold
                 .parse()
-                .context("couldn't parse minimum credit balance threshhold")?,
+                .map_err(|e| ConfigError::InvalidAmount(format!("{e}")))?,
             minimum_credit_balance_topup: config
                 .minimum_credit_balance_topup
                 .parse()
-                .context("couldn't parse minimum credit topup")?,
+                .map_err(|e| ConfigError::InvalidAmount(format!("{e}")))?,
         })
     }
 }
