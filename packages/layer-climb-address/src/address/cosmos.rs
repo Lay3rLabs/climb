@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-use anyhow::{anyhow, bail, Context, Result};
+use crate::error::{AddressError, Result};
 use cosmwasm_schema::cw_schema;
 use subtle_encoding::bech32;
 
@@ -28,14 +28,16 @@ impl CosmosAddr {
 
     pub fn new_bytes(bytes: Vec<u8>, prefix: &str) -> Result<Self> {
         if !prefix.chars().all(|c| matches!(c, 'a'..='z' | '0'..='9')) {
-            bail!("expected prefix to be lowercase alphanumeric characters only");
+            return Err(AddressError::InvalidFormat(
+                "expected prefix to be lowercase alphanumeric characters only".to_string(),
+            ));
         }
 
         if bytes.len() > 255 {
-            bail!(
+            return Err(AddressError::InvalidFormat(format!(
                 "account ID should be at most 255 bytes long, but was {} bytes long",
                 bytes.len()
-            );
+            )));
         }
 
         let bech32_addr = bech32::encode(prefix, bytes);
@@ -53,9 +55,7 @@ impl CosmosAddr {
                 let id = tendermint::account::Id::from(*encoded_point);
                 Self::new_bytes(id.as_bytes().to_vec(), prefix)
             }
-            _ => Err(anyhow!(
-                "Invalid public key type, currently only supports secp256k1"
-            )),
+            _ => Err(AddressError::UnsupportedPubKey),
         }
     }
 
@@ -67,15 +67,14 @@ impl CosmosAddr {
         } else {
             bech32::decode(value)
         }
-        .context(format!("invalid bech32: '{value}'"))?;
+        .map_err(|e| AddressError::InvalidFormat(format!("invalid bech32 '{value}': {e}")))?;
 
         if let Some(prefix) = prefix {
             if decoded_prefix != prefix {
-                bail!(
-                    "Address prefix \"{}\" does not match expected prefix \"{}\"",
-                    decoded_prefix,
-                    prefix
-                );
+                return Err(AddressError::InvalidPrefix {
+                    expected: prefix.to_string(),
+                    actual: decoded_prefix,
+                });
             }
         }
 
@@ -108,7 +107,7 @@ impl std::fmt::Display for CosmosAddr {
 }
 
 impl FromStr for CosmosAddr {
-    type Err = anyhow::Error;
+    type Err = AddressError;
 
     fn from_str(s: &str) -> Result<Self> {
         Self::new_str(s, None)
@@ -116,7 +115,7 @@ impl FromStr for CosmosAddr {
 }
 
 impl serde::Serialize for CosmosAddr {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -125,7 +124,7 @@ impl serde::Serialize for CosmosAddr {
 }
 
 impl<'de> serde::Deserialize<'de> for CosmosAddr {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -169,7 +168,7 @@ impl cosmwasm_schema::schemars::JsonSchema for CosmosAddr {
 
 // From/Into impls
 impl TryFrom<cosmwasm_std::Addr> for CosmosAddr {
-    type Error = anyhow::Error;
+    type Error = AddressError;
 
     fn try_from(addr: cosmwasm_std::Addr) -> Result<Self> {
         Self::new_str(addr.as_str(), None)
@@ -183,7 +182,7 @@ impl From<CosmosAddr> for cosmwasm_std::Addr {
 }
 
 impl TryFrom<&cosmwasm_std::Addr> for CosmosAddr {
-    type Error = anyhow::Error;
+    type Error = AddressError;
 
     fn try_from(addr: &cosmwasm_std::Addr) -> Result<Self> {
         Self::new_str(addr.as_str(), None)
