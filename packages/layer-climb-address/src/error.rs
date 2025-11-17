@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
-pub enum AddressError {
+pub enum ClimbAddressError {
     #[error("invalid address format: {0}")]
     InvalidFormat(String),
 
@@ -21,4 +21,4 @@ pub enum AddressError {
     Other(String),
 }
 
-pub type Result<T> = std::result::Result<T, AddressError>;
+pub type Result<T> = std::result::Result<T, ClimbAddressError>;

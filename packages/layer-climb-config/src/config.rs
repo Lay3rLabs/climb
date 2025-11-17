@@ -51,9 +51,9 @@ impl ChainId {
 }
 
 impl FromStr for ChainId {
-    type Err = anyhow::Error;
+    type Err = ClimbConfigError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         Ok(Self::new(s))
     }
 }

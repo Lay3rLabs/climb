@@ -70,7 +70,7 @@ impl CosmosAddr {
         .map_err(|e| ClimbAddressError::InvalidFormat(format!("invalid bech32 '{value}': {e}")))?;
 
         if let Some(prefix) = prefix {
-            if decoded_prefix != prefix {
+            if decoded_prefix != *prefix {
                 return Err(ClimbAddressError::InvalidPrefix {
                     expected: prefix.to_string(),
                     actual: decoded_prefix,
