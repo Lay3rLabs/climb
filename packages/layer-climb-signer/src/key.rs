@@ -1,5 +1,5 @@
+use super::error::{ClimbSignerError, Result};
 use super::signer::TxSigner;
-use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use bip32::DerivationPath;
 use bip39::Mnemonic;
@@ -13,7 +13,8 @@ pub static COSMOS_HUB_PATH: LazyLock<DerivationPath> =
     LazyLock::new(|| DerivationPath::from_str("m/44'/118'/0'/0/0").unwrap());
 
 pub fn cosmos_hub_derivation(index: u32) -> Result<DerivationPath> {
-    DerivationPath::from_str(&format!("m/44'/118'/0'/0/{index}")).map_err(|err| anyhow!("{}", err))
+    DerivationPath::from_str(&format!("m/44'/118'/0'/0/{index}"))
+        .map_err(|err| ClimbSignerError::InvalidDerivationPath(err.to_string()))
 }
 
 pub struct KeySigner {
@@ -39,8 +40,8 @@ impl KeySigner {
         let derivation = derivation.unwrap_or(&COSMOS_HUB_PATH);
         let mnemonic: Mnemonic = mnemonic.parse()?;
         let seed = mnemonic.to_seed("");
-        let key =
-            bip32::XPrv::derive_from_path(seed, derivation).map_err(|err| anyhow!("{}", err))?;
+        let key = bip32::XPrv::derive_from_path(seed, derivation)
+            .map_err(|err| ClimbSignerError::KeyDerivationFailed(err.to_string()))?;
 
         Ok(Self { key })
     }
@@ -78,12 +79,13 @@ async fn sign(signer: &KeySigner, msg: &layer_climb_proto::tx::SignDoc) -> Resul
         .key
         .private_key()
         .try_sign(&layer_climb_proto::proto_into_bytes(msg)?)
-        .map_err(|err| anyhow!("{}", err))?;
+        .map_err(|err| ClimbSignerError::SigningFailed(err.to_string()))?;
     Ok(signed.to_vec())
 }
 
 async fn public_key(signer: &KeySigner) -> Result<PublicKey> {
     let public_key = signer.key.public_key();
     let public_key_bytes = public_key.to_bytes();
-    PublicKey::from_raw_secp256k1(&public_key_bytes).context("Invalid secp256k1 public key")
+    PublicKey::from_raw_secp256k1(&public_key_bytes)
+        .ok_or_else(|| ClimbSignerError::InvalidSecp256k1PublicKey("failed to parse public key".to_string()))
 }

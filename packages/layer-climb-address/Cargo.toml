@@ -16,7 +16,7 @@ cw-storage = [ "dep:cw-storage-plus"]
 
 [dependencies]
 tendermint = { workspace = true }
-anyhow = { workspace = true }
+thiserror = { workspace = true }
 cosmwasm-schema = { workspace = true }
 subtle-encoding = { workspace = true }
 alloy-primitives = { workspace = true }

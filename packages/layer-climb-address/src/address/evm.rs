@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-use anyhow::{anyhow, bail, Result};
+use crate::error::{ClimbAddressError, Result};
 use cosmwasm_schema::cw_schema;
 
 /// EVM address
@@ -18,7 +18,10 @@ impl EvmAddr {
 
     pub fn new_vec(bytes: Vec<u8>) -> Result<Self> {
         if bytes.len() != 20 {
-            bail!("Invalid length for EVM address");
+            return Err(ClimbAddressError::InvalidFormat(format!(
+                "Invalid length for EVM address: expected 20 bytes, got {}",
+                bytes.len()
+            )));
         }
         let mut arr = [0u8; 20];
         arr.copy_from_slice(&bytes);
@@ -26,11 +29,13 @@ impl EvmAddr {
     }
 
     pub fn new_pub_key(_pub_key: &tendermint::PublicKey) -> Result<Self> {
-        Err(anyhow!("TODO - support EVM pub key"))
+        Err(ClimbAddressError::UnsupportedPubKey)
     }
 
     pub fn new_str(s: &str) -> Result<Self> {
-        Self::new_vec(const_hex::decode(s.trim())?)
+        let decoded = const_hex::decode(s.trim())
+            .map_err(|e| ClimbAddressError::InvalidFormat(format!("invalid hex: {e}")))?;
+        Self::new_vec(decoded)
     }
 
     pub fn as_bytes(&self) -> [u8; 20] {
@@ -77,7 +82,7 @@ impl std::fmt::Display for EvmAddr {
 }
 
 impl FromStr for EvmAddr {
-    type Err = anyhow::Error;
+    type Err = ClimbAddressError;
 
     fn from_str(s: &str) -> Result<Self> {
         Self::new_str(s)
@@ -85,7 +90,7 @@ impl FromStr for EvmAddr {
 }
 
 impl serde::Serialize for EvmAddr {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -94,7 +99,7 @@ impl serde::Serialize for EvmAddr {
 }
 
 impl<'de> serde::Deserialize<'de> for EvmAddr {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {

@@ -1,7 +1,7 @@
 mod cosmos;
 mod evm;
 
-use anyhow::{bail, Result};
+use crate::error::{ClimbAddressError, Result};
 use cosmwasm_schema::cw_serde;
 use std::hash::Hash;
 
@@ -65,45 +65,45 @@ impl std::fmt::Display for Address {
 
 // TryFrom<Address>
 impl TryFrom<Address> for EvmAddr {
-    type Error = anyhow::Error;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
             Address::Evm(addr) => Ok(addr),
-            Address::Cosmos(_) => bail!("Address is not EVM"),
+            Address::Cosmos(_) => Err(ClimbAddressError::NotEvm),
         }
     }
 }
 
 impl TryFrom<Address> for CosmosAddr {
-    type Error = anyhow::Error;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
             Address::Cosmos(addr) => Ok(addr),
-            Address::Evm(_) => bail!("Address is not Cosmos"),
+            Address::Evm(_) => Err(ClimbAddressError::NotCosmos),
         }
     }
 }
 
 impl TryFrom<Address> for alloy_primitives::Address {
-    type Error = anyhow::Error;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
             Address::Evm(addr) => Ok(addr.into()),
-            Address::Cosmos(_) => bail!("Address is not EVM"),
+            Address::Cosmos(_) => Err(ClimbAddressError::NotEvm),
         }
     }
 }
 
 impl TryFrom<Address> for cosmwasm_std::Addr {
-    type Error = anyhow::Error;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: Address) -> Result<Self> {
         match addr {
             Address::Cosmos(addr) => Ok(addr.into()),
-            Address::Evm(_) => bail!("Address is not Cosmos"),
+            Address::Evm(_) => Err(ClimbAddressError::NotCosmos),
         }
     }
 }
@@ -128,7 +128,7 @@ impl From<alloy_primitives::Address> for Address {
 }
 
 impl TryFrom<cosmwasm_std::Addr> for Address {
-    type Error = anyhow::Error;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: cosmwasm_std::Addr) -> Result<Self> {
         Ok(Self::Cosmos(addr.try_into()?))
@@ -136,7 +136,7 @@ impl TryFrom<cosmwasm_std::Addr> for Address {
 }
 
 impl TryFrom<&cosmwasm_std::Addr> for Address {
-    type Error = anyhow::Error;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: &cosmwasm_std::Addr) -> Result<Self> {
         Ok(Self::Cosmos(addr.try_into()?))

@@ -2,15 +2,18 @@ use std::sync::atomic::AtomicU32;
 
 use crate::{
     cache::ClimbCache,
+    error::ClimbError,
     querier::{Connection, QueryClient},
     signing::SigningClient,
 };
-use anyhow::{bail, Error, Result};
+use anyhow::{Error, Result};
 use deadpool::managed::{Manager, Metrics, Object, PoolError, RecycleResult};
 use layer_climb_address::*;
 use layer_climb_config::ChainConfig;
 use layer_climb_signer::{cosmos_hub_derivation, KeySigner, TxSigner};
 use tokio::sync::Mutex;
+
+type ClimbResult<T> = std::result::Result<T, ClimbError>;
 
 /// Currently this only works with mnemonic phrases
 pub struct SigningClientPoolManager {
@@ -40,9 +43,11 @@ impl SigningClientPoolManager {
         }
     }
 
-    pub async fn address(&self, index: u32) -> Result<Address, PoolError<Error>> {
-        let signer =
-            KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))?;
+    pub async fn address(&self, index: u32) -> ClimbResult<Address> {
+        let signer = KeySigner::new_mnemonic_str(
+            &self.mnemonic,
+            Some(&cosmos_hub_derivation(index)?),
+        )?;
 
         let addr = self
             .chain_config
@@ -109,17 +114,17 @@ impl SigningClientPoolManager {
         Ok(self)
     }
 
-    fn create_signer(&self) -> Result<KeySigner> {
+    fn create_signer(&self) -> ClimbResult<KeySigner> {
         match &self.chain_config.address_kind {
             layer_climb_address::AddrKind::Cosmos { .. } => {
                 let index = self
                     .derivation_index
                     .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
-                KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))
+                Ok(KeySigner::new_mnemonic_str(&self.mnemonic, Some(&cosmos_hub_derivation(index)?))?)
             }
             layer_climb_address::AddrKind::Evm => {
-                bail!("EVM address kind is not supported (yet)")
+                Err(ClimbError::EvmNotSupported)
             }
         }
     }

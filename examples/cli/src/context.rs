@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use layer_climb::prelude::{ClimbAddressError, ClimbSignerError};
 use layer_climb::prelude::*;
 use rand::rngs::ThreadRng;
 

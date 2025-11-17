@@ -1,5 +1,5 @@
+use super::error::{ClimbSignerError, Result};
 use super::key::PublicKey;
-use anyhow::{bail, Result};
 use async_trait::async_trait;
 use layer_climb_proto::MessageExt;
 
@@ -18,7 +18,7 @@ cfg_if::cfg_if! {
             }
             async fn address(&self, chain_config: &layer_climb_config::ChainConfig) -> Result<layer_climb_address::Address> {
                 let public_key = self.public_key().await?;
-                chain_config.address_from_pub_key(&public_key)
+                Ok(chain_config.address_from_pub_key(&public_key)?)
             }
         }
     } else {
@@ -34,7 +34,7 @@ cfg_if::cfg_if! {
             }
             async fn address(&self, chain_config: &layer_climb_config::ChainConfig) -> Result<layer_climb_address::Address> {
                 let public_key = self.public_key().await?;
-                chain_config.address_from_pub_key(&public_key)
+                Ok(chain_config.address_from_pub_key(&public_key)?)
             }
         }
     }
@@ -51,7 +51,7 @@ fn public_key_to_proto(public_key: &PublicKey) -> Result<layer_climb_proto::Any>
         }
         .to_bytes()?,
         _ => {
-            bail!("Invalid public key type!")
+            return Err(ClimbSignerError::InvalidPublicKeyType);
         }
     };
 
@@ -59,7 +59,7 @@ fn public_key_to_proto(public_key: &PublicKey) -> Result<layer_climb_proto::Any>
         tendermint::PublicKey::Ed25519(_) => "/cosmos.crypto.ed25519.PubKey",
         tendermint::PublicKey::Secp256k1(_) => "/cosmos.crypto.secp256k1.PubKey",
         _ => {
-            bail!("Invalid public key type!")
+            return Err(ClimbSignerError::InvalidPublicKeyType);
         }
     };
 
