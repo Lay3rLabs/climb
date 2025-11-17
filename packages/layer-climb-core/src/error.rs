@@ -11,6 +11,9 @@ pub enum ClimbError {
     #[error("signer error: {0}")]
     Signer(#[from] layer_climb_signer::ClimbSignerError),
 
+    #[error("EVM address kind is not supported yet")]
+    EvmNotSupported,
+
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

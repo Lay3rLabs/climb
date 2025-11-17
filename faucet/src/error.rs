@@ -9,6 +9,12 @@ pub type Result<T> = std::result::Result<T, AnyError>;
 pub enum AppError {
     #[error("not found")]
     NotFound,
+
+    #[error("invalid denom: expected {expected}, got {got}")]
+    InvalidDenom { expected: String, got: String },
+
+    #[error("client pool error: {0}")]
+    ClientPoolError(String),
 }
 
 pub struct AnyError(ClimbError);
@@ -34,6 +40,8 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response<Body> {
         let status = match &self {
             AppError::NotFound => StatusCode::NOT_FOUND,
+            AppError::InvalidDenom { .. } => StatusCode::BAD_REQUEST,
+            AppError::ClientPoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         let body = self.to_string().into();
@@ -49,6 +57,11 @@ impl Clone for AppError {
     fn clone(&self) -> Self {
         match self {
             Self::NotFound => Self::NotFound,
+            Self::InvalidDenom { expected, got } => Self::InvalidDenom {
+                expected: expected.clone(),
+                got: got.clone(),
+            },
+            Self::ClientPoolError(s) => Self::ClientPoolError(s.clone()),
         }
     }
 }
@@ -68,5 +81,23 @@ impl From<anyhow::Error> for AnyError {
 impl From<AppError> for AnyError {
     fn from(err: AppError) -> Self {
         Self(ClimbError::Other(err.into()))
+    }
+}
+
+impl From<layer_climb::prelude::ClimbAddressError> for AnyError {
+    fn from(err: layer_climb::prelude::ClimbAddressError) -> Self {
+        Self(ClimbError::Address(err))
+    }
+}
+
+impl From<layer_climb::prelude::ClimbSignerError> for AnyError {
+    fn from(err: layer_climb::prelude::ClimbSignerError) -> Self {
+        Self(ClimbError::Signer(err))
+    }
+}
+
+impl From<layer_climb::prelude::ClimbConfigError> for AnyError {
+    fn from(err: layer_climb::prelude::ClimbConfigError) -> Self {
+        Self(ClimbError::Config(err))
     }
 }

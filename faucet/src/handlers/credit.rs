@@ -33,10 +33,10 @@ async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditR
 
     if let Some(denom) = &payload.denom {
         if denom != state.config.credit.denom.as_str() {
-            return Err(ClimbError::from(ValidationError::invalid_denom(
-                &state.config.credit.denom,
-                denom,
-            ))
+            return Err(AppError::InvalidDenom {
+                expected: state.config.credit.denom.clone(),
+                got: denom.clone(),
+            }
             .into());
         }
     }
@@ -45,7 +45,7 @@ async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditR
         .client_pool
         .get()
         .await
-        .map_err(|e| ClimbError::from(NetworkError::client_pool(format!("{e:?}"))))?;
+        .map_err(|e| AppError::ClientPoolError(format!("{e:?}")))?;
 
     let mut tx_builder = sender.tx_builder();
     if let Some(memo) = &state.config.memo {
@@ -57,7 +57,7 @@ async fn credit_inner(state: AppState, payload: CreditRequest) -> Result<CreditR
         .credit
         .amount
         .parse()
-        .map_err(|e| ClimbError::parse(format!("{e}")))?;
+        .map_err(|e| ClimbError::Other(anyhow::anyhow!("Failed to parse amount: {e}")))?;
 
     let tx = sender
         .transfer(

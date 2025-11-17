@@ -26,6 +26,9 @@ pub enum ClimbSignerError {
     #[error("address error: {0}")]
     Address(#[from] layer_climb_address::ClimbAddressError),
 
+    #[error("proto encoding error: {0}")]
+    ProtoEncodeError(#[from] prost::EncodeError),
+
     #[error("encoding error: {0}")]
     EncodeError(#[from] anyhow::Error),
 

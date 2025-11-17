@@ -148,7 +148,7 @@ impl ConfigInit {
         if let Ok(chain_address_kind) = std::env::var("FAUCET_CHAIN_ADDRESS_KIND") {
             config.chain_address_kind = chain_address_kind
                 .parse()
-                .map_err(|_| ConfigError::invalid_address_kind(chain_address_kind))?;
+                .map_err(|_| ClimbConfigError::invalid_address_kind(chain_address_kind))?;
         }
 
         if let Ok(chain_address_bech32_prefix) = std::env::var("FAUCET_CHAIN_ADDRESS_BECH32_PREFIX")
@@ -189,7 +189,7 @@ impl TryFrom<ConfigInit> for Config {
             memo: config.memo,
             credit,
             mnemonic: std::env::var(&config.mnemonic_env_var)
-                .map_err(|_| ConfigError::missing_env(&config.mnemonic_env_var))?,
+                .map_err(|_| ClimbConfigError::missing_env(&config.mnemonic_env_var))?,
             chain_config: ChainConfig {
                 chain_id: config.chain_id,
                 rpc_endpoint: config.chain_rpc_endpoint,
@@ -201,7 +201,7 @@ impl TryFrom<ConfigInit> for Config {
                     ConfigChainAddrKindName::Cosmos => AddrKind::Cosmos {
                         prefix: config
                             .chain_address_bech32_prefix
-                            .ok_or(ConfigError::MissingBech32Prefix)?,
+                            .ok_or(ClimbConfigError::MissingBech32Prefix)?,
                     },
                     ConfigChainAddrKindName::Evm => AddrKind::Evm,
                 },
@@ -209,11 +209,11 @@ impl TryFrom<ConfigInit> for Config {
             minimum_credit_balance_threshhold: config
                 .minimum_credit_balance_threshhold
                 .parse()
-                .map_err(|e| ConfigError::InvalidAmount(format!("{e}")))?,
+                .map_err(|e| ClimbConfigError::InvalidAmount(format!("{e}")))?,
             minimum_credit_balance_topup: config
                 .minimum_credit_balance_topup
                 .parse()
-                .map_err(|e| ConfigError::InvalidAmount(format!("{e}")))?,
+                .map_err(|e| ClimbConfigError::InvalidAmount(format!("{e}")))?,
         })
     }
 }
