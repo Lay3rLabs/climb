@@ -1,6 +1,7 @@
+use super::error::{Result, ClimbSignerError};
 use super::key::PublicKey;
-use anyhow::{bail, Result};
 use async_trait::async_trait;
+use layer_climb_address::ClimbAddressError;
 use layer_climb_proto::MessageExt;
 
 cfg_if::cfg_if! {

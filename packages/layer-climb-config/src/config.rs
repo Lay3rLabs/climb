@@ -1,5 +1,5 @@
-use anyhow::Result;
-use layer_climb_address::{AddrKind, Address};
+use crate::error::{ClimbConfigError, Result};
+use layer_climb_address::{ClimbAddressError, AddrKind, Address};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
 
@@ -17,24 +17,23 @@ pub struct ChainConfig {
 }
 
 impl ChainConfig {
-    pub fn ibc_client_revision(&self) -> Result<u64> {
+    pub fn ibc_client_revision(&self) -> u64 {
         // > Tendermint chains wishing to use revisions to maintain persistent IBC connections even across height-resetting upgrades
         // > must format their chainIDs in the following manner: {chainID}-{revision_number}
         // - https://github.com/cosmos/ibc-go/blob/main/docs/docs/01-ibc/01-overview.md#ibc-client-heights
-        Ok(self
-            .chain_id
+        self.chain_id
             .as_str()
             .split("-")
             .last()
             .and_then(|s| s.parse::<u64>().ok())
-            .unwrap_or_default())
+            .unwrap_or_default()
     }
 
-    pub fn parse_address(&self, value: &str) -> Result<Address> {
+    pub fn parse_address(&self, value: &str) -> std::result::Result<Address, ClimbAddressError> {
         self.address_kind.parse_address(value)
     }
 
-    pub fn address_from_pub_key(&self, pub_key: &tendermint::PublicKey) -> Result<Address> {
+    pub fn address_from_pub_key(&self, pub_key: &tendermint::PublicKey) -> std::result::Result<Address, ClimbAddressError> {
         self.address_kind.address_from_pub_key(pub_key)
     }
 }

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-use crate::error::{AddressError, Result};
+use crate::error::{ClimbAddressError, Result};
 use cosmwasm_schema::cw_schema;
 
 /// EVM address
@@ -18,7 +18,7 @@ impl EvmAddr {
 
     pub fn new_vec(bytes: Vec<u8>) -> Result<Self> {
         if bytes.len() != 20 {
-            return Err(AddressError::InvalidFormat(format!(
+            return Err(ClimbAddressError::InvalidFormat(format!(
                 "Invalid length for EVM address: expected 20 bytes, got {}",
                 bytes.len()
             )));
@@ -29,12 +29,12 @@ impl EvmAddr {
     }
 
     pub fn new_pub_key(_pub_key: &tendermint::PublicKey) -> Result<Self> {
-        Err(AddressError::UnsupportedPubKey)
+        Err(ClimbAddressError::UnsupportedPubKey)
     }
 
     pub fn new_str(s: &str) -> Result<Self> {
         let decoded = const_hex::decode(s.trim())
-            .map_err(|e| AddressError::InvalidFormat(format!("invalid hex: {e}")))?;
+            .map_err(|e| ClimbAddressError::InvalidFormat(format!("invalid hex: {e}")))?;
         Self::new_vec(decoded)
     }
 
@@ -82,7 +82,7 @@ impl std::fmt::Display for EvmAddr {
 }
 
 impl FromStr for EvmAddr {
-    type Err = AddressError;
+    type Err = ClimbAddressError;
 
     fn from_str(s: &str) -> Result<Self> {
         Self::new_str(s)

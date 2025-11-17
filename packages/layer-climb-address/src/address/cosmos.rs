@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-use crate::error::{AddressError, Result};
+use crate::error::{ClimbAddressError, Result};
 use cosmwasm_schema::cw_schema;
 use subtle_encoding::bech32;
 
@@ -28,13 +28,13 @@ impl CosmosAddr {
 
     pub fn new_bytes(bytes: Vec<u8>, prefix: &str) -> Result<Self> {
         if !prefix.chars().all(|c| matches!(c, 'a'..='z' | '0'..='9')) {
-            return Err(AddressError::InvalidFormat(
+            return Err(ClimbAddressError::InvalidFormat(
                 "expected prefix to be lowercase alphanumeric characters only".to_string(),
             ));
         }
 
         if bytes.len() > 255 {
-            return Err(AddressError::InvalidFormat(format!(
+            return Err(ClimbAddressError::InvalidFormat(format!(
                 "account ID should be at most 255 bytes long, but was {} bytes long",
                 bytes.len()
             )));
@@ -55,7 +55,7 @@ impl CosmosAddr {
                 let id = tendermint::account::Id::from(*encoded_point);
                 Self::new_bytes(id.as_bytes().to_vec(), prefix)
             }
-            _ => Err(AddressError::UnsupportedPubKey),
+            _ => Err(ClimbAddressError::UnsupportedPubKey),
         }
     }
 
@@ -67,11 +67,11 @@ impl CosmosAddr {
         } else {
             bech32::decode(value)
         }
-        .map_err(|e| AddressError::InvalidFormat(format!("invalid bech32 '{value}': {e}")))?;
+        .map_err(|e| ClimbAddressError::InvalidFormat(format!("invalid bech32 '{value}': {e}")))?;
 
         if let Some(prefix) = prefix {
             if decoded_prefix != prefix {
-                return Err(AddressError::InvalidPrefix {
+                return Err(ClimbAddressError::InvalidPrefix {
                     expected: prefix.to_string(),
                     actual: decoded_prefix,
                 });
@@ -107,7 +107,7 @@ impl std::fmt::Display for CosmosAddr {
 }
 
 impl FromStr for CosmosAddr {
-    type Err = AddressError;
+    type Err = ClimbAddressError;
 
     fn from_str(s: &str) -> Result<Self> {
         Self::new_str(s, None)
@@ -168,7 +168,7 @@ impl cosmwasm_schema::schemars::JsonSchema for CosmosAddr {
 
 // From/Into impls
 impl TryFrom<cosmwasm_std::Addr> for CosmosAddr {
-    type Error = AddressError;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: cosmwasm_std::Addr) -> Result<Self> {
         Self::new_str(addr.as_str(), None)
@@ -182,7 +182,7 @@ impl From<CosmosAddr> for cosmwasm_std::Addr {
 }
 
 impl TryFrom<&cosmwasm_std::Addr> for CosmosAddr {
-    type Error = AddressError;
+    type Error = ClimbAddressError;
 
     fn try_from(addr: &cosmwasm_std::Addr) -> Result<Self> {
         Self::new_str(addr.as_str(), None)

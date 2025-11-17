@@ -2602,7 +2602,6 @@ name = "layer-climb-address"
 version = "0.8.7"
 dependencies = [
  "alloy-primitives",
- "anyhow",
  "bincode",
  "const-hex",
  "cosmwasm-schema",
@@ -2612,6 +2611,7 @@ dependencies = [
  "serde_json",
  "subtle-encoding",
  "tendermint",
+ "thiserror 2.0.12",
  "utoipa",
 ]
 
@@ -2619,7 +2619,6 @@ dependencies = [
 name = "layer-climb-cli"
 version = "0.8.7"
 dependencies = [
- "anyhow",
  "bip39",
  "clap 4.5.40",
  "cosmwasm-std",
