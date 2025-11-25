@@ -67,6 +67,46 @@ impl SigningClient {
         Ok((contract_address, resp))
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub async fn contract_instantiate2(
+        &self,
+        admin: impl Into<Option<Address>>,
+        code_id: u64,
+        label: impl ToString,
+        msg: &impl Serialize,
+        funds: Vec<layer_climb_proto::Coin>,
+        salt: Vec<u8>,
+        fix_msg: bool,
+        tx_builder: Option<TxBuilder<'_>>,
+    ) -> Result<(Address, layer_climb_proto::abci::TxResponse)> {
+        let resp = tx_builder
+            .unwrap_or_else(|| self.tx_builder())
+            .broadcast([proto_into_any(&self.contract_instantiate2_msg(
+                admin, code_id, label, funds, salt, fix_msg, msg,
+            )?)?])
+            .await?;
+
+        let events = CosmosTxEvents::from(&resp);
+
+        let contract_address = events
+            .attr_first(
+                EVENT_TYPE_CONTRACT_INSTANTIATE,
+                EVENT_ATTR_INSTANTIATE_CONTRACT_ADDRESS_V1,
+            )
+            .or_else(|_| {
+                events.attr_first(
+                    EVENT_TYPE_CONTRACT_INSTANTIATE,
+                    EVENT_ATTR_INSTANTIATE_CONTRACT_ADDRESS_V2,
+                )
+            })?
+            .value()
+            .to_string();
+
+        let contract_address = self.querier.chain_config.parse_address(&contract_address)?;
+
+        Ok((contract_address, resp))
+    }
+
     pub async fn contract_execute(
         &self,
         address: &Address,

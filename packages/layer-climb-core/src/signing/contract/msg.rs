@@ -33,6 +33,29 @@ impl SigningClient {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub fn contract_instantiate2_msg(
+        &self,
+        admin: impl Into<Option<Address>>,
+        code_id: u64,
+        label: impl ToString,
+        funds: Vec<layer_climb_proto::Coin>,
+        salt: Vec<u8>,
+        fix_msg: bool,
+        msg: &impl Serialize,
+    ) -> Result<layer_climb_proto::wasm::MsgInstantiateContract2> {
+        Ok(layer_climb_proto::wasm::MsgInstantiateContract2 {
+            sender: self.addr.to_string(),
+            admin: admin.into().map(|a| a.to_string()).unwrap_or_default(),
+            code_id,
+            label: label.to_string(),
+            msg: contract_msg_to_vec(msg)?,
+            salt,
+            fix_msg,
+            funds,
+        })
+    }
+
     pub fn contract_execute_msg(
         &self,
         address: &Address,
