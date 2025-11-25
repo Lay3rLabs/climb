@@ -1,4 +1,5 @@
 use crate::{contract_helpers::contract_msg_to_vec, prelude::*};
+use layer_climb_address::{AddrKind, CosmosAddr};
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::instrument;
 
@@ -50,6 +51,46 @@ impl QueryClient {
             address: address.clone(),
         })
         .await
+    }
+
+    #[instrument]
+    pub async fn contract_predict_address(
+        &self,
+        code_id: u64,
+        creator: &Address,
+        salt: &[u8],
+    ) -> Result<Address> {
+        let code_info = self.contract_code_info(code_id).await?;
+
+        let checksum = {
+            let data_hash = code_info.data_hash;
+
+            if data_hash.len() != 32 {
+                bail!("Unexpected code data hash length");
+            }
+
+            let mut array = [0u8; 32];
+            array.copy_from_slice(&data_hash);
+            cosmwasm_std::Checksum::from(array)
+        };
+
+        let canonical_addr = cosmwasm_std::instantiate2_address(
+            checksum.as_slice(),
+            &creator.as_bytes().into(),
+            salt,
+        )?;
+
+        let human_addr = CosmosAddr::new_bytes(
+            canonical_addr.into(),
+            match &self.chain_config.address_kind {
+                AddrKind::Cosmos { prefix } => prefix,
+                AddrKind::Evm => {
+                    bail!("Cannot convert to human address with EVM address kind");
+                }
+            },
+        )?;
+
+        Ok(human_addr.into())
     }
 }
 

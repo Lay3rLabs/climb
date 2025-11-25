@@ -23,13 +23,13 @@ impl QueryClient {
                     .simulate(req)
                     .await
                     .map(|res| res.into_inner())
-                    .context("couldn't simulate tx")
+                    .map_err(|e| anyhow!("couldn't simulate tx: {e:?}"))
             }
             ConnectionMode::Rpc => self
                 .rpc_client()?
                 .abci_protobuf_query("/cosmos.tx.v1beta1.Service/Simulate", req, None)
                 .await
-                .context("couldn't simulate tx"),
+                .map_err(|e| anyhow!("couldn't simulate tx: {e:?}")),
         }
     }
 
