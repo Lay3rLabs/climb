@@ -33,6 +33,7 @@ impl SigningClient {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn contract_instantiate2_msg(
         &self,
         admin: impl Into<Option<Address>>,

@@ -67,6 +67,7 @@ impl SigningClient {
         Ok((contract_address, resp))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn contract_instantiate2(
         &self,
         admin: impl Into<Option<Address>>,
