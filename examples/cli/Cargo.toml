@@ -8,16 +8,17 @@ license = "Apache-2.0"
 ### Workspace dependencies ###
 layer-climb = { workspace = true }
 layer-climb-cli = { workspace = true }
-serde = { workspace = true } 
-serde_json = {workspace = true} 
+serde = { workspace = true }
+serde_json = {workspace = true}
 anyhow = {workspace = true}
 clap = { workspace = true}
 futures = {workspace = true}
 cosmwasm-std = {workspace = true}
 tracing = {workspace = true}
-dotenvy = {workspace = true} 
-tracing-subscriber = {workspace = true} 
+dotenvy = {workspace = true}
+tracing-subscriber = {workspace = true}
 bip39 = {workspace = true}
 rand = {workspace = true}
 deadpool = {workspace = true}
 tokio = {workspace = true}
+rustls = {workspace = true}

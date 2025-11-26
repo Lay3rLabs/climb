@@ -13,6 +13,10 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
     // Load the .env file before anything, in case it's used by args
     if dotenvy::dotenv().is_err() {
         eprintln!("Failed to load .env file");
