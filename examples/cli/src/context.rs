@@ -1,6 +1,7 @@
 #![allow(clippy::match_like_matches_macro)]
 
 use anyhow::{Context, Result};
+use layer_climb::prelude::{ClimbAddressError, ClimbSignerError};
 use layer_climb::prelude::*;
 use layer_climb_cli::command::WalletCommand;
 use rand::rngs::ThreadRng;

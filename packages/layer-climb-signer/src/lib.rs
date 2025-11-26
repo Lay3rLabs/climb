@@ -1,6 +1,8 @@
+mod error;
 mod key;
 mod signer;
 
+pub use error::*;
 pub use key::*;
 pub use signer::*;
 

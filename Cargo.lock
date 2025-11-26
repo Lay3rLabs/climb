@@ -2603,7 +2603,6 @@ name = "layer-climb-address"
 version = "0.8.8"
 dependencies = [
  "alloy-primitives",
- "anyhow",
  "bincode",
  "const-hex",
  "cosmwasm-schema",
@@ -2613,6 +2612,7 @@ dependencies = [
  "serde_json",
  "subtle-encoding",
  "tendermint",
+ "thiserror 2.0.12",
  "utoipa",
 ]
 
@@ -2643,6 +2643,7 @@ dependencies = [
  "layer-climb-address",
  "serde",
  "tendermint",
+ "thiserror 2.0.12",
  "url",
 ]
 
@@ -2742,6 +2743,7 @@ dependencies = [
  "layer-climb-config",
  "layer-climb-proto",
  "log",
+ "prost",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
