@@ -1,72 +1,72 @@
 {
-    "local-layer-sdk": {
-        "chain": {
-            "chain_id": "slay3r-local",
-            "rpc_endpoint": "http://localhost:26657",
-            "grpc_endpoint": "http://localhost:9090",
-            "rest_endpoint": "http://localhost:1317",
-            "gas_price": 0.025,
-            "gas_denom": "uslay",
-            "address_kind": {
-                "cosmos": {
-                    "prefix": "layer"
-                }
-            }
-        },
-        "faucet": {
-            "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
+  "local-layer-sdk": {
+    "chain": {
+      "chain_id": "slay3r-local",
+      "rpc_endpoint": "http://localhost:26657",
+      "grpc_endpoint": "http://localhost:9090",
+      "rest_endpoint": "http://localhost:1317",
+      "gas_price": 0.025,
+      "gas_denom": "uslay",
+      "address_kind": {
+        "cosmos": {
+          "prefix": "layer"
         }
+      }
     },
-    "local-wasmd": {
-        "chain": {
-            "chain_id": "local-wasmd",
-            "rpc_endpoint": "http://localhost:26657",
-            "rest_endpoint": "http://localhost:1317",
-            "gas_price": 0.025,
-            "gas_denom": "ulayer",
-            "address_kind": {
-                "cosmos": {
-                    "prefix": "wasm"
-                }
-            }
-        },
-        "faucet": {
-            "mnemonic": "opinion knife other balcony surge more bamboo canoe romance ask argue teach anxiety adjust spike mystery wolf alone torch tail six decide wash alley"
-        }
-    },
-    "local": {
-        "chain": {
-            "chain_id": "local-osmosis",
-            "rpc_endpoint": "http://localhost:26657",
-            "rest_endpoint": "http://localhost:1317",
-            "gas_price": 0.025,
-            "gas_denom": "uosmo",
-            "address_kind": {
-                "cosmos": {
-                    "prefix": "osmo"
-                }
-            }
-        },
-        "faucet": {
-            "mnemonic": "opinion knife other balcony surge more bamboo canoe romance ask argue teach anxiety adjust spike mystery wolf alone torch tail six decide wash alley"
-        }
-    },
-    "testnet": {
-        "chain": {
-            "chain_id": "layer-permissionless-3",
-            "rpc_endpoint": "https://rpc.layer-p.net",
-            "grpc_endpoint": "https://grpc.layer-p.net:443",
-            "rest_endpoint": "https://api.layer-p.net",
-            "gas_price": 0.025,
-            "gas_denom": "uperm",
-            "address_kind": {
-                "cosmos": {
-                    "prefix": "layer"
-                }
-            }
-        },
-        "faucet": {
-            "mnemonic": "feel slide lunch main narrow illness goose foster income exotic trim brief install million slab myth marine uncover club eye evolve edit angle decrease"
-        }
+    "faucet": {
+      "mnemonic": "economy stock theory fatal elder harbor betray wasp final emotion task crumble siren bottom lizard educate guess current outdoor pair theory focus wife stone"
     }
+  },
+  "local-wasmd": {
+    "chain": {
+      "chain_id": "local-wasmd",
+      "rpc_endpoint": "http://localhost:26657",
+      "rest_endpoint": "http://localhost:1317",
+      "gas_price": 0.025,
+      "gas_denom": "ulayer",
+      "address_kind": {
+        "cosmos": {
+          "prefix": "wasm"
+        }
+      }
+    },
+    "faucet": {
+      "mnemonic": "opinion knife other balcony surge more bamboo canoe romance ask argue teach anxiety adjust spike mystery wolf alone torch tail six decide wash alley"
+    }
+  },
+  "local": {
+    "chain": {
+      "chain_id": "local-osmosis",
+      "rpc_endpoint": "http://localhost:26657",
+      "rest_endpoint": "http://localhost:1317",
+      "gas_price": 0.025,
+      "gas_denom": "uosmo",
+      "address_kind": {
+        "cosmos": {
+          "prefix": "osmo"
+        }
+      }
+    },
+    "faucet": {
+      "mnemonic": "opinion knife other balcony surge more bamboo canoe romance ask argue teach anxiety adjust spike mystery wolf alone torch tail six decide wash alley"
+    }
+  },
+  "testnet": {
+    "chain": {
+      "chain_id": "pion-1",
+      "rpc_endpoint": "https://rpc-lb-pion.ntrn.tech",
+      "grpc_endpoint": "http://grpc-lb-pion.ntrn.tech:80",
+      "rest_endpoint": "https://rest-lb-pion.ntrn.tech",
+      "gas_price": 0.025,
+      "gas_denom": "untrn",
+      "address_kind": {
+        "cosmos": {
+          "prefix": "neutron"
+        }
+      }
+    },
+    "faucet": {
+      "mnemonic": "feel slide lunch main narrow illness goose foster income exotic trim brief install million slab myth marine uncover club eye evolve edit angle decrease"
+    }
+  }
 }

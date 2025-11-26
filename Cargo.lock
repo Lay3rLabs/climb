@@ -1609,6 +1609,7 @@ dependencies = [
  "layer-climb",
  "layer-climb-cli",
  "rand 0.9.1",
+ "rustls",
  "serde",
  "serde_json",
  "tokio",

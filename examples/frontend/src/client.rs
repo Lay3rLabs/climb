@@ -112,7 +112,7 @@ pub async fn client_connect(key_kind: ClientKeyKind, target_env: TargetEnvironme
 
         ClientKeyKind::DirectEnv => {
             let env_str = match target_env {
-                TargetEnvironment::Testnet => option_env!("TEST_MNEMONIC"),
+                TargetEnvironment::Testnet => option_env!("TESTNET_MNEMONIC"),
                 TargetEnvironment::Local => option_env!("LOCAL_MNEMONIC"),
             };
 

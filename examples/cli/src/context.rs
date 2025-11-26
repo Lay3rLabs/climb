@@ -1,5 +1,8 @@
+#![allow(clippy::match_like_matches_macro)]
+
 use anyhow::{Context, Result};
 use layer_climb::prelude::*;
+use layer_climb_cli::command::WalletCommand;
 use rand::rngs::ThreadRng;
 
 use crate::{
@@ -34,7 +37,7 @@ impl AppContext {
                 .clone(),
             TargetEnvironment::Testnet => self
                 .config
-                .local
+                .testnet
                 .as_ref()
                 .context("no testnet config found")?
                 .chain
@@ -49,7 +52,7 @@ impl AppContext {
     pub fn client_mnemonic(&self) -> Result<String> {
         let mnemonic_var = match self.args.target_env {
             TargetEnvironment::Local => "LOCAL_MNEMONIC",
-            TargetEnvironment::Testnet => "TEST_MNEMONIC",
+            TargetEnvironment::Testnet => "TESTNET_MNEMONIC",
         };
 
         std::env::var(mnemonic_var)
@@ -72,7 +75,13 @@ impl AppContext {
 
     // get either a signing or query client
     pub async fn any_client(&self) -> Result<AnyClient> {
-        let is_signing = !matches!(&self.args.command, Command::Wallet(_));
+        let is_signing = match &self.args.command {
+            Command::Wallet(args) => match args.command {
+                WalletCommand::Transfer { .. } => true,
+                _ => false,
+            },
+            _ => true,
+        };
 
         match (is_signing, self.client_mnemonic()) {
             (true, Ok(mnemonic)) => {
