@@ -30,8 +30,7 @@ cfg_if::cfg_if! {
                 }
             } else {
                 use wstd::{
-                    http::{Client, IntoBody, Request, StatusCode},
-                    io::AsyncRead,
+                    http::{Body, Client, Request, StatusCode},
                 };
 
                 pub struct WasiRpcTransport {}
@@ -43,15 +42,15 @@ cfg_if::cfg_if! {
                 #[async_trait(?Send)]
                 impl RpcTransport for WasiRpcTransport {
                     async fn post_json_bytes(&self, url: &str, body: Vec<u8>) -> anyhow::Result<String> {
-                        let request = Request::post(url).header("content-type", "application/json").body(body.into_body())?;
+                        let request = Request::post(url)
+                            .header("content-type", "application/json")
+                            .body(Body::from(body))?;
                         let mut res = Client::new().send(request).await?;
 
                         match res.status() {
                             StatusCode::OK => {
-                                let body = res.body_mut();
-                                let mut body_buf = Vec::new();
-                                body.read_to_end(&mut body_buf).await?;
-                                String::from_utf8(body_buf).map_err(|err| anyhow::anyhow!(err))
+                                let body_bytes = res.body_mut().contents().await?;
+                                String::from_utf8(body_bytes.to_vec()).map_err(|err| anyhow::anyhow!(err))
                             },
                             status => Err(anyhow!("unexpected status code: {status}")),
                         }
