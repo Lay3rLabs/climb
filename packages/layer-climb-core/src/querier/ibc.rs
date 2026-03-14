@@ -391,7 +391,7 @@ impl QueryRequest for IbcConnectionConsensusStateReq {
         let consensus_height = match consensus_height {
             Some(h) => *h,
             None => layer_climb_proto::RevisionHeight {
-                revision_number: client.chain_config.ibc_client_revision()?,
+                revision_number: client.chain_config.ibc_client_revision(),
                 revision_height: match height {
                     Some(h) => *h,
                     None => BlockHeightReq {}.request(client.clone()).await?,
@@ -557,7 +557,7 @@ impl QueryRequest for IbcCreateClientConsensusStateReq {
         let chain_id = client.chain_config.chain_id.to_string();
 
         let latest_height = layer_climb_proto::RevisionHeight {
-            revision_number: client.chain_config.ibc_client_revision()?,
+            revision_number: client.chain_config.ibc_client_revision(),
             revision_height: latest_block_header.height()?,
         };
 

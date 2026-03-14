@@ -1,9 +1,12 @@
 // just to make IDE's happy
-use anyhow::{bail, Result};
 use async_trait::async_trait;
 use layer_climb_config::ChainId;
 
-use crate::{key::PublicKey, signer::TxSigner};
+use crate::{
+    error::{ClimbSignerError, Result},
+    key::PublicKey,
+    signer::TxSigner,
+};
 
 use super::WebChainConfig;
 
@@ -30,10 +33,10 @@ impl KeplrSigner {
 #[async_trait]
 impl TxSigner for KeplrSignerInner {
     async fn sign(&self, _: &layer_climb_proto::tx::SignDoc) -> Result<Vec<u8>> {
-        bail!("Keplr is only available in browsers");
+        Err(ClimbSignerError::KeplrNotAvailable)
     }
 
     async fn public_key(&self) -> Result<PublicKey> {
-        bail!("Keplr is only available in browsers");
+        Err(ClimbSignerError::KeplrNotAvailable)
     }
 }

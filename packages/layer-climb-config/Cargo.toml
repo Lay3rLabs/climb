@@ -13,7 +13,8 @@ crate-type = ["lib"]
 ######## Local dependencies ########
 layer-climb-address = {workspace = true}
 ######## Workspace dependencies ########
-serde = {workspace = true} 
-anyhow = {workspace = true} 
+serde = {workspace = true}
+anyhow = {workspace = true}
+thiserror = {workspace = true}
 url = {workspace = true}
 tendermint = {workspace = true}
